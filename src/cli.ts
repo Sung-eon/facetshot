@@ -49,6 +49,7 @@ const COMMANDS = [
 ];
 /** Flags that take a value. Everything else is a switch. */
 const VALUED = new Set([
+	'url',
 	'on',
 	'as',
 	'p',
@@ -122,7 +123,7 @@ Usage
   facetshot check <targets…>                            read the screens for problems, no pictures
   facetshot diff                                        run the last command again and show what changed
   facetshot list [devices|variants|profiles|checks|runs]
-  facetshot init [--agent claude|codex|cursor|all]      write a starter config and connect your agent
+  facetshot init [--url <address>] [--agent claude|codex|cursor|all]  write a starter config and connect your agent
   facetshot doctor                                      check this machine and say how to fix what's missing
   facetshot mcp                                         run as an MCP server over stdio (for AI agents)
   facetshot baseline save|list|rm <name>                keep a run to compare against later
@@ -398,7 +399,8 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 			const { init } = await import('./init.ts');
 			return init({
 				agent: typeof flags.agent === 'string' ? flags.agent : undefined,
-				yes: flags.yes === true
+				yes: flags.yes === true,
+				url: typeof flags.url === 'string' ? flags.url : undefined
 			});
 		}
 		case 'doctor': {

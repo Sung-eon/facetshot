@@ -13,6 +13,9 @@ npm i -D facetshot          # or: bun add -d facetshot / pnpm add -D facetshot
 npx playwright install chromium
 ```
 
+facetshot isn't on npm yet. Until it is, clone this repository, run `bun install` in it, and add it from there:
+`bun add -d /path/to/facetshot` (or `npm i -D /path/to/facetshot`).
+
 If your project already uses Playwright, facetshot uses the browsers you have.
 
 Check that everything it needs is in place:
@@ -79,7 +82,15 @@ export default defineConfig({
 });
 ```
 
-What that means:
+If `init` finds nothing it can build or start — the folder isn't a project, or it's a kind of app `init` doesn't
+recognise — it writes nothing and tells you so, instead of a config that would only fail later. Then either run it in
+your project's folder, or tell it where an app is already running (yours, staging or production):
+
+```sh
+npx facetshot init --url http://localhost:3000
+```
+
+What the Vite config above means:
 
 - **`build`** makes a production build, and only when one of the `inputs` has changed since the last build. Pictures
   of a production build are faster to take and closer to what your users see than pictures of a dev server.

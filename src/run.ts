@@ -199,6 +199,13 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 			})
 		);
 		prepareMs = Date.now() - started;
+		// Nothing could start because of how it was asked (no config, a missing setting): say so plainly and stop,
+		// rather than a report of pictures that were never going to be taken.
+		const refused = prepared.find(
+			(outcome): outcome is PromiseRejectedResult =>
+				outcome.status === 'rejected' && outcome.reason instanceof UsageError
+		);
+		if (refused && prepared.every((outcome) => outcome.status === 'rejected')) throw refused.reason;
 		// Patterns become the pictures they stand for, now that the drivers know what exists.
 		for (const [index, [driver, cells]] of [...assigned].entries()) {
 			if (prepared[index].status === 'fulfilled' && driver.expand)

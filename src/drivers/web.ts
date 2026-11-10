@@ -21,7 +21,8 @@ import type { Engine } from '../engine/runtime.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
 import { loadFlow, playInPage, shotNames } from '../flows.ts';
 import { fill } from '../plan.ts';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { CONFIG_NAMES } from '../config.ts';
 import { existsSync } from 'node:fs';
 import {
 	byDeviceAndVariant,
@@ -294,9 +295,13 @@ export class WebDriver implements Driver {
 			this.baseURL = fill(web.baseURL, ctx.values);
 		} else if (relative) {
 			if (!web?.serve) {
+				const path = cells.find((cell) => cell.target.value.startsWith('/'))?.target.value ?? '/';
+				const configured = CONFIG_NAMES.some((name) => existsSync(join(ctx.root, name)));
 				throw new UsageError(
-					'Paths like "/talk" need to know where your app is.',
-					'Set web.baseURL (an address you run yourself) or web.serve (a command facetshot starts) in facetshot.config.ts — or give full URLs.'
+					`"${path}" is a path, and facetshot doesn't know which app it belongs to.`,
+					configured
+						? 'Set web.baseURL (an app you run, staging or production) or web.build + web.serve (facetshot builds and starts it) in your facetshot config, or give a full URL.'
+						: `There's no facetshot config in ${ctx.root}. Run facetshot init in your project's folder (or facetshot init --url <address> for an app that's already running), or give a full URL: facetshot https://example.com${path}`
 				);
 			}
 			// A server kept from an earlier run is used again unless it has died, or the build under it changed.

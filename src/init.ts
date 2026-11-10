@@ -7,6 +7,7 @@ import {
 	existsSync,
 	lstatSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	symlinkSync,
@@ -70,23 +71,24 @@ export function detect(root: string): Detected {
 	found.electron = !!deps['electron'];
 	found.tauri = !!deps['@tauri-apps/api'] || existsSync(join(root, 'src-tauri'));
 	if (existsSync(join(root, 'Package.swift'))) found.swift = '.';
+	found.xcode = readdirSync(root).find((name) => name.endsWith('.xcodeproj'));
 	return found;
 }
 
-function configText(found: Detected): string {
+function configText(found: Detected, url?: string, installed = true): string {
 	const parts: string[] = [];
-	if (found.web) {
+	if (url) {
+		parts.push(`	web: {
+		// The app is already running here (yours, staging or production); facetshot only visits it.
+		baseURL: '${url}'
+	},`);
+	} else if (found.web) {
 		parts.push(`	web: {
 		// A production build, rebuilt only when these inputs change, and its preview server.
 		build: { cmd: '${found.web.build}', inputs: ${JSON.stringify(found.web.inputs)} },
 		serve: { cmd: '${found.web.serve}', port: 'auto' },
 		// What "ready" means beyond a quiet network and loaded fonts: spinners that must be gone.
 		ready: { gone: ['[aria-busy=true]', '.spinner', '.skeleton'] }
-	},`);
-	} else {
-		parts.push(`	web: {
-		// Where your app runs (you start it), or set build + serve and facetshot starts it.
-		baseURL: 'http://localhost:3000'
 	},`);
 	}
 	if (found.storybook)
@@ -105,11 +107,18 @@ function configText(found: Detected): string {
 		// What \`facetshot <targets>\` uses when you don't say --on/--as.
 		default: { on: ['review'], as: ['light', 'dark'] }
 	}`);
-	return `import { defineConfig } from 'facetshot';
+	// Installed in the project, the config gets types through defineConfig; run with npx alone, it is a plain object,
+	// since an import of a package that isn't installed would fail.
+	return installed
+		? `import { defineConfig } from 'facetshot';
 
 export default defineConfig({
 ${parts.join('\n')}
 });
+`
+		: `export default {
+${parts.join('\n')}
+};
 `;
 }
 
@@ -166,17 +175,45 @@ export async function init(options: {
 	agent?: string;
 	yes?: boolean;
 	cwd?: string;
+	/** An app that is already running, for a project facetshot can't build or start itself. */
+	url?: string;
 }): Promise<number> {
 	const root = options.cwd ?? process.cwd();
 	const say = (line: string) => process.stdout.write(`${line}\n`);
 	const found = detect(root);
+	const url = options.url?.replace(/\/$/, '');
+	if (url && !/^https?:\/\/[^/]/.test(url)) {
+		throw new UsageError(
+			`"${options.url}" isn't an address.`,
+			'Give one like http://localhost:3000.'
+		);
+	}
 
 	const existing = CONFIG_NAMES.map((name) => join(root, name)).find(existsSync);
+	const nothing =
+		!url && !found.web && !found.storybook && !found.electron && !found.tauri && !found.swift;
 	if (existing) say(`Keeping your config: ${existing}`);
-	else {
-		writeFileSync(join(root, 'facetshot.config.ts'), configText(found));
+	else if (nothing) {
+		// Writing a config that guesses would only fail later, further from the reason.
+		say(`Found no app to picture in ${root}`);
+		say('(no web framework in package.json, and no Storybook, Electron, Tauri or Swift package).');
+		say("- Run this in your project's folder, or");
+		say(
+			'- for an app that is already running (yours, staging or production): facetshot init --url <address>'
+		);
+		if (found.xcode)
+			say(
+				`- for ${found.xcode}: add an \`apple\` section by hand (docs/ios.md); init doesn't write one yet.`
+			);
+		say('Any page can be pictured without a config: facetshot https://example.com');
+		return 2;
+	} else {
+		writeFileSync(
+			join(root, 'facetshot.config.ts'),
+			configText(found, url, existsSync(join(root, 'node_modules', 'facetshot')))
+		);
 		const what = [
-			found.web && 'a web app',
+			url ? `the app at ${url}` : found.web && 'a web app',
 			found.storybook && 'Storybook',
 			found.electron && 'Electron',
 			found.tauri && 'Tauri',
