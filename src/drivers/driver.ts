@@ -2,6 +2,7 @@
  * What every driver (web, Storybook, iOS simulator, desktop window, Swift snapshots) implements, and the long-lived
  * runtime they share. A new platform is a new Driver; nothing else in facetshot needs to change.
  */
+import type { LogGroup } from '../logs.ts';
 import type { Cell, CellResult, Config } from '../types.ts';
 import { firstLine, UsageError } from '../errors.ts';
 import { fill, unfilled } from '../plan.ts';
@@ -34,6 +35,8 @@ export interface RunContext {
 	atEnd(close: () => Promise<void>): void;
 	log(message: string): void;
 	signal: AbortSignal;
+	/** What each picture's page logged, a group per picture, written with the run. */
+	logs: LogGroup[];
 }
 
 export interface Driver {

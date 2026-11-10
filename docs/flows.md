@@ -34,36 +34,49 @@ facetshot /settings/account --do "click:role=button[name='Delete account']" --do
 ```
 
 Write each step as `<step>:<value>`; `fill` and `select` take `<selector>=<text>`
-(`--do "fill:input[name=email]=ada@example.com"`). Agents pass the same strings in the MCP tools' `steps`.
+(`--do "fill:input[name=email]=ada@example.com"`), `drag` takes `<from>><to>`, `scroll:<selector>=<pixels>` scrolls
+inside an element, and `back`, `forward` and `reload` take nothing. Agents pass the same strings in the MCP tools' `steps`.
 
 ## Steps
 
 | Step                                       | Does                                                   |
 | ------------------------------------------ | ------------------------------------------------------ |
 | `click: <selector>`                        | clicks the first match                                 |
+| `dblclick: <selector>`                     | double-clicks it                                       |
+| `rightclick: <selector>`                   | right-clicks it, to open a context menu                |
 | `tap: <selector>`                          | taps it (touch devices)                                |
+| `longpress: <selector>`                    | presses and holds it for 0.8 s                         |
 | `hover: <selector>`                        | moves the pointer over it                              |
 | `focus: <selector>`                        | focuses it                                             |
+| `drag: <selector>` + `to: <selector>`      | drags it onto the other                                |
 | `fill: <selector>` + `with: <text>`        | replaces a field's text                                |
 | `type: <text>`                             | types into whatever has focus                          |
 | `press: <key>`                             | presses a key: `Enter`, `Escape`, `Control+A`          |
 | `select: <selector>` + `option: <value>`   | picks an option in a `<select>`                        |
 | `scroll: <selector>` or `scroll: <pixels>` | scrolls an element into view, or scrolls by that much  |
+| `scroll: <selector>` + `by: <pixels>`      | scrolls inside a scrollable element                    |
 | `wait: <selector>`                         | waits until it's visible (up to 15 s)                  |
 | `gone: <selector>`                         | waits until it's hidden                                |
 | `goto: <path>`                             | opens another address                                  |
+| `back`, `forward`, `reload`                | the browser's buttons                                  |
 | `shot: <name>`                             | waits for the screen to be ready, then takes a picture |
 
 A flow with no `shot` step takes one picture at the end.
 
 ## Selectors
 
-Selectors are Playwright's, so you can write them the way you'd describe the screen to someone:
+A step can also name a point, `@x,y` in CSS pixels. Selectors are Playwright's, so you can write them the way you'd
+describe the screen to someone:
 
 - `role=button[name='Save']` — by accessible role and name (the sturdiest)
 - `text=Forgot password?` — by visible text
 - `label=Email` — the field with that label
 - `#submit`, `.card:nth-child(2)`, `[data-testid=menu]` — plain CSS
+
+## Finding the steps
+
+Don't know the steps yet? Open a [session](sessions.md), work the page one step at a time, and close it with
+`--save flows/name.yaml`: the steps that worked become a flow.
 
 ## When a step fails
 

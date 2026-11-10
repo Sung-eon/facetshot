@@ -15,6 +15,7 @@
  * - locale: Chromium's `--lang` switch; time zone: the `TZ` environment variable; offline: the context goes offline.
  * - density: Chromium's `--force-device-scale-factor` switch.
  */
+import type { LogLevel } from '../logs.ts';
 import { existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
@@ -226,6 +227,15 @@ export class ElectronDriver implements Driver {
 				`Try it yourself: ${launch.executablePath ?? 'electron'} ${launch.args.join(' ')}`
 			);
 		}
+		// The main process's own output goes into the same log as the window's.
+		const early: [LogLevel, string][] = [];
+		let mainLog = (level: LogLevel, text: string): void => void early.push([level, text]);
+		app.on('console', (message) =>
+			mainLog(
+				message.type() === 'error' ? 'error' : message.type() === 'warning' ? 'warn' : 'info',
+				message.text()
+			)
+		);
 		// An app that won't close is killed: it is a real window, and a single-instance app would block the next launch.
 		const close = async () => {
 			if (!(await within(app.close(), 10_000))) app.process().kill('SIGKILL');
@@ -248,6 +258,9 @@ export class ElectronDriver implements Driver {
 			await page.waitForLoadState('load');
 			await page.reload({ waitUntil: 'load' });
 			const watch = new NetworkWatch(page, blocked);
+			// The main process's output, held from launch until there is a window to log it with.
+			for (const [level, text] of early.splice(0)) watch.log.add('main', level, text);
+			mainLog = (level, text) => void watch.log.add('main', level, text);
 			for (const cells of groupBy(group, (cell) => cell.device.name)) {
 				const device = cells[0].device;
 				const sizeNote = await sizeWindow(app, page, device);

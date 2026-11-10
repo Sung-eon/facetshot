@@ -11,7 +11,9 @@ import { homeFolder, loadConfig } from '../config.ts';
 import { EXIT, FacetshotError } from '../errors.ts';
 import type { CellResult, Manifest } from '../types.ts';
 import type { RunRequest } from '../run.ts';
-import { SOCKET, type Event } from './server.ts';
+import { SOCKET, type Event, type SessionMessage } from './server.ts';
+import type { SessionInfo } from '../session.ts';
+import type { LogEntry } from '../logs.ts';
 import { codeStamp } from './stamp.ts';
 import { openLog, waitUntil } from '../engine/procs.ts';
 
@@ -19,6 +21,8 @@ interface Status {
 	pid: number;
 	stamp: string;
 	active: number;
+	/** Sessions open: like runs, they would be lost if the daemon were replaced. */
+	sessions?: number;
 	/** Closing what it holds; it goes once that is done, and a new daemon starts after it. */
 	stopping?: boolean;
 	idleMinutes: number;
@@ -87,7 +91,7 @@ async function ensureDaemon(log: (message: string) => void): Promise<boolean> {
 	const stamp = codeStamp();
 	let current = await status();
 	if (current && current.stamp !== stamp && !current.stopping) {
-		if (current.active > 0) {
+		if (current.active > 0 || (current.sessions ?? 0) > 0) {
 			log('The background helper is busy with older code; running this one here instead.');
 			return false;
 		}
@@ -225,4 +229,94 @@ export async function daemonCommand(action: string): Promise<number> {
 				EXIT.usage
 			);
 	}
+}
+
+/** Sessions live in the daemon; this asks it, starting one with this code if none is running. */
+export async function sessionCall<T>(
+	action: 'open' | 'act' | 'look' | 'close',
+	body: SessionMessage
+): Promise<T> {
+	if (process.env.FACETSHOT_NO_DAEMON) {
+		throw new FacetshotError(
+			'Sessions are kept by the background helper, which FACETSHOT_NO_DAEMON turns off.',
+			undefined,
+			EXIT.usage
+		);
+	}
+	if (action === 'open') {
+		// A helper running other code (another checkout's facetshot, say) may not know sessions: it is replaced when
+		// it is free, as for runs; while it is busy, there's nowhere to keep a session.
+		if (!(await ensureDaemon(() => {}))) {
+			throw new FacetshotError(
+				'The background helper is busy running an older facetshot, which can’t keep sessions.',
+				'Try again once it’s done (facetshot daemon status shows what it’s doing).',
+				EXIT.environment
+			);
+		}
+	} else if (!(await status())) throw noSession(body.id);
+	// Opening may build the app and start its servers first.
+	const { status: code, text } = await call('POST', `/session/${action}`, body, 20 * 60_000);
+	if (code === 404) throw noSession(body.id);
+	const answer = JSON.parse(text) as T & { message?: string; exitCode?: number };
+	if (code !== 200)
+		throw new FacetshotError(answer.message ?? text, undefined, answer.exitCode ?? EXIT.internal);
+	return answer;
+}
+
+function noSession(id: string | undefined): FacetshotError {
+	return new FacetshotError(
+		`There's no open session "${id}": the background helper isn't running.`,
+		'Open one with facetshot open <target>.',
+		EXIT.usage
+	);
+}
+
+export async function listSessions(): Promise<SessionInfo[]> {
+	if (!(await status())) return [];
+	return JSON.parse((await call('GET', '/sessions')).text) as SessionInfo[];
+}
+
+/** A session's log lines, and with `follow` each new one as it happens, until the session closes or Ctrl-C. */
+export function sessionLogs(
+	id: string,
+	options: { follow?: boolean; onEntry: (entry: LogEntry) => void }
+): Promise<void> {
+	return new Promise((done, fail) => {
+		const req = httpRequest(
+			{
+				socketPath: SOCKET(),
+				method: 'GET',
+				path: `/session/logs?id=${encodeURIComponent(id)}&follow=${options.follow ? 1 : 0}`
+			},
+			(response) => {
+				let buffer = '';
+				response.setEncoding('utf8');
+				response.on('data', (chunk: string) => {
+					buffer += chunk;
+					let newline: number;
+					while ((newline = buffer.indexOf('\n')) >= 0) {
+						const line = buffer.slice(0, newline);
+						buffer = buffer.slice(newline + 1);
+						if (line.trim()) options.onEntry(JSON.parse(line) as LogEntry);
+					}
+				});
+				response.on('end', () => {
+					if (response.statusCode !== 200) {
+						const answer = JSON.parse(buffer || '{}') as { message?: string };
+						fail(new FacetshotError(answer.message ?? 'No such session.', undefined, EXIT.usage));
+					} else done();
+				});
+			}
+		);
+		req.on('error', (error) =>
+			fail((error as NodeJS.ErrnoException).code === 'ENOENT' ? noSession(id) : error)
+		);
+		const stop = () => {
+			req.destroy();
+			done();
+		};
+		process.once('SIGINT', stop);
+		req.on('close', () => process.off('SIGINT', stop));
+		req.end();
+	});
 }

@@ -28,6 +28,7 @@ import { explain, UsageError } from './errors.ts';
 import { failed, type Driver, type RunContext } from './drivers/driver.ts';
 import { createDrivers } from './drivers/index.ts';
 import { ALL_CHECKS } from './checks/page.ts';
+import { LogBook, LogTail, writeLogs } from './logs.ts';
 
 export interface RunRequest extends PlanRequest {
 	/** Steps to play on every target before its picture (clicks, typing…); each `shot` step is a picture. */
@@ -56,6 +57,51 @@ export interface RunOptions {
 	pools?: RunContext['pools'];
 	/** Called as each picture finishes: for progress. */
 	onCell?: (result: CellResult, done: number, total: number) => void;
+}
+
+/** What a run, a session or a clean-up works in: the config, where things go, the caps and the locks. */
+export function newContext(
+	config: Config,
+	options: Pick<
+		RunContext,
+		'runId' | 'runDir' | 'checks' | 'images' | 'runtime' | 'log' | 'signal' | 'atEnd'
+	> & {
+		pools?: RunContext['pools'];
+	}
+): RunContext {
+	const limits = config.limits ?? {};
+	const lockDir = expandHome(limits.lockDir ?? join(homeFolder(), 'locks'));
+	return {
+		...options,
+		config,
+		root: config.root ?? process.cwd(),
+		stateDir: stateDir(config),
+		values: {},
+		services: {},
+		pools: options.pools ?? {
+			web: new Pool(limits.webPages ?? 4, limits.maxLoad ?? 3),
+			simulators: new Pool(limits.simulators ?? 2, limits.maxLoad ?? 3)
+		},
+		locks: {
+			build: join(lockDir, limits.lockNames?.build ?? 'build.lock'),
+			macWindow: join(lockDir, limits.lockNames?.macWindow ?? 'mac-window.lock')
+		},
+		logs: []
+	};
+}
+
+/**
+ * The config's services (the app's API, say), started or found running. One after another: a service's command may
+ * name an earlier one's `{services.<name>.url}`.
+ */
+export async function startServices(ctx: RunContext): Promise<void> {
+	for (const [name, service] of Object.entries(ctx.config.services ?? {})) {
+		const running = await ctx.runtime.service(`${ctx.root}\u0000service:${name}`, () =>
+			ensureService(name, service, ctx)
+		);
+		ctx.services[name] = { url: running.url };
+		ctx.values[`services.${name}.url`] = running.url;
+	}
 }
 
 export function stateDir(config: Config): string {
@@ -129,8 +175,6 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 
 	const ownsRuntime = !options.runtime;
 	const runtime = options.runtime ?? new Runtime();
-	const limits = config.limits ?? {};
-	const lockDir = expandHome(limits.lockDir ?? join(homeFolder(), 'locks'));
 	const checks = request.checks?.includes('all')
 		? request.checkOnly
 			? [...ALL, 'a11y']
@@ -139,41 +183,23 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 
 	const results: CellResult[] = [];
 	const errors: string[] = [...planned.unmatched];
-	const ctx: RunContext = {
-		config,
-		root,
-		stateDir: state,
+	const ctx = newContext(config, {
 		runId,
 		runDir,
-		values: {},
-		services: {},
 		checks,
 		images: !request.checkOnly,
 		runtime,
-		pools: options.pools ?? {
-			web: new Pool(limits.webPages ?? 4, limits.maxLoad ?? 3),
-			simulators: new Pool(limits.simulators ?? 2, limits.maxLoad ?? 3)
-		},
-		locks: {
-			build: join(lockDir, limits.lockNames?.build ?? 'build.lock'),
-			macWindow: join(lockDir, limits.lockNames?.macWindow ?? 'mac-window.lock')
-		},
+		pools: options.pools,
 		log,
 		signal: controller.signal,
 		atEnd: (close) => void atEnd.push(close)
-	};
+	});
+	// Server output from here on goes into this run's logs.
+	const serverLog = new LogTail(join(state, 'logs'));
 
 	let prepareMs: number;
 	try {
-		// Services first: the app's server, an API. Their URLs become `{services.<name>.url}`.
-		// One after another: a service's command may name an earlier one's `{services.<name>.url}`.
-		for (const [name, service] of Object.entries(config.services ?? {})) {
-			const running = await runtime.service(`${root}\u0000service:${name}`, () =>
-				ensureService(name, service, ctx)
-			);
-			ctx.services[name] = { url: running.url };
-			ctx.values[`services.${name}.url`] = running.url;
-		}
+		await startServices(ctx);
 		// Then test data, whose ids fill `{placeholders}` in the targets.
 		Object.assign(ctx.values, await prepareFixtures(ctx));
 
@@ -323,6 +349,13 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 				changed: request.diff ? sheets.filter((s) => s.changed).length : undefined
 			}
 		};
+		const servers = new LogBook(20_000);
+		serverLog.read(servers);
+		const logs = writeLogs(runDir, [
+			...ctx.logs.sort((a, b) => a.label.localeCompare(b.label)),
+			{ label: 'servers', started, entries: servers.since(0), untimed: true }
+		]);
+		if (logs) manifest.logs = logs;
 		writeManifest(manifest);
 		if (!request.out) pointLatest(state, runDir);
 		pruneRuns(config);

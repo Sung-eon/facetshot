@@ -12,6 +12,10 @@ function createWindow() {
 		webPreferences: { contextIsolation: true, sandbox: true }
 	});
 	window.loadFile(path.join(import.meta.dirname, 'index.html'), { hash: '/' });
+	// The main process's output shows up in facetshot's logs, next to the window's.
+	window.webContents.on('did-navigate-in-page', (_event, url) =>
+		console.log(`Showing ${new URL(url).hash || '#/'}`)
+	);
 }
 
 app.whenReady().then(() => {

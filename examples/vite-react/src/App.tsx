@@ -80,8 +80,23 @@ function Pricing() {
 }
 
 function Settings() {
+	const [saved, setSaved] = useState(false);
+	const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+	const save = () => {
+		// On purpose: what a session's logs show after clicking Save.
+		console.info('Saving settings…');
+		console.warn('The weekly summary setting is deprecated and will move to Notifications.');
+		setSaved(true);
+	};
 	return (
-		<section className="settings">
+		<section
+			className="settings"
+			onContextMenu={(event) => {
+				event.preventDefault();
+				setMenu({ x: event.clientX, y: event.clientY });
+			}}
+			onClick={() => setMenu(null)}
+		>
 			<h1>Settings</h1>
 			<label>
 				Name
@@ -95,7 +110,18 @@ function Settings() {
 				Your notes are encrypted on this device before they are sent anywhere, including to our
 				servers.
 			</p>
-			<Button>Save</Button>
+			<Button onClick={save}>Save</Button>
+			{saved && <p role="status">Saved.</p>}
+			{menu && (
+				<ul className="menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+					<li role="menuitem" onClick={() => console.info('Reset to defaults')}>
+						Reset to defaults
+					</li>
+					<li role="menuitem" onClick={() => console.info('Copied settings link')}>
+						Copy link to settings
+					</li>
+				</ul>
+			)}
 		</section>
 	);
 }

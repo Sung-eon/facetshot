@@ -48,13 +48,14 @@ facetshot does the getting ready once and keeps it ready:
 
 ## How it compares
 
-|                          | Visual testing services (Chromatic, Percy, Argos) | Playwright `toHaveScreenshot`  | facetshot                                                    |
-| ------------------------ | ------------------------------------------------- | ------------------------------ | ------------------------------------------------------------ |
-| Main question it answers | Did anything change since the approved version?   | Does this page match its file? | What does this screen look like everywhere, right now?       |
-| Where it runs            | Their cloud, from CI                              | Your test suite                | Your machine, whenever you or an agent asks                  |
-| What it covers           | Web, Storybook                                    | Web                            | Web, Storybook, iOS simulator, SwiftUI, Mac, Electron, Tauri |
-| Output                   | A review web app                                  | Pass or fail per test          | Contact sheets, a list of problems, diffs, JSON              |
-| Made for agents          | No                                                | No                             | MCP server and Agent Skill included                          |
+|                          | Visual testing services (Chromatic, Percy, Argos) | Playwright `toHaveScreenshot`  | facetshot                                                         |
+| ------------------------ | ------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
+| Main question it answers | Did anything change since the approved version?   | Does this page match its file? | What does this screen look like everywhere, right now?            |
+| Where it runs            | Their cloud, from CI                              | Your test suite                | Your machine, whenever you or an agent asks                       |
+| What it covers           | Web, Storybook                                    | Web                            | Web, Storybook, iOS simulator, SwiftUI, Mac, Electron, Tauri      |
+| Output                   | A review web app                                  | Pass or fail per test          | Contact sheets, a list of problems, diffs, JSON                   |
+| Made for agents          | No                                                | No                             | MCP server and Agent Skill included                               |
+| Step-by-step use         | No                                                | Your own test code             | Sessions: click, type, right-click, with the logs after each step |
 
 facetshot doesn't replace visual regression testing in CI. It's the quick look you take while you work. Its
 baselines and diffs are there for "what did my change do?", not for gating merges.
@@ -123,6 +124,22 @@ facetshot check /settings /billing      # no pictures, just the list of problems
 facetshot diff                          # the last command again: only what changed
 ```
 
+## Working a page step by step
+
+When you don't know the steps yet, open a session and work the page one step at a time. Each answer is the picture,
+the log lines since the last step, and what on screen can be clicked, numbered:
+
+```sh
+facetshot open /settings --on phone          # → s-3b8ec4, a picture, and "#6 button "Save" @195,362" …
+facetshot act s-3b8ec4 "fill:#4=Grace" click:#6
+facetshot act s-3b8ec4 rightclick:@195,120   # open a context menu
+facetshot logs s-3b8ec4 --follow             # in another terminal: the page's log as it happens
+facetshot close s-3b8ec4 --save flows/edit-settings.yaml
+```
+
+Agents do the same with the MCP tools `open`, `act` and `close`. Each answer comes with the picture, so the agent
+sees the screen, reads the log and decides what to do next. See [Sessions](docs/sessions.md).
+
 ## What you get back
 
 Every run writes a folder with:
@@ -132,6 +149,9 @@ Every run writes a folder with:
 - **The single pictures**, at full resolution, for when a cell needs a closer look.
 - **`report.html`**: every sheet and problem on one page (`--open` opens it).
 - **`manifest.json`**: everything that happened, for scripts and agents ([schema](schema/manifest.v1.json)).
+- **`logs.txt`** and **`logs.ndjson`**: what each page logged while it was pictured (console, errors, requests) and
+  what the servers facetshot started printed. One file is for reading, the other for programs
+  ([Logs](docs/logs.md)).
 
 The terminal shows a short summary by default. Use `--format md` for a pull request comment, or `--format json` for
 the manifest itself. Agents using the MCP server get the summary and the sheets as images directly, sized to fit in
@@ -153,6 +173,8 @@ the checks to find:
 - [How it works](docs/concepts.md): targets, devices, variants, profiles, runs and the background helper
 - [Web apps](docs/web.md): builds and servers, live sites, signing in, test data, when a screen counts as ready
 - [Flows](docs/flows.md): pictures of menus, dialogs and half-filled forms
+- [Sessions](docs/sessions.md): working a page step by step, for you or an agent
+- [Logs](docs/logs.md): what each page and server logged, next to its pictures
 - [Checks](docs/checks.md): what facetshot reads on each screen
 - [Comparing](docs/comparing.md): what changed since the last run or a saved baseline
 - [iOS simulators](docs/ios.md) and [SwiftUI snapshots](docs/swiftui.md)

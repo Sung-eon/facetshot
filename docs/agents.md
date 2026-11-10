@@ -38,16 +38,19 @@ It looks for `facetshot.config.ts` from the folder it's started in. Set `FACETSH
 
 ## The tools
 
-facetshot exposes five tools. Few, small tools are deliberate: every tool's description sits in the agent's context
-on every turn.
+facetshot exposes eight tools. Few, small tools are deliberate: every tool's description sits in the agent's
+context on every turn.
 
 | Tool      | What it does                                                  | Returns                                               |
 | --------- | ------------------------------------------------------------- | ----------------------------------------------------- |
 | `check`   | reads screens for problems without taking pictures            | a text list of problems                               |
 | `capture` | takes pictures on the given (or default) devices and variants | a summary and one contact sheet per screen, as images |
 | `compare` | repeats the last capture (or the targets given) and compares  | only the sheets that changed                          |
-| `inspect` | one picture at full size, or a region of it                   | an image and that picture's problems                  |
+| `inspect` | one picture at full size, or a region of it                   | an image, that picture's problems and its log lines   |
 | `list`    | devices, variants, profiles, checks, recent runs              | text                                                  |
+| `open`    | opens a page and keeps it open (a [session](sessions.md))     | its id, a picture, its log and what's clickable       |
+| `act`     | steps in a session: click, type, right-click, drag, scroll…   | the picture, the log since the last step, problems    |
+| `close`   | ends a session, optionally saving its steps as a flow         | text                                                  |
 
 Every tool takes targets the same way the command line does (`/path`, `app:/path`, `story:…`, `preview:…`, a flow
 file) and optional `devices` and `variants`. `capture` and `check` also take `steps` — clicks, typing and waits played
@@ -63,6 +66,20 @@ agent can look at a menu or a dialog without writing a flow file.
 | `none`             | paths only                                          | when the agent's client shows files itself, or only the text matters |
 
 Long runs report progress as they go, so an agent (and you, watching it) can see it's working.
+
+## Working a page step by step
+
+When the agent doesn't know the steps yet — what's in this menu, what happens after Save — `capture` with `steps`
+means guessing them all up front. A session lets it look, decide and act one step at a time instead:
+
+1. `open` a page. The answer lists what's on screen, numbered: `#6 button "Save" @496,362`.
+2. `act` with steps that use those numbers, a selector, or a point on the picture: `["fill:#4=Grace", "click:#6"]`,
+   `["rightclick:@320,120"]`. Each answer is the new picture, the log lines since the last step (console, errors,
+   requests, the servers' output) and any console errors or failed requests.
+3. `close` it, with `saveAs` to keep the steps as a flow that `capture` can play on every device.
+
+How many steps to take is the agent's call. facetshot gives it the page, the hands and the eyes, and closes a
+forgotten session after 10 minutes.
 
 ## Keeping it cheap
 

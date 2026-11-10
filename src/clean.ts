@@ -6,12 +6,10 @@ import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { homeFolder, loadConfig } from './config.ts';
 import { EXIT, explain } from './errors.ts';
-import { stateDir } from './run.ts';
+import { newContext, startServices, stateDir } from './run.ts';
 import { Runtime } from './engine/runtime.ts';
 import { Pool } from './engine/scheduler.ts';
-import { ensureService } from './engine/procs.ts';
 import { removeAllFixtures } from './fixtures.ts';
-import type { RunContext } from './drivers/driver.ts';
 
 export async function clean(options: { configFile?: string; all?: boolean }): Promise<number> {
 	const say = (line: string) => process.stdout.write(`${line}\n`);
@@ -26,29 +24,19 @@ export async function clean(options: { configFile?: string; all?: boolean }): Pr
 	// Test data a crashed run left: removing it may need the project's services (an API), so start them for this.
 	if (config.fixtures?.remove && existsSync(join(state, 'fixtures.ledger.json'))) {
 		const runtime = new Runtime();
-		const ctx = {
-			config,
-			root,
-			stateDir: state,
+		const ctx = newContext(config, {
 			runId: 'clean',
 			runDir: state,
-			values: {},
-			services: {},
 			checks: [],
 			images: false,
 			runtime,
 			pools: { web: new Pool(1), simulators: new Pool(1) },
-			locks: { build: '', macWindow: '' },
 			log: say,
 			signal: new AbortController().signal,
 			atEnd: () => {}
-		} satisfies RunContext;
+		});
 		try {
-			for (const [name, service] of Object.entries(config.services ?? {})) {
-				const running = await runtime.service(name, () => ensureService(name, service, ctx));
-				(ctx.services as Record<string, { url: string }>)[name] = { url: running.url };
-				(ctx.values as Record<string, string>)[`services.${name}.url`] = running.url;
-			}
+			await startServices(ctx);
 			const removed = await removeAllFixtures(ctx);
 			say(`Removed ${removed} item(s) of test data.`);
 		} catch (error) {

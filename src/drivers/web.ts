@@ -147,6 +147,19 @@ export async function pictureOf(
 					`Not settled after ${(rule.timeout ?? 15_000) / 1000}s: still waiting for ${settled.waitingFor}.`
 				]
 	});
+	const entries = session.watch.log.take();
+	if (entries.length) {
+		ctx.logs.push({
+			label: `${screen} · ${cell.device.name} · ${cell.variant.name}`,
+			started,
+			entries
+		});
+		out.log = {
+			count: entries.length,
+			errors: entries.filter((entry) => entry.level === 'error').length,
+			warnings: entries.filter((entry) => entry.level === 'warn').length
+		};
+	}
 	if (ctx.images) {
 		const { file, rel } = imagePath(ctx.runDir, screen, cell.device.name, cell.variant.name);
 		const size = await takePicture(session.page, file, {
@@ -274,6 +287,11 @@ export async function navigate(page: Page, url: string): Promise<void> {
 export class WebDriver implements Driver {
 	readonly name = 'web';
 	private baseURL: string | undefined;
+
+	/** Where the app is, once prepared: paths are opened against it. */
+	get url(): string | undefined {
+		return this.baseURL;
+	}
 
 	handles(cell: Cell): boolean {
 		return (

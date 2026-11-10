@@ -1,12 +1,15 @@
 /**
  * facetshot as an MCP server over stdio, so an agent can look at the app without knowing the command line.
  *
- * Five tools, kept small on purpose — every tool's schema sits in the agent's context on every turn:
+ * Tools, kept few and small on purpose — every tool's schema sits in the agent's context on every turn:
  *   capture  pictures, answered with the contact sheets themselves
  *   check    what is wrong on the screens, as text (cheapest)
  *   compare  what changed since the last run or a baseline
- *   inspect  one picture at full size, or a part of it
+ *   inspect  one picture at full size, or a part of it, with what its page logged
  *   list     devices, variants, profiles, scenes and recent runs
+ *   open     a page kept open to work step by step (a session)
+ *   act      steps in a session — click, type, right-click, scroll — then the picture, logs and what's clickable
+ *   close    ends a session, optionally keeping its steps as a flow
  *
  * Runs go through the daemon like the command line's, so several agents' servers share one browser and the
  * machine's caps.
@@ -27,6 +30,7 @@ import { listRuns, readManifest, stateDir, type RunRequest } from '../run.ts';
 import type { Manifest } from '../types.ts';
 import { VERSION } from '../version.ts';
 import { parseStep } from '../flows.ts';
+import { describeView, type View } from '../session.ts';
 
 /** How much image a single answer may carry: sheets, and the longest side of an inspected picture. */
 const MAX_SHEETS = Number(process.env.FACETSHOT_MCP_MAX_IMAGES ?? 4);
@@ -354,7 +358,8 @@ export function createServer(): McpServer {
 					(findings.length
 						? `\n${findings.map((f) => `- ${f.check}: ${f.message}${f.where ? ` — ${f.where}` : ''}`).join('\n')}`
 						: '') +
-					(cell.notes?.length ? `\n${cell.notes.join('\n')}` : '');
+					(cell.notes?.length ? `\n${cell.notes.join('\n')}` : '') +
+					cellLog(manifest, `${args.screen} · ${args.device} · ${args.variant}`);
 				return {
 					content: [
 						{ type: 'text', text },
@@ -429,7 +434,167 @@ export function createServer(): McpServer {
 		}
 	);
 
+	const viewContent = (view: View): Content[] => [
+		{ type: 'text', text: describeView(view) },
+		{
+			type: 'image',
+			data: encodePng(fit(readPng(view.image), MAX_SIDE)).toString('base64'),
+			mimeType: 'image/png'
+		}
+	];
+	const lookShape = {
+		elements: z
+			.boolean()
+			.optional()
+			.describe(
+				'List what can be clicked or typed into, numbered: a step can then say "click:#3". Default true for open, false for act.'
+			),
+		full: z.boolean().optional().describe('Picture the whole page, not just the screen.'),
+		logLevel: z
+			.enum(['debug', 'info', 'warn', 'error'])
+			.optional()
+			.describe('The least important log lines to return (default info; debug adds every request).')
+	};
+
+	server.registerTool(
+		'open',
+		{
+			title: 'Open a page to work',
+			description:
+				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers and sign-in. Returns the session id, a picture (CSS pixels), what the page logged, and what on screen can be clicked or typed into. Then use act. Close it when done.",
+			inputSchema: {
+				target: z.string().describe('A path ("/settings") or a full URL.'),
+				device: z
+					.string()
+					.optional()
+					.describe('One device, e.g. "phone". Default: the profile\'s first.'),
+				variant: z
+					.string()
+					.optional()
+					.describe('One variant, e.g. "dark". Default: the profile\'s first.'),
+				...lookShape
+			},
+			annotations: { readOnlyHint: false, openWorldHint: false }
+		},
+		async (args) => {
+			try {
+				const { sessionCall } = await import('../daemon/client.ts');
+				const loaded = await loadConfig({ file: configFile(), cwd: cwd() });
+				const view = await sessionCall<View>('open', {
+					open: { target: args.target, on: args.device, as: args.variant },
+					configFile: loaded.file,
+					cwd: cwd(),
+					env: process.env
+				});
+				opened.add(view.session);
+				return { content: viewContent(view) };
+			} catch (error) {
+				return failure(error);
+			}
+		}
+	);
+
+	server.registerTool(
+		'act',
+		{
+			title: 'Work an open page',
+			description:
+				'Does steps in an open session, in order, stopping at the first that fails, then returns the picture, the log lines since the last look, console errors and failed requests. With no steps, just looks again. Elements: a selector ("text=Save", "role=button[name=\'Save\']"), "#n" from the list, or "@x,y" on the picture.',
+			inputSchema: {
+				session: z.string().describe('The id open returned, e.g. "s-1a2b3c".'),
+				steps: z
+					.array(z.string())
+					.default([])
+					.describe(
+						'e.g. "click:#3", "rightclick:@420,180", "dblclick:text=Title", "longpress:#5", "hover:#2", "fill:#4=hello", "type:abc", "press:Meta+K", "select:#6=Large", "drag:#7>#9", "scroll:600", "scroll:#list=400", "wait:role=dialog", "goto:/other", "back".'
+					),
+				...lookShape
+			},
+			annotations: { readOnlyHint: false, openWorldHint: false }
+		},
+		async (args) => {
+			try {
+				const { sessionCall } = await import('../daemon/client.ts');
+				const options = { elements: args.elements, full: args.full, logLevel: args.logLevel };
+				const view = args.steps.length
+					? await sessionCall<View>('act', {
+							id: args.session,
+							steps: args.steps.map(parseStep),
+							options
+						})
+					: await sessionCall<View>('look', { id: args.session, options });
+				return { content: viewContent(view), isError: view.failed ? true : undefined };
+			} catch (error) {
+				return failure(error);
+			}
+		}
+	);
+
+	server.registerTool(
+		'close',
+		{
+			title: 'Close a page',
+			description:
+				'Closes a session. With saveAs, the steps that worked are kept as a flow file that capture can play again on every device.',
+			inputSchema: {
+				session: z.string(),
+				saveAs: z
+					.string()
+					.optional()
+					.describe('A flow file to write, e.g. "flows/delete-account.yaml".')
+			},
+			annotations: { readOnlyHint: false, openWorldHint: false }
+		},
+		async (args) => {
+			try {
+				const { sessionCall } = await import('../daemon/client.ts');
+				const answer = await sessionCall<{ closed: string; saved?: string }>('close', {
+					id: args.session,
+					save: args.saveAs ? join(cwd(), args.saveAs) : undefined
+				});
+				opened.delete(args.session);
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Closed ${answer.closed}.${answer.saved ? ` Steps saved to ${answer.saved}; capture it with targets: ["${args.saveAs}"].` : ''}`
+						}
+					]
+				};
+			} catch (error) {
+				return failure(error);
+			}
+		}
+	);
+
 	return server;
+}
+
+/** Sessions this server opened and hasn't closed: closed when the agent goes. */
+const opened = new Set<string>();
+
+/** A picture's log lines from its run, for inspect. */
+function cellLog(manifest: Manifest, label: string): string {
+	if (!manifest.logs) return '';
+	const file = join(manifest.out, manifest.logs.json);
+	if (!existsSync(file)) return '';
+	const lines = readFileSync(file, 'utf8')
+		.split('\n')
+		.filter(Boolean)
+		.map(
+			(line) =>
+				JSON.parse(line) as { at: string; of: string; source: string; level: string; text: string }
+		)
+		.filter((entry) => entry.of === label && entry.level !== 'debug');
+	if (!lines.length) return '';
+	const origin = Date.parse(lines[0].at);
+	const shown = lines
+		.slice(-60)
+		.map(
+			(entry) =>
+				`  +${((Date.parse(entry.at) - origin) / 1000).toFixed(2)}s ${entry.level.toUpperCase().padEnd(5)} ${entry.source} ${entry.text}`
+		);
+	return `\n\nLogs (${lines.length}${lines.length > 60 ? ', last 60' : ''}):\n${shown.join('\n')}`;
 }
 
 export async function serveMcp(): Promise<void> {
@@ -440,4 +605,11 @@ export async function serveMcp(): Promise<void> {
 	for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
 		process.once(signal, () => process.exit(0));
 	await new Promise<void>((done) => process.stdin.once('close', done));
+	if (opened.size) {
+		const { sessionCall } = await import('../daemon/client.ts');
+		await Promise.race([
+			Promise.allSettled([...opened].map((id) => sessionCall('close', { id }))),
+			new Promise((done) => setTimeout(done, 5000))
+		]);
+	}
 }

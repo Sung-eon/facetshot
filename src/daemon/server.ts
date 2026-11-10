@@ -16,6 +16,14 @@ import { Pool } from '../engine/scheduler.ts';
 import { explain, FacetshotError } from '../errors.ts';
 import { run, type RunRequest } from '../run.ts';
 import { codeStamp } from './stamp.ts';
+import {
+	MAX_SESSIONS,
+	Session,
+	SESSION_IDLE_MS,
+	type LookOptions,
+	type OpenRequest
+} from '../session.ts';
+import type { Step } from '../flows.ts';
 
 export const SOCKET = () => join(homeFolder(), 'daemon.sock');
 const PID_FILE = () => join(homeFolder(), 'daemon.pid');
@@ -28,6 +36,19 @@ const RUNS_PER_BROWSER = 25;
 const SHUTDOWN_DEADLINE_MS = 60_000;
 /** A request body is a small JSON run request; anything bigger is a mistake, not something to hold in memory. */
 const MAX_BODY = 1 * 2 ** 20;
+
+/** A session request: open one (with the client's config, like a run), or work one by its id. */
+export interface SessionMessage {
+	open?: OpenRequest;
+	configFile?: string;
+	cwd?: string;
+	env?: Record<string, string | undefined>;
+	id?: string;
+	steps?: Step[];
+	options?: LookOptions;
+	/** On close: save the steps that worked as a flow file here. */
+	save?: string;
+}
 
 export interface RunMessage {
 	request: RunRequest;
@@ -93,6 +114,7 @@ export async function serve(): Promise<void> {
 	const pools = { web: new Pool(4), simulators: new Pool(2) };
 	let active = 0;
 	let lastUsed = Date.now();
+	const sessions = new Map<string, { session: Session; project: Project }>();
 	let stopping = false;
 	/** The socket file this process made, so it only ever removes its own and never a newer daemon's. */
 	let mine: number | undefined;
@@ -145,6 +167,8 @@ export async function serve(): Promise<void> {
 		}, SHUTDOWN_DEADLINE_MS);
 		// The socket stays until everything is closed: a client that finds this daemon stopping waits for it to go
 		// before it starts the next, so the next never borrows a server this one is about to stop.
+		await Promise.all([...sessions.values()].map(({ session }) => session.close().catch(() => {})));
+		sessions.clear();
 		await Promise.all([...runtimes].map((runtime) => runtime.close()));
 		// No `server.close()`: closing a Unix-socket server unlinks the socket by its path, which may be a newer
 		// daemon's by now. The socket file goes only through releaseSocket, which checks it is this one's.
@@ -216,6 +240,105 @@ export async function serve(): Promise<void> {
 		}
 	};
 
+	const endSession = async (id: string) => {
+		const held = sessions.get(id);
+		if (!held) return;
+		sessions.delete(id);
+		await held.session.close().catch(() => {});
+		held.project.running -= 1;
+		held.project.lastUsed = Date.now();
+		if (held.project.running === 0 && projects.get(held.project.root) !== held.project)
+			await retire(held.project);
+	};
+
+	const held = (id: string | undefined) => {
+		const found = id ? sessions.get(id) : undefined;
+		if (!found) {
+			throw new FacetshotError(
+				`There's no open session "${id}".`,
+				'Sessions close after 10 idle minutes. Open another with facetshot open <target>; facetshot sessions lists the open ones.',
+				2
+			);
+		}
+		return found.session;
+	};
+
+	/** Opens, works and closes sessions; answers with JSON. */
+	const handleSession = async (action: string, body: SessionMessage) => {
+		switch (action) {
+			case 'open': {
+				if (!body.open) throw new FacetshotError('Nothing to open.', undefined, 2);
+				if (sessions.size >= MAX_SESSIONS) {
+					throw new FacetshotError(
+						`${sessions.size} sessions are open, the most this machine keeps at once.`,
+						`Close one first (facetshot close <id>): ${[...sessions.keys()].join(', ')}.`,
+						3
+					);
+				}
+				const loaded = await loadConfig({
+					file: body.configFile,
+					cwd: body.cwd ?? process.cwd(),
+					env: body.env
+				});
+				const entry = await project(loaded.root, loaded.stamp);
+				entry.running += 1;
+				const limits = loaded.config.limits ?? {};
+				try {
+					const { session, view } = await Session.open(
+						body.open,
+						loaded.config,
+						entry.runtime,
+						{
+							web: limits.webPages ? pools.web.narrow(limits.webPages) : pools.web,
+							simulators: pools.simulators
+						},
+						(message) => process.stderr.write(`${new Date().toISOString()} ${message}\n`)
+					);
+					sessions.set(session.id, { session, project: entry });
+					return view;
+				} catch (error) {
+					entry.running -= 1;
+					throw error;
+				}
+			}
+			case 'act':
+				return held(body.id).act(body.steps ?? [], body.options);
+			case 'look':
+				return held(body.id).look(body.options);
+			case 'close': {
+				const session = held(body.id);
+				const saved = body.save ? session.saveFlow(body.save) : undefined;
+				await endSession(session.id);
+				return { closed: session.id, saved };
+			}
+			default:
+				throw new FacetshotError(`Unknown session action "${action}".`, undefined, 2);
+		}
+	};
+
+	/** A session's log as it happens: what's there after `cursor`, then each new line, until the client goes. */
+	const followLogs = (url: URL, response: ServerResponse) => {
+		const session = held(url.searchParams.get('id') ?? undefined);
+		response.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
+		const send = (entry: unknown) => response.write(`${JSON.stringify(entry)}\n`);
+		session.pollServers();
+		const earlier = [
+			...session.logsSince(Number(url.searchParams.get('cursor') ?? 0)),
+			...session.servers.since(0)
+		].sort((a, b) => a.at - b.at);
+		for (const entry of earlier) send(entry);
+		if (url.searchParams.get('follow') !== '1') return void response.end();
+		const stops = [session.log.subscribe(send), session.servers.subscribe(send)];
+		const poll = setInterval(() => {
+			if (!sessions.has(session.id)) return void response.end();
+			session.pollServers();
+		}, 1000);
+		response.once('close', () => {
+			clearInterval(poll);
+			for (const stop of stops) stop();
+		});
+	};
+
 	const read = (request: IncomingMessage) =>
 		new Promise<string>((done, fail) => {
 			let text = '';
@@ -238,6 +361,7 @@ export async function serve(): Promise<void> {
 						pid: process.pid,
 						stamp,
 						active,
+						sessions: sessions.size,
 						stopping,
 						idleMinutes: Math.round((Date.now() - lastUsed) / 60_000),
 						projects: [...projects].map(([root, each]) => ({
@@ -249,6 +373,37 @@ export async function serve(): Promise<void> {
 				);
 			} else if (request.method === 'POST' && request.url === '/run' && !stopping) {
 				await handleRun(JSON.parse(await read(request)) as RunMessage, response);
+			} else if (request.method === 'POST' && request.url?.startsWith('/session/') && !stopping) {
+				active += 1;
+				try {
+					const answer = await handleSession(
+						request.url.slice('/session/'.length),
+						JSON.parse(await read(request)) as SessionMessage
+					);
+					response.writeHead(200, { 'Content-Type': 'application/json' });
+					response.end(JSON.stringify(answer));
+				} catch (error) {
+					response.writeHead(400, { 'Content-Type': 'application/json' });
+					response.end(
+						JSON.stringify({
+							message: explain(error),
+							exitCode: error instanceof FacetshotError ? error.exitCode : 4
+						})
+					);
+				} finally {
+					active -= 1;
+					lastUsed = Date.now();
+				}
+			} else if (request.method === 'GET' && request.url === '/sessions') {
+				response.writeHead(200, { 'Content-Type': 'application/json' });
+				response.end(JSON.stringify([...sessions.values()].map(({ session }) => session.info())));
+			} else if (request.method === 'GET' && request.url?.startsWith('/session/logs')) {
+				try {
+					followLogs(new URL(request.url, 'http://daemon'), response);
+				} catch (error) {
+					response.writeHead(400, { 'Content-Type': 'application/json' });
+					response.end(JSON.stringify({ message: explain(error), exitCode: 2 }));
+				}
 			} else if (request.method === 'POST' && request.url === '/stop') {
 				response.writeHead(200);
 				response.end('stopping');
@@ -275,11 +430,14 @@ export async function serve(): Promise<void> {
 	});
 	setInterval(() => {
 		if (stopping) return;
-		if (active === 0 && Date.now() - lastUsed > IDLE_MS)
+		// A session nobody has touched for its idle time closes, so a forgotten one can't hold a page for ever.
+		for (const [id, { session }] of sessions)
+			if (Date.now() - session.lastUsed > SESSION_IDLE_MS) void endSession(id);
+		if (active === 0 && sessions.size === 0 && Date.now() - lastUsed > IDLE_MS)
 			void shutdown(`idle for ${IDLE_MS / 60_000} minutes`);
 		// A daemon that has grown too big (a leak somewhere, ours or a dependency's) starts over once it is free; the next
 		// run starts a fresh one. Servers and test data go with it, so nothing is left holding memory.
-		else if (active === 0 && process.memoryUsage().rss > MAX_RSS)
+		else if (active === 0 && sessions.size === 0 && process.memoryUsage().rss > MAX_RSS)
 			void shutdown(`using ${Math.round(process.memoryUsage().rss / 2 ** 20)} MB`);
 		// A project nobody has used for the idle time lets go of its servers and browsers, even while another keeps
 		// the daemon busy.

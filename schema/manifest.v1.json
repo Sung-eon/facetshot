@@ -20,30 +20,61 @@
 		"counts"
 	],
 	"properties": {
-		"$schema": { "type": "string" },
-		"version": { "const": 1 },
-		"runId": { "type": "string", "description": "yyyymmdd-hhmmss-xxxx" },
-		"startedAt": { "type": "string", "format": "date-time" },
-		"ms": { "type": "integer", "description": "The whole run, in milliseconds." },
+		"$schema": {
+			"type": "string"
+		},
+		"version": {
+			"const": 1
+		},
+		"runId": {
+			"type": "string",
+			"description": "yyyymmdd-hhmmss-xxxx"
+		},
+		"startedAt": {
+			"type": "string",
+			"format": "date-time"
+		},
+		"ms": {
+			"type": "integer",
+			"description": "The whole run, in milliseconds."
+		},
 		"prepareMs": {
 			"type": "integer",
 			"description": "Time before the first picture: builds, servers, sign-in, test data."
 		},
-		"root": { "type": "string", "description": "The project folder (where the config is)." },
+		"root": {
+			"type": "string",
+			"description": "The project folder (where the config is)."
+		},
 		"out": {
 			"type": "string",
 			"description": "This run's folder; every relative path below is relative to it."
 		},
-		"devices": { "type": "array", "items": { "type": "string" } },
-		"variants": { "type": "array", "items": { "type": "string" } },
+		"devices": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"variants": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"screens": {
 			"type": "array",
 			"items": {
 				"type": "object",
 				"required": ["screen"],
 				"properties": {
-					"screen": { "type": "string" },
-					"sheet": { "type": "string", "description": "The contact sheet (JPEG)." },
+					"screen": {
+						"type": "string"
+					},
+					"sheet": {
+						"type": "string",
+						"description": "The contact sheet (JPEG)."
+					},
 					"changed": {
 						"type": "boolean",
 						"description": "Present when the run compared: whether any picture of this screen changed."
@@ -51,19 +82,32 @@
 				}
 			}
 		},
-		"cells": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
+		"cells": {
+			"type": "array",
+			"items": {
+				"$ref": "#/$defs/cell"
+			}
+		},
 		"errors": {
 			"type": "array",
-			"items": { "type": "string" },
+			"items": {
+				"type": "string"
+			},
 			"description": "Problems not tied to one picture (a server that would not start)."
 		},
 		"counts": {
 			"type": "object",
 			"required": ["ok", "failed", "skipped", "findings"],
 			"properties": {
-				"ok": { "type": "integer" },
-				"failed": { "type": "integer" },
-				"skipped": { "type": "integer" },
+				"ok": {
+					"type": "integer"
+				},
+				"failed": {
+					"type": "integer"
+				},
+				"skipped": {
+					"type": "integer"
+				},
 				"findings": {
 					"type": "integer",
 					"description": "Errors and warnings from checks (not info)."
@@ -73,6 +117,30 @@
 					"description": "Screens that changed, when the run compared."
 				}
 			}
+		},
+		"logs": {
+			"type": "object",
+			"description": "What the pages and servers logged during the run, relative to the run folder.",
+			"properties": {
+				"text": {
+					"type": "string",
+					"description": "logs.txt, for people"
+				},
+				"json": {
+					"type": "string",
+					"description": "logs.ndjson, one entry per line"
+				},
+				"count": {
+					"type": "integer"
+				},
+				"errors": {
+					"type": "integer"
+				},
+				"warnings": {
+					"type": "integer"
+				}
+			},
+			"required": ["text", "json", "count", "errors", "warnings"]
 		}
 	},
 	"$defs": {
@@ -80,38 +148,71 @@
 			"type": "object",
 			"required": ["screen", "target", "device", "variant", "status", "ms"],
 			"properties": {
-				"screen": { "type": "string" },
+				"screen": {
+					"type": "string"
+				},
 				"target": {
 					"type": "string",
 					"description": "As written, or the concrete story/scene id."
 				},
-				"device": { "type": "string" },
-				"variant": { "type": "string" },
-				"status": { "enum": ["ok", "failed", "skipped"] },
-				"image": { "type": "string", "description": "The PNG." },
-				"width": { "type": "integer" },
-				"height": { "type": "integer" },
-				"ms": { "type": "integer" },
-				"error": { "type": "string", "description": "Why it failed, ending with what to do." },
+				"device": {
+					"type": "string"
+				},
+				"variant": {
+					"type": "string"
+				},
+				"status": {
+					"enum": ["ok", "failed", "skipped"]
+				},
+				"image": {
+					"type": "string",
+					"description": "The PNG."
+				},
+				"width": {
+					"type": "integer"
+				},
+				"height": {
+					"type": "integer"
+				},
+				"ms": {
+					"type": "integer"
+				},
+				"error": {
+					"type": "string",
+					"description": "Why it failed, ending with what to do."
+				},
 				"readyTimedOut": {
 					"type": "boolean",
 					"description": "Taken before the screen settled; see notes for what was pending."
 				},
-				"notes": { "type": "array", "items": { "type": "string" } },
+				"notes": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
 				"findings": {
 					"type": "array",
 					"items": {
 						"type": "object",
 						"required": ["check", "severity", "message"],
 						"properties": {
-							"check": { "type": "string" },
-							"severity": { "enum": ["error", "warning", "info"] },
-							"message": { "type": "string" },
+							"check": {
+								"type": "string"
+							},
+							"severity": {
+								"enum": ["error", "warning", "info"]
+							},
+							"message": {
+								"type": "string"
+							},
 							"where": {
 								"type": "string",
 								"description": "A short selector path, when there is one."
 							},
-							"text": { "type": "string" }
+							"text": {
+								"type": "string"
+							}
 						}
 					}
 				},
@@ -119,15 +220,36 @@
 					"type": "object",
 					"required": ["against", "ratio"],
 					"properties": {
-						"against": { "type": "string" },
+						"against": {
+							"type": "string"
+						},
 						"ratio": {
 							"type": "number",
 							"minimum": 0,
 							"maximum": 1,
 							"description": "Share of pixels that changed."
 						},
-						"image": { "type": "string", "description": "The difference image." }
+						"image": {
+							"type": "string",
+							"description": "The difference image."
+						}
 					}
+				},
+				"log": {
+					"type": "object",
+					"description": "How much the page logged while it was on screen.",
+					"properties": {
+						"count": {
+							"type": "integer"
+						},
+						"errors": {
+							"type": "integer"
+						},
+						"warnings": {
+							"type": "integer"
+						}
+					},
+					"required": ["count", "errors", "warnings"]
 				}
 			}
 		}

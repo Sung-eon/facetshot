@@ -87,6 +87,9 @@ describe.skipIf(!installed || process.platform !== 'darwin')('Electron end to en
 		// The page's background in its dark scheme (#16181d), well inside the main area.
 		const png = PNG.sync.read(readFileSync(join(manifest.out, cell.image!)));
 		const at = (png.width * 1000 + 1500) * 4;
-		expect([png.data[at], png.data[at + 1], png.data[at + 2]]).toEqual([0x16, 0x18, 0x1d]);
+		// Within 2 per channel: the window's colour conversion may round differently from one machine to the next.
+		const want = [0x16, 0x18, 0x1d];
+		for (const [index, value] of want.entries())
+			expect(Math.abs(png.data[at + index] - value)).toBeLessThanOrEqual(2);
 	}, 120_000);
 });

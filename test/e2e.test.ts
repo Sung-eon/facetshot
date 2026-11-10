@@ -75,11 +75,14 @@ test('the MCP server answers check, capture and inspect over stdio', async () =>
 	try {
 		const { tools } = await client.listTools();
 		expect(tools.map((tool) => tool.name).sort()).toEqual([
+			'act',
 			'capture',
 			'check',
+			'close',
 			'compare',
 			'inspect',
-			'list'
+			'list',
+			'open'
 		]);
 
 		const checked = await client.callTool({

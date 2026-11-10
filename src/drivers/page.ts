@@ -8,6 +8,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import type { BrowserContext, Page, Request } from 'playwright';
 import { inPage, PAGE_CHECKS } from '../checks/page.ts';
+import { LogBook, recordPage, shortUrl } from '../logs.ts';
 import type { Device, Finding, ReadyRule, Variant, WebConfig } from '../types.ts';
 
 const TEXT_SIZES = { large: '125%', xlarge: '150%', xxl: '200%' } as const;
@@ -74,11 +75,14 @@ export class NetworkWatch {
 	private lastChange = Date.now();
 	readonly failures: Finding[] = [];
 	readonly consoleErrors: Finding[] = [];
+	/** Everything the page does, for the run's logs and for sessions. */
+	readonly log = new LogBook();
 
 	constructor(
 		private page: Page,
 		private blocked: (url: string) => boolean
 	) {
+		recordPage(page, this.log, blocked);
 		page.on('request', (request) => {
 			if (['websocket', 'eventsource'].includes(request.resourceType())) return;
 			this.open.set(request, Date.now());
@@ -149,15 +153,6 @@ export class NetworkWatch {
 		const now = Date.now();
 		for (const [request, since] of this.open) if (now - since > 10_000) this.open.delete(request);
 		return this.open.size ? 0 : now - this.lastChange;
-	}
-}
-
-function shortUrl(url: string): string {
-	try {
-		const parsed = new URL(url);
-		return (parsed.pathname + parsed.search).slice(0, 100);
-	} catch {
-		return url.slice(0, 100);
 	}
 }
 

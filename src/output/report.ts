@@ -3,7 +3,7 @@
  * pictures (click one for full size), what the checks found next to it, and the changed pixels on a switch when the
  * run compared. It sits in the run's folder and uses the pictures beside it.
  */
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Manifest } from '../types.ts';
 import { groupFindings } from './manifest.ts';
@@ -38,7 +38,10 @@ export function writeReport(manifest: Manifest): string {
 							cell.diff && cell.diff.ratio > 0
 								? `<i class="changed">${(cell.diff.ratio * 100).toFixed(1)}% changed</i>`
 								: '',
-							cell.readyTimedOut ? '<i class="slow">not settled</i>' : ''
+							cell.readyTimedOut ? '<i class="slow">not settled</i>' : '',
+							cell.log?.errors
+								? `<i class="changed">${cell.log.errors} error${cell.log.errors === 1 ? '' : 's'} logged</i>`
+								: ''
 						].join('');
 						return `<td><a href="${escape(cell.image)}" target="_blank"><img loading="lazy" src="${escape(cell.image)}"${diff}></a>${badge}</td>`;
 					});
@@ -58,6 +61,16 @@ export function writeReport(manifest: Manifest): string {
 		})
 		.join('');
 	const hasDiff = manifest.cells.some((cell) => cell.diff?.image);
+	// The run's logs, folded away at the end; a huge log is linked rather than inlined.
+	const logFile = manifest.logs ? join(manifest.out, manifest.logs.text) : undefined;
+	const logs =
+		logFile && existsSync(logFile)
+			? `<section id="logs"><details><summary><b>Logs</b> <small>${manifest.logs!.count} lines, ${manifest.logs!.errors} errors, ${manifest.logs!.warnings} warnings · <a href="${escape(manifest.logs!.text)}">${escape(manifest.logs!.text)}</a> · <a href="${escape(manifest.logs!.json)}">${escape(manifest.logs!.json)}</a></small></summary>${
+					statSync(logFile).size < 512 * 1024
+						? `<pre>${escape(readFileSync(logFile, 'utf8'))}</pre>`
+						: '<p>Too long to show here; open the file.</p>'
+				}</details></section>`
+			: '';
 	const { ok, failed } = manifest.counts;
 	const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>facetshot · ${escape(manifest.runId)}</title>
@@ -71,6 +84,7 @@ nav { margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap } nav a { color: 
 section { margin-top: 32px } h2 { font-size: 16px; margin: 0 0 8px }
 ul { margin: 0 0 12px; padding-left: 18px } li.error b { color: var(--bad) } li.warning b { color: var(--warn) } small { color: var(--muted) }
 code { font-size: 12px; color: var(--muted) }
+pre { font: 12px/1.5 ui-monospace, monospace; overflow-x: auto; padding: 12px; border: 1px solid var(--line) }
 table { border-collapse: separate; border-spacing: 12px 8px; margin-left: -12px } th { text-align: left; font-weight: 600; vertical-align: top }
 td { vertical-align: top } img { display: block; max-width: min(28vw, 420px); max-height: 420px; border: 1px solid var(--line) }
 .fail { max-width: 300px; padding: 8px; border: 1px solid var(--bad); color: var(--bad) } .fail b { display: block }
@@ -83,6 +97,7 @@ ${hasDiff ? '<label><input type="checkbox" id="diff"> show changed pixels</label
 ${manifest.errors.length ? `<ul>${manifest.errors.map((error) => `<li class="error">${escape(error)}</li>`).join('')}</ul>` : ''}
 <nav>${manifest.screens.map(({ screen }) => `<a href="#${escape(screen)}">${escape(screen)}</a>`).join('')}</nav>
 ${sections}
+${logs}
 <script>
 document.getElementById('diff')?.addEventListener('change', (event) => {
 	for (const img of document.querySelectorAll('img[data-diff]')) {

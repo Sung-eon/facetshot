@@ -104,6 +104,8 @@ export interface CellResult {
 	diff?: { against: string; ratio: number; image?: string };
 	/** Anything a driver wants the reader to know (e.g. "rendered without Liquid Glass"). */
 	notes?: string[];
+	/** How much the page logged while it was on screen; the lines are in the run's logs (`Manifest.logs`). */
+	log?: { count: number; errors: number; warnings: number };
 }
 
 export interface ScreenSheet {
@@ -130,6 +132,11 @@ export interface Manifest {
 	/** Failures that are not about one cell (a server would not start, a build failed). */
 	errors: string[];
 	counts: { ok: number; failed: number; skipped: number; findings: number; changed?: number };
+	/**
+	 * What the pages and the servers logged during the run, relative to the run folder: `text` for people (a section
+	 * per picture), `json` with one entry per line for programs.
+	 */
+	logs?: { text: string; json: string; count: number; errors: number; warnings: number };
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

@@ -14,22 +14,34 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, join, resolve } from 'node:path';
 import { parse, stringify } from 'yaml';
-import type { Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import { UsageError } from './errors.ts';
 
+/**
+ * A step. Where a step takes an element, it is a Playwright selector (CSS, `text=`, `role=`), `#<n>` for an element a
+ * session listed (`look`), or `@<x>,<y>` for a point on the screen in CSS pixels (the session's pictures are in the
+ * same units).
+ */
 export type Step =
 	| { click: string }
+	| { dblclick: string }
+	| { rightclick: string }
 	| { tap: string }
+	| { longpress: string }
 	| { hover: string }
 	| { focus: string }
+	| { drag: string; to: string }
 	| { fill: string; with: string }
 	| { type: string }
 	| { press: string }
 	| { select: string; option: string }
-	| { scroll: string | number }
+	| { scroll: string | number; by?: number }
 	| { wait: string }
 	| { gone: string }
 	| { goto: string }
+	| { back: unknown }
+	| { forward: unknown }
+	| { reload: unknown }
 	| { shot: string };
 
 export interface Flow {
@@ -42,9 +54,13 @@ export interface Flow {
 
 const KEYS = [
 	'click',
+	'dblclick',
+	'rightclick',
 	'tap',
+	'longpress',
 	'hover',
 	'focus',
+	'drag',
 	'fill',
 	'type',
 	'press',
@@ -53,8 +69,13 @@ const KEYS = [
 	'wait',
 	'gone',
 	'goto',
+	'back',
+	'forward',
+	'reload',
 	'shot'
 ];
+/** Steps that need no value: `back`, not `back:`. */
+const BARE = new Set(['back', 'forward', 'reload']);
 
 export function loadFlow(file: string, root: string): Flow {
 	const path = resolve(root, file);
@@ -95,6 +116,7 @@ export function loadFlow(file: string, root: string): Flow {
  * `press:Enter`, `scroll:600`, `wait:<selector>`, `shot:<name>`…
  */
 export function parseStep(text: string): Step {
+	if (BARE.has(text.trim())) return { [text.trim()]: true } as Step;
 	const at = text.indexOf(':');
 	const key = at > 0 ? text.slice(0, at) : '';
 	const value = text.slice(at + 1);
@@ -104,15 +126,26 @@ export function parseStep(text: string): Step {
 			`Write <step>:<value>, e.g. click:"role=button[name='Save']" or shot:saved. Steps: ${KEYS.join(', ')}.`
 		);
 	}
-	if (key === 'fill' || key === 'select') {
-		const split = value.lastIndexOf('=');
+	if (key === 'fill' || key === 'select' || key === 'drag') {
+		const split = value.lastIndexOf(key === 'drag' ? '>' : '=');
 		if (split < 0)
-			throw new UsageError(`"${text}" needs a value after "=": ${key}:<selector>=<text>.`);
+			throw new UsageError(
+				key === 'drag'
+					? `"${text}" needs where to drop it: drag:<from>><to>.`
+					: `"${text}" needs a value after "=": ${key}:<selector>=<text>.`
+			);
+		const [left, right] = [value.slice(0, split), value.slice(split + 1)];
 		return key === 'fill'
-			? { fill: value.slice(0, split), with: value.slice(split + 1) }
-			: { select: value.slice(0, split), option: value.slice(split + 1) };
+			? { fill: left, with: right }
+			: key === 'select'
+				? { select: left, option: right }
+				: { drag: left, to: right };
 	}
 	if (key === 'scroll' && /^-?\d+$/.test(value)) return { scroll: Number(value) };
+	if (key === 'scroll' && /=-?\d+$/.test(value)) {
+		const split = value.lastIndexOf('=');
+		return { scroll: value.slice(0, split), by: Number(value.slice(split + 1)) };
+	}
 	return { [key]: value } as Step;
 }
 
@@ -159,28 +192,10 @@ export async function playInPage(
 	for (const [index, step] of flow.steps.entries()) {
 		const where = `step ${index + 1} of ${flow.name}`;
 		try {
-			if ('click' in step) await page.locator(step.click).first().click({ timeout: 10_000 });
-			else if ('tap' in step) await page.locator(step.tap).first().tap({ timeout: 10_000 });
-			else if ('hover' in step) await page.locator(step.hover).first().hover({ timeout: 10_000 });
-			else if ('focus' in step) await page.locator(step.focus).first().focus({ timeout: 10_000 });
-			else if ('fill' in step)
-				await page.locator(step.fill).first().fill(step.with, { timeout: 10_000 });
-			else if ('type' in step) await page.keyboard.type(step.type);
-			else if ('press' in step) await page.keyboard.press(step.press);
-			else if ('select' in step)
-				await page.locator(step.select).first().selectOption(step.option, { timeout: 10_000 });
-			else if ('scroll' in step) {
-				if (typeof step.scroll === 'number') await page.mouse.wheel(0, step.scroll);
-				else await page.locator(step.scroll).first().scrollIntoViewIfNeeded({ timeout: 10_000 });
-			} else if ('wait' in step)
-				await page.locator(step.wait).first().waitFor({ state: 'visible', timeout: 15_000 });
-			else if ('gone' in step)
-				await page.locator(step.gone).first().waitFor({ state: 'hidden', timeout: 15_000 });
-			else if ('goto' in step) await open(step.goto);
-			else if ('shot' in step) {
+			if ('shot' in step) {
 				shots += 1;
 				await onShot(step.shot);
-			}
+			} else await doStep(page, step, open);
 		} catch (error) {
 			const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
 			throw new Error(`${where} (${JSON.stringify(step)}) didn't work: ${message}`, {
@@ -189,4 +204,95 @@ export async function playInPage(
 		}
 	}
 	if (!shots) await onShot('end');
+}
+
+const TIMEOUT = 10_000;
+/** The element a step names, or the point it names (`@x,y`). `#n` is an element a session listed. */
+function aim(page: Page, target: string): { point: { x: number; y: number } } | { at: Locator } {
+	const point = /^@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(target.trim());
+	if (point) return { point: { x: Number(point[1]), y: Number(point[2]) } };
+	const ref = /^#(\d+)$/.exec(target.trim());
+	return {
+		at: page.locator(ref ? `[data-facetshot-ref="${ref[1]}"]` : target).first()
+	};
+}
+
+/** Does one step (anything but `shot`) in a page. `open` shows an address the way the driver does. */
+export async function doStep(
+	page: Page,
+	step: Step,
+	open: (address: string) => Promise<void>
+): Promise<void> {
+	const pointer = async (target: string, button: 'left' | 'right', count: number) => {
+		const aimed = aim(page, target);
+		if ('point' in aimed)
+			await page.mouse.click(aimed.point.x, aimed.point.y, { button, clickCount: count });
+		else if (count === 2) await aimed.at.dblclick({ button, timeout: TIMEOUT });
+		else await aimed.at.click({ button, timeout: TIMEOUT });
+	};
+	const pointAt = async (target: string) => {
+		const aimed = aim(page, target);
+		if ('point' in aimed) return aimed.point;
+		await aimed.at.scrollIntoViewIfNeeded({ timeout: TIMEOUT });
+		const box = await aimed.at.boundingBox({ timeout: TIMEOUT });
+		if (!box) throw new Error(`${target} isn't on screen.`);
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	if ('click' in step) await pointer(step.click, 'left', 1);
+	else if ('dblclick' in step) await pointer(step.dblclick, 'left', 2);
+	else if ('rightclick' in step) await pointer(step.rightclick, 'right', 1);
+	else if ('tap' in step) {
+		const aimed = aim(page, step.tap);
+		if ('point' in aimed) await page.touchscreen.tap(aimed.point.x, aimed.point.y);
+		else await aimed.at.tap({ timeout: TIMEOUT });
+	} else if ('longpress' in step) {
+		const { x, y } = await pointAt(step.longpress);
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await page.waitForTimeout(800);
+		await page.mouse.up();
+	} else if ('hover' in step) {
+		const aimed = aim(page, step.hover);
+		if ('point' in aimed) await page.mouse.move(aimed.point.x, aimed.point.y);
+		else await aimed.at.hover({ timeout: TIMEOUT });
+	} else if ('focus' in step) {
+		const aimed = aim(page, step.focus);
+		if ('point' in aimed) throw new Error('focus takes an element, not a point.');
+		await aimed.at.focus({ timeout: TIMEOUT });
+	} else if ('drag' in step) {
+		const from = await pointAt(step.drag);
+		const to = await pointAt(step.to);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(to.x, to.y, { steps: 12 });
+		await page.mouse.up();
+	} else if ('fill' in step) {
+		const aimed = aim(page, step.fill);
+		if ('point' in aimed) throw new Error('fill takes an element, not a point.');
+		await aimed.at.fill(step.with, { timeout: TIMEOUT });
+	} else if ('type' in step) await page.keyboard.type(step.type);
+	else if ('press' in step) await page.keyboard.press(step.press);
+	else if ('select' in step) {
+		const aimed = aim(page, step.select);
+		if ('point' in aimed) throw new Error('select takes an element, not a point.');
+		await aimed.at.selectOption(step.option, { timeout: TIMEOUT });
+	} else if ('scroll' in step) {
+		if (typeof step.scroll === 'number') await page.mouse.wheel(0, step.scroll);
+		else {
+			const aimed = aim(page, step.scroll);
+			if ('point' in aimed) {
+				await page.mouse.move(aimed.point.x, aimed.point.y);
+				await page.mouse.wheel(0, step.by ?? 400);
+			} else if (step.by !== undefined) {
+				await aimed.at.evaluate((element, by) => element.scrollBy(0, by), step.by);
+			} else await aimed.at.scrollIntoViewIfNeeded({ timeout: TIMEOUT });
+		}
+	} else if ('wait' in step)
+		await page.locator(step.wait).first().waitFor({ state: 'visible', timeout: 15_000 });
+	else if ('gone' in step)
+		await page.locator(step.gone).first().waitFor({ state: 'hidden', timeout: 15_000 });
+	else if ('goto' in step) await open(step.goto);
+	else if ('back' in step) await page.goBack({ waitUntil: 'load', timeout: 30_000 });
+	else if ('forward' in step) await page.goForward({ waitUntil: 'load', timeout: 30_000 });
+	else if ('reload' in step) await page.reload({ waitUntil: 'load', timeout: 30_000 });
 }

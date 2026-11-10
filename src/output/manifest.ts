@@ -130,5 +130,17 @@ export function summarize(
 		);
 	}
 	lines.push('', `Report: ${path('report.html')}`, `Details: ${path('manifest.json')}`);
+	if (manifest.logs) {
+		const { count, errors, warnings } = manifest.logs;
+		const tally = [
+			errors && `${errors} error${errors === 1 ? '' : 's'}`,
+			warnings && `${warnings} warning${warnings === 1 ? '' : 's'}`
+		]
+			.filter(Boolean)
+			.join(', ');
+		lines.push(
+			`Logs: ${path(manifest.logs.text)} (${count} line${count === 1 ? '' : 's'}${tally ? `; ${tally}` : ''})`
+		);
+	}
 	return lines.join('\n') + '\n';
 }

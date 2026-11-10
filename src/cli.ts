@@ -44,6 +44,12 @@ const COMMANDS = [
 	'daemon',
 	'baseline',
 	'clean',
+	'open',
+	'act',
+	'look',
+	'close',
+	'sessions',
+	'logs',
 	'help',
 	'version'
 ];
@@ -62,7 +68,9 @@ const VALUED = new Set([
 	'agent',
 	'c',
 	'do',
-	'format'
+	'format',
+	'save',
+	'level'
 ]);
 /** Flags that may be given more than once; their values are kept in order, joined by a newline. */
 const REPEATED = new Set(['do']);
@@ -129,6 +137,20 @@ Usage
   facetshot baseline save|list|rm <name>                keep a run to compare against later
   facetshot daemon status|stop                          the background helper that keeps things warm
   facetshot clean                                       remove runs, test data, and anything left running
+
+Sessions (a page kept open to work step by step)
+  facetshot open <target> [--on device] [--as variant]  open a page; prints its id, a picture, logs and what's clickable
+  facetshot act <id> <step…> [--elements] [--full]       do steps, then show the page again
+  facetshot look <id> [--elements] [--full]              show the page again
+  facetshot close <id> [--save flows/name.yaml]          close it (and keep the steps that worked as a flow)
+  facetshot sessions                                    the open sessions
+  facetshot logs <id|run|latest> [--follow] [--level debug|info|warn|error] [--json]
+
+Steps (--do, act, flows)
+  click: dblclick: rightclick: tap: longpress: hover: focus:  <element>
+  fill:<element>=<text>  select:<element>=<option>  drag:<element>><element>  type:<text>  press:Shift+A
+  scroll:600  scroll:<element>  scroll:<element>=600  wait:<element>  gone:<element>  goto:/path  back  forward  reload
+  An element is a selector (text=Save, role=button[name='Save'], CSS), #n from a session's list, or @x,y on its picture.
 
 Targets
   /path or https://…     a web page            app:/path        an app screen (simulator or desktop app)
@@ -415,6 +437,15 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 		case 'daemon': {
 			const { daemonCommand } = await import('./daemon/client.ts');
 			return daemonCommand(positional[0] ?? 'status');
+		}
+		case 'open':
+		case 'act':
+		case 'look':
+		case 'close':
+		case 'sessions':
+		case 'logs': {
+			const { sessionCommand } = await import('./session-cli.ts');
+			return sessionCommand(command, positional, flags);
 		}
 		case 'clean': {
 			const { clean } = await import('./clean.ts');

@@ -15,6 +15,14 @@ Two things are broken on purpose, for the checks to find:
   page is wider than the screen.
 - `/settings`: a one-line hint cut off by `overflow: hidden` — the `clipped` check reports it at every size.
 
+`/settings` also has something to try in a [session](../../docs/sessions.md): Save logs an info line and a
+warning, and right-clicking the settings opens a small menu.
+
+```sh
+bun --bun ../../src/cli.ts open /settings --on desktop
+bun --bun ../../src/cli.ts act <id> "click:role=button[name='Save']" rightclick:@320,120
+```
+
 Storybook stories are found in `storybook-static/index.json`. `Button/Playground` is tagged `facetshot-skip`, so
 patterns leave it out (`story:button--playground` still shoots it). The docs page `autodocs` adds is never shot.
 Storybook 8+ doesn't put `parameters` in index.json; facetshot reads `parameters.facetshot` (`skip`, `ready`,

@@ -5,12 +5,19 @@ facetshot <targets…> [options]          take pictures
 facetshot check <targets…> [options]    read screens for problems, no pictures
 facetshot diff [against]                repeat the last command and show what changed
 facetshot list [what]                   devices, variants, profiles, checks, runs
-facetshot init [--agent …] [--yes]      write a starter config, connect an agent
+facetshot init [--url …] [--agent …]    write a starter config, connect an agent
 facetshot doctor                        check this machine and project
 facetshot mcp                           run as an MCP server over stdio
 facetshot baseline save|list|rm <name>  keep a run to compare with later
 facetshot daemon status|stop            the background helper
 facetshot clean [--all]                 remove runs, test data, simulators; stop everything
+
+facetshot open <target> [--on d] [--as v]   open a page to work step by step (a session)
+facetshot act <id> <step…>                  do steps in it, then show it again
+facetshot look <id>                         show it again
+facetshot close <id> [--save file]          close it, optionally keeping its steps as a flow
+facetshot sessions                          the open sessions
+facetshot logs <id|run|latest>              a session's logs (live with --follow) or a run's
 ```
 
 `fshot` is a shorter name for the same command.
@@ -82,6 +89,31 @@ data); `stop` stops it after the runs in progress finish, closing everything it 
 Stops the background helper, removes test data that runs left behind, deletes runs, logs, build stamps and caches,
 and deletes facetshot's own simulators. Baselines stay unless you pass `--all`.
 
+## Sessions
+
+See [Sessions](sessions.md) for the whole story.
+
+| Command            | Options                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `open <target>`    | `--on <device>`, `--as <variant>` (one each), `--json`                                          |
+| `act <id> <step…>` | `--elements` (list what's clickable), `--full` (whole page), `--level <level>` (logs), `--json` |
+| `look <id>`        | the same as `act`                                                                               |
+| `close <id>`       | `--save <file>`: write the steps that worked as a flow                                          |
+| `sessions`         | `--json`                                                                                        |
+
+`act` exits with 1 when a step didn't work; the rest of its answer shows where the page ended up.
+
+## `logs`
+
+```sh
+facetshot logs latest                   # the last run's logs, a section per picture
+facetshot logs <run-id> --level warn    # only warnings and errors
+facetshot logs s-3b8ec4 --follow        # a session's logs as they happen, until Ctrl-C
+facetshot logs latest --json            # one JSON object per line
+```
+
+Levels are `debug`, `info` (the default), `warn` and `error`. See [Logs](logs.md).
+
 ## Exit codes
 
 | Code | Meaning                                                                                  |
@@ -96,11 +128,12 @@ Problems found by checks don't change the exit code: they're there for you to re
 
 ## Environment variables
 
-| Variable                   | Effect                                                                                              |
-| -------------------------- | --------------------------------------------------------------------------------------------------- |
-| `FACETSHOT_HOME`           | where machine-wide state lives (default `~/.facetshot`): the daemon's socket and log, locks, caches |
-| `FACETSHOT_NO_DAEMON`      | same as `--no-daemon` for every command, including the MCP server                                   |
-| `FACETSHOT_IDLE_MINUTES`   | how long the background helper waits before stopping (default 15)                                   |
-| `FACETSHOT_CONFIG`         | the config the MCP server uses                                                                      |
-| `FACETSHOT_CWD`            | the folder the MCP server looks for a config from                                                   |
-| `FACETSHOT_MCP_MAX_IMAGES` | sheets per MCP answer (default 4)                                                                   |
+| Variable                         | Effect                                                                                              |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `FACETSHOT_HOME`                 | where machine-wide state lives (default `~/.facetshot`): the daemon's socket and log, locks, caches |
+| `FACETSHOT_NO_DAEMON`            | same as `--no-daemon` for every command, including the MCP server                                   |
+| `FACETSHOT_IDLE_MINUTES`         | how long the background helper waits before stopping (default 15)                                   |
+| `FACETSHOT_CONFIG`               | the config the MCP server uses                                                                      |
+| `FACETSHOT_CWD`                  | the folder the MCP server looks for a config from                                                   |
+| `FACETSHOT_MCP_MAX_IMAGES`       | sheets per MCP answer (default 4)                                                                   |
+| `FACETSHOT_SESSION_IDLE_MINUTES` | how long an unused session stays open (default 10)                                                  |

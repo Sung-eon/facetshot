@@ -22,7 +22,20 @@ running between calls, so a second look takes seconds.
    - MCP: `compare` (repeats your last capture)
    - shell: `facetshot diff`
 4. If a sheet is too small to judge a detail, capture with `images: "cells"` for a few cells, or **inspect** one cell (MCP `inspect` with screen, device, variant, and
-   optionally a region), or open the PNG path from the summary.
+   optionally a region), or open the PNG path from the summary. `inspect` also returns what that page logged.
+
+## Working a page step by step
+
+To find out what happens when you click, right-click, type or scroll — rather than picture a state you already know
+how to reach — open a session:
+
+- MCP: `open` with `target: "/settings"` (and one `device`, one `variant`) → then `act` with `steps`, as many turns as
+  you need → `close` (with `saveAs: "flows/name.yaml"` to keep the steps as a flow).
+- shell: `facetshot open /settings --on phone`, `facetshot act <id> click:#6`, `facetshot close <id> --save flows/x.yaml`.
+
+Each answer has the picture, the log lines since the last step, and (on `open`, or with `elements: true`) what's
+clickable, numbered. Name what to touch by that number (`click:#6`), a point on the picture (`rightclick:@320,120`,
+CSS pixels), or a selector (`click:role=button[name='Save']`). Close sessions when you're done.
 
 ## Targets
 
@@ -51,8 +64,10 @@ test data facetshot makes for each run.
 - Don't write screenshot scripts, start browsers yourself, or add sleeps. If facetshot can't reach a state, write a
   flow file; if a screen isn't ready when shot, the summary says what it was waiting for — fix the ready rule in
   `facetshot.config.ts`.
-- Don't leave things running: facetshot stops what it started when it goes idle. `facetshot clean` removes
-  everything, including test data.
+- Don't leave things running: close your sessions, and facetshot stops what it started when it goes idle.
+  `facetshot clean` removes everything, including test data.
+- Read the logs before guessing at a cause: a console error or a failed request usually says why a screen looks
+  wrong (`inspect`, an `act` answer, or `facetshot logs latest`).
 - A failed picture's reason ends with what to do. Read it before retrying.
 - Report what you saw honestly: if a sheet shows a problem you didn't fix, say so.
 
