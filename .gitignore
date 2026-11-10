@@ -1,0 +1,17 @@
+# The examples' installed dependencies and build output (each example installs its own).
+examples/*/node_modules
+examples/*/dist
+examples/*/storybook-static
+examples/*/src-tauri/target
+examples/*/src-tauri/gen
+examples/*/.build
+examples/*/.swiftpm
+# SwiftPM, for FacetshotKit built from this folder.
+.build/
+.swiftpm/
+Package.resolved
+
+# Installed dependencies and facetshot's own output when run from this folder.
+node_modules/
+.facetshot/
+.out/

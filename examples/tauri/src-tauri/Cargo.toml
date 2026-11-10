@@ -1,0 +1,15 @@
+[package]
+name = "pebble"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "pebble_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-deep-link = "2.6"

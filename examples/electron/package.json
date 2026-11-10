@@ -1,0 +1,12 @@
+{
+	"name": "facetshot-example-electron",
+	"private": true,
+	"main": "main.js",
+	"scripts": {
+		"start": "electron ."
+	},
+	"devDependencies": {
+		"electron": "45.2.3"
+	},
+	"type": "module"
+}

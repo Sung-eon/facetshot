@@ -1,0 +1,5 @@
+start: /second.html
+steps:
+  - click: '#open'
+  - wait: 'dialog[open]'
+  - shot: dialog

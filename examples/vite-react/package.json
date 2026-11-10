@@ -1,0 +1,25 @@
+{
+	"name": "facetshot-example-vite-react",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"storybook": "storybook dev -p 6006",
+		"build-storybook": "storybook build -o storybook-static --quiet"
+	},
+	"dependencies": {
+		"react": "19.3.1",
+		"react-dom": "19.3.1"
+	},
+	"devDependencies": {
+		"@storybook/react-vite": "10.6.7",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@vitejs/plugin-react": "6.3.0",
+		"storybook": "10.6.7",
+		"typescript": "5.9.3",
+		"vite": "8.3.7"
+	}
+}

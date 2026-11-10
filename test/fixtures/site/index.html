@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Fixture</title>
+	<style>
+		:root {
+			color-scheme: light dark;
+			--bg: #fff;
+			--fg: #111;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #111;
+				--fg: #eee;
+			}
+		}
+		body {
+			margin: 0;
+			font: 1rem/1.5 system-ui;
+			background: var(--bg);
+			color: var(--fg);
+		}
+		header {
+			display: flex;
+			gap: 1rem;
+			padding: 1rem;
+			border-bottom: 1px solid #8884;
+		}
+		.card {
+			margin: 1rem;
+			padding: 1rem;
+			border: 1px solid #8886;
+			border-radius: 12px;
+		}
+		.name {
+			width: 8rem;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		.wide {
+			width: 1200px;
+			height: 8px;
+			background: #e11d48;
+		}
+		.spinner {
+			width: 2rem;
+			height: 2rem;
+			background: #888;
+		}
+		@media (min-width: 900px) {
+			.wide {
+				display: none;
+			}
+		}
+		button.tiny {
+			width: 16px;
+			height: 16px;
+			padding: 0;
+		}
+	</style>
+	<header>
+		<strong>Fixture</strong><a href="/second.html">Second</a
+		><button class="tiny" aria-label="x">×</button>
+	</header>
+	<div class="spinner" id="spinner"></div>
+	<main class="card">
+		<h1>Hello there</h1>
+		<p class="name">A rather long name that will not fit in its box</p>
+		<div class="wide"></div>
+		<p id="late"></p>
+	</main>
+	<script>
+		setTimeout(() => {
+			document.getElementById('spinner').remove();
+			document.getElementById('late').textContent = 'Loaded after a moment.';
+		}, 400);
+	</script>
+</html>

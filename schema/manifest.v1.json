@@ -1,0 +1,88 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://unpkg.com/facetshot/schema/manifest.v1.json",
+	"title": "facetshot run manifest",
+	"description": "What one facetshot run took, found and compared. Written as manifest.json in the run's folder.",
+	"type": "object",
+	"required": ["version", "runId", "startedAt", "ms", "prepareMs", "root", "out", "devices", "variants", "screens", "cells", "errors", "counts"],
+	"properties": {
+		"$schema": { "type": "string" },
+		"version": { "const": 1 },
+		"runId": { "type": "string", "description": "yyyymmdd-hhmmss-xxxx" },
+		"startedAt": { "type": "string", "format": "date-time" },
+		"ms": { "type": "integer", "description": "The whole run, in milliseconds." },
+		"prepareMs": { "type": "integer", "description": "Time before the first picture: builds, servers, sign-in, test data." },
+		"root": { "type": "string", "description": "The project folder (where the config is)." },
+		"out": { "type": "string", "description": "This run's folder; every relative path below is relative to it." },
+		"devices": { "type": "array", "items": { "type": "string" } },
+		"variants": { "type": "array", "items": { "type": "string" } },
+		"screens": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["screen"],
+				"properties": {
+					"screen": { "type": "string" },
+					"sheet": { "type": "string", "description": "The contact sheet (JPEG)." },
+					"changed": { "type": "boolean", "description": "Present when the run compared: whether any picture of this screen changed." }
+				}
+			}
+		},
+		"cells": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
+		"errors": { "type": "array", "items": { "type": "string" }, "description": "Problems not tied to one picture (a server that would not start)." },
+		"counts": {
+			"type": "object",
+			"required": ["ok", "failed", "skipped", "findings"],
+			"properties": {
+				"ok": { "type": "integer" },
+				"failed": { "type": "integer" },
+				"skipped": { "type": "integer" },
+				"findings": { "type": "integer", "description": "Errors and warnings from checks (not info)." },
+				"changed": { "type": "integer", "description": "Screens that changed, when the run compared." }
+			}
+		}
+	},
+	"$defs": {
+		"cell": {
+			"type": "object",
+			"required": ["screen", "target", "device", "variant", "status", "ms"],
+			"properties": {
+				"screen": { "type": "string" },
+				"target": { "type": "string", "description": "As written, or the concrete story/scene id." },
+				"device": { "type": "string" },
+				"variant": { "type": "string" },
+				"status": { "enum": ["ok", "failed", "skipped"] },
+				"image": { "type": "string", "description": "The PNG." },
+				"width": { "type": "integer" },
+				"height": { "type": "integer" },
+				"ms": { "type": "integer" },
+				"error": { "type": "string", "description": "Why it failed, ending with what to do." },
+				"readyTimedOut": { "type": "boolean", "description": "Taken before the screen settled; see notes for what was pending." },
+				"notes": { "type": "array", "items": { "type": "string" } },
+				"findings": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": ["check", "severity", "message"],
+						"properties": {
+							"check": { "type": "string" },
+							"severity": { "enum": ["error", "warning", "info"] },
+							"message": { "type": "string" },
+							"where": { "type": "string", "description": "A short selector path, when there is one." },
+							"text": { "type": "string" }
+						}
+					}
+				},
+				"diff": {
+					"type": "object",
+					"required": ["against", "ratio"],
+					"properties": {
+						"against": { "type": "string" },
+						"ratio": { "type": "number", "minimum": 0, "maximum": 1, "description": "Share of pixels that changed." },
+						"image": { "type": "string", "description": "The difference image." }
+					}
+				}
+			}
+		}
+	}
+}

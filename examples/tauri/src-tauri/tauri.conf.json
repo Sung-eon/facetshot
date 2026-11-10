@@ -1,0 +1,20 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Pebble",
+	"version": "0.1.0",
+	"identifier": "space.facetshot.example.pebble",
+	"build": {
+		"beforeDevCommand": "bun run dev",
+		"devUrl": "http://localhost:1420",
+		"beforeBuildCommand": "bun run build",
+		"frontendDist": "../dist"
+	},
+	"app": {
+		"windows": [{ "label": "main", "title": "Pebble", "width": 1024, "height": 720 }],
+		"security": { "csp": null }
+	},
+	"bundle": { "active": true, "targets": ["app"], "icon": [] },
+	"plugins": {
+		"deep-link": { "desktop": { "schemes": ["pebble"] } }
+	}
+}

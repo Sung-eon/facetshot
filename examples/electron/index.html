@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+		<meta name="color-scheme" content="light dark" />
+		<title>Tally</title>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<aside class="sidebar">
+			<strong>Tally</strong>
+			<nav>
+				<a href="#/">Today</a>
+				<a href="#/reports">Reports</a>
+			</nav>
+		</aside>
+		<main>
+			<section data-view="/">
+				<h1>Today</h1>
+				<ul class="list">
+					<li><span>Morning walk</span><span class="count">3.2 km</span></li>
+					<li><span>Water</span><span class="count">6 glasses</span></li>
+					<li><span>Reading</span><span class="count">42 pages</span></li>
+				</ul>
+			</section>
+			<section data-view="/reports">
+				<h1>Reports</h1>
+				<div class="grid">
+					<div class="tile"><span class="big">128 km</span><span>walked this month</span></div>
+					<div class="tile"><span class="big">31</span><span>days in a row</span></div>
+					<div class="tile"><span class="big">1,204</span><span>pages read</span></div>
+				</div>
+			</section>
+		</main>
+		<script src="app.js"></script>
+	</body>
+</html>

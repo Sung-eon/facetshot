@@ -1,0 +1,20 @@
+<!doctype html> <meta charset="utf-8" /><meta
+	name="viewport"
+	content="width=device-width, initial-scale=1"
+/>
+<style>
+	body {
+		font: 1rem system-ui;
+		margin: 2rem;
+	}
+	dialog {
+		border-radius: 12px;
+	}
+</style>
+<h1>Second page</h1>
+<button id="open" onclick="document.querySelector('dialog').showModal()">Open dialog</button>
+<dialog>
+	<p>Are you sure?</p>
+	<button onclick="this.closest('dialog').close()">Close</button>
+</dialog>
+<img src="/missing.png" alt="missing" width="40" height="40" />

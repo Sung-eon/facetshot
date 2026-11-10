@@ -1,0 +1,23 @@
+:root {
+	color-scheme: light dark;
+	--bg: #f4f6f4;
+	--fg: #172019;
+	--muted: #5d6b60;
+	--card: #ffffff;
+	--line: #dde3de;
+	--accent: #2f7d4f;
+	font-family: system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+	:root { --bg: #121713; --fg: #e8efe9; --muted: #95a398; --card: #1b221c; --line: #2a332c; --accent: #6fcf97; }
+}
+body { margin: 0; background: var(--bg); color: var(--fg); }
+header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-bottom: 1px solid var(--line); }
+nav { display: flex; gap: 16px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a[aria-current] { color: var(--fg); font-weight: 600; }
+main { padding: 24px; max-width: 720px; }
+h1 { margin: 0 0 12px; }
+.greeting { color: var(--accent); font-weight: 600; }
+.items { list-style: none; padding: 0; display: grid; gap: 8px; }
+.items li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
