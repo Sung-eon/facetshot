@@ -8,7 +8,9 @@ device and variant without any extra setup per story. Storybook 7 to 10 are supp
 Tell facetshot where your Storybook is — one you run yourself, or a static build it makes and serves:
 
 ```ts
-storybook: { url: 'http://localhost:6006' }
+storybook: {
+	url: 'http://localhost:6006';
+}
 ```
 
 ```ts
@@ -55,7 +57,7 @@ A story can carry its own settings in its parameters:
 
 ```ts
 export const Live: Story = {
-	parameters: { facetshot: { skip: true } }               // never pictured
+	parameters: { facetshot: { skip: true } } // never pictured
 };
 export const Chart: Story = {
 	parameters: { facetshot: { ready: { visible: ['svg'] }, mask: ['.timestamp'] } }

@@ -19,8 +19,8 @@ On macOS a Tauri window is a WKWebView, which nothing outside the app can automa
   `rustup`), launched, sent to each screen with `open pebble://about`, and its window captured. The app can't be
   resized or re-themed from outside, so facetshot passes `FACETSHOT_WIDTH`, `FACETSHOT_HEIGHT` and
   `FACETSHOT_APPEARANCE` in its environment; `src-tauri/src/lib.rs` shows the dozen lines that honour them. Run
-  `bun tauri icon <a 1024×1024 png>` once first: a bundle needs icons. *This path was written but not yet run here:
-  there was no Rust toolchain on the machine it was made on.*
+  `bun tauri icon <a 1024×1024 png>` once first: a bundle needs icons. _This path was written but not yet run here:
+  there was no Rust toolchain on the machine it was made on._
 
 Windows (WebView2 over the DevTools protocol) and Linux (WebKitGTK through `tauri-driver`) aren't supported yet;
 facetshot says so when asked, and the `webkit` engine works on every system.

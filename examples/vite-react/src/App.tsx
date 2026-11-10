@@ -63,8 +63,17 @@ function Pricing() {
 			<h1>Pricing</h1>
 			<div className="plans">
 				<PlanCard name="Candle" price="Free" features={['3 notebooks', 'Sync on one device']} />
-				<PlanCard name="Lamp" price="$4" features={['Unlimited notebooks', 'Sync everywhere']} highlighted />
-				<PlanCard name="Lighthouse" price="$9" features={['Everything in Lamp', 'Shared notebooks for teams']} />
+				<PlanCard
+					name="Lamp"
+					price="$4"
+					features={['Unlimited notebooks', 'Sync everywhere']}
+					highlighted
+				/>
+				<PlanCard
+					name="Lighthouse"
+					price="$9"
+					features={['Everything in Lamp', 'Shared notebooks for teams']}
+				/>
 			</div>
 		</section>
 	);
@@ -82,7 +91,10 @@ function Settings() {
 				<input type="checkbox" defaultChecked /> Send me a weekly summary
 			</label>
 			{/* On purpose: a one-line label that is cut off mid-word on narrow screens (the `clipped` check). */}
-			<p className="hint">Your notes are encrypted on this device before they are sent anywhere, including to our servers.</p>
+			<p className="hint">
+				Your notes are encrypted on this device before they are sent anywhere, including to our
+				servers.
+			</p>
 			<Button>Save</Button>
 		</section>
 	);

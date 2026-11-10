@@ -15,11 +15,11 @@ npx facetshot init --agent all
 
 What this does:
 
-| Agent | MCP server | Instructions |
-|---|---|---|
-| Claude Code | added to `.mcp.json` | skill in `.claude/skills/facetshot/` |
-| Cursor | added to `.cursor/mcp.json` | rule in `.cursor/rules/facetshot.mdc` |
-| Codex | printed for you to add to `~/.codex/config.toml` | skill in `.agents/skills/facetshot/` |
+| Agent       | MCP server                                       | Instructions                          |
+| ----------- | ------------------------------------------------ | ------------------------------------- |
+| Claude Code | added to `.mcp.json`                             | skill in `.claude/skills/facetshot/`  |
+| Cursor      | added to `.cursor/mcp.json`                      | rule in `.cursor/rules/facetshot.mdc` |
+| Codex       | printed for you to add to `~/.codex/config.toml` | skill in `.agents/skills/facetshot/`  |
 
 It also suggests one line for your `AGENTS.md` or `CLAUDE.md`; pass `--yes` to add it. Commit these files so
 everyone on the team, and every agent, gets the same setup.
@@ -41,13 +41,13 @@ It looks for `facetshot.config.ts` from the folder it's started in. Set `FACETSH
 facetshot exposes five tools. Few, small tools are deliberate: every tool's description sits in the agent's context
 on every turn.
 
-| Tool | What it does | Returns |
-|---|---|---|
-| `check` | reads screens for problems without taking pictures | a text list of problems |
+| Tool      | What it does                                                  | Returns                                               |
+| --------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| `check`   | reads screens for problems without taking pictures            | a text list of problems                               |
 | `capture` | takes pictures on the given (or default) devices and variants | a summary and one contact sheet per screen, as images |
-| `compare` | repeats the last capture (or the targets given) and compares | only the sheets that changed |
-| `inspect` | one picture at full size, or a region of it | an image and that picture's problems |
-| `list` | devices, variants, profiles, checks, recent runs | text |
+| `compare` | repeats the last capture (or the targets given) and compares  | only the sheets that changed                          |
+| `inspect` | one picture at full size, or a region of it                   | an image and that picture's problems                  |
+| `list`    | devices, variants, profiles, checks, recent runs              | text                                                  |
 
 Every tool takes targets the same way the command line does (`/path`, `app:/path`, `story:…`, `preview:…`, a flow
 file) and optional `devices` and `variants`. `capture` and `check` also take `steps` — clicks, typing and waits played
@@ -56,11 +56,11 @@ agent can look at a menu or a dialog without writing a flow file.
 
 `capture` can hand pictures back three ways, chosen with `images`:
 
-| `images` | Returns | Use it for |
-|---|---|---|
-| `sheets` (default) | one grid per screen | seeing how a screen holds up everywhere |
-| `cells` | each picture on its own, up to 8, scaled to 1024 px | a few cells where details matter |
-| `none` | paths only | when the agent's client shows files itself, or only the text matters |
+| `images`           | Returns                                             | Use it for                                                           |
+| ------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `sheets` (default) | one grid per screen                                 | seeing how a screen holds up everywhere                              |
+| `cells`            | each picture on its own, up to 8, scaled to 1024 px | a few cells where details matter                                     |
+| `none`             | paths only                                          | when the agent's client shows files itself, or only the text matters |
 
 Long runs report progress as they go, so an agent (and you, watching it) can see it's working.
 

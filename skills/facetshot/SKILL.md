@@ -17,7 +17,7 @@ running between calls, so a second look takes seconds.
 2. **Look at what matters.** Take pictures of the screens worth seeing:
    - MCP: `capture` with `targets: ["/settings", "/settings/profile"]`
    - shell: `facetshot /settings /settings/profile`
-   You get one sheet per screen: rows are devices, columns are variants. Read the sheet; don't open every picture.
+     You get one sheet per screen: rows are devices, columns are variants. Read the sheet; don't open every picture.
 3. **Fix**, then **compare** to see only what changed:
    - MCP: `compare` (repeats your last capture)
    - shell: `facetshot diff`
@@ -26,13 +26,13 @@ running between calls, so a second look takes seconds.
 
 ## Targets
 
-| Write | For |
-| --- | --- |
-| `/path` or a full URL | a web page |
-| `app:/path` | an app screen on a simulator or a desktop window (opened by deep link) |
-| `story:button--primary`, `story:Button/*` | Storybook stories |
-| `preview:Book/Page` | SwiftUI scenes rendered without a simulator |
-| `flows/name.yaml` | a state you reach by clicking and typing (see reference.md) |
+| Write                                     | For                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------- |
+| `/path` or a full URL                     | a web page                                                             |
+| `app:/path`                               | an app screen on a simulator or a desktop window (opened by deep link) |
+| `story:button--primary`, `story:Button/*` | Storybook stories                                                      |
+| `preview:Book/Page`                       | SwiftUI scenes rendered without a simulator                            |
+| `flows/name.yaml`                         | a state you reach by clicking and typing (see reference.md)            |
 
 To see a menu, dialog or half-filled form, add steps (MCP `steps`, shell `--do`):
 `["click:role=button[name='Delete']", "wait:role=dialog", "shot:confirm"]`.

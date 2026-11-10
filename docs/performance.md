@@ -25,12 +25,12 @@ result. And because agents happily start ten things at once, it's just as carefu
 Measured on a 10-core Apple-silicon Mac on the same day, against the same screens, compared with how the same pictures
 were taken before (a dev server or a fresh app launch per picture, a fixed wait, one picture at a time):
 
-| Job | Before | facetshot, first run | facetshot, next runs |
-|---|---|---|---|
-| A large web app: 10 screens × 4 devices × 3 variants = 120 pictures | 323 s | 155 s (incl. a 27 s build and starting the API) | 131 s |
-| The same app on iOS: 10 screens × 3 devices × 3 variants = 90 pictures, simulators booted, app built | ~1,250 s | 390 s (incl. booting) | 317 s |
-| A small web app: 3 screens × 2 devices × 2 variants = 12 pictures | — | ~3 s | ~1.5 s |
-| SwiftUI snapshots: 40 scenes × 3 devices × 3 variants = 360 pictures (iOS) | — | ~2 min build + ~2.5 min | ~2.5 min |
+| Job                                                                                                  | Before   | facetshot, first run                            | facetshot, next runs |
+| ---------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------- | -------------------- |
+| A large web app: 10 screens × 4 devices × 3 variants = 120 pictures                                  | 323 s    | 155 s (incl. a 27 s build and starting the API) | 131 s                |
+| The same app on iOS: 10 screens × 3 devices × 3 variants = 90 pictures, simulators booted, app built | ~1,250 s | 390 s (incl. booting)                           | 317 s                |
+| A small web app: 3 screens × 2 devices × 2 variants = 12 pictures                                    | —        | ~3 s                                            | ~1.5 s               |
+| SwiftUI snapshots: 40 scenes × 3 devices × 3 variants = 360 pictures (iOS)                           | —        | ~2 min build + ~2.5 min                         | ~2.5 min             |
 
 Other work was running on the machine during these (load averages of 5 to 240), so expect your own numbers to vary.
 Most of the remaining time in the iOS row is the iPad's large screenshots, taken one after another on one simulator.

@@ -69,11 +69,11 @@ facetshot removes the file before every screen, so write it again after each nav
 
 ## Variants on iOS
 
-| Variant | How |
-|---|---|
-| `light`, `dark` | the simulator's appearance, switched live |
+| Variant                  | How                                                                         |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `light`, `dark`          | the simulator's appearance, switched live                                   |
 | `large`, `xlarge`, `xxl` | Dynamic Type: accessibility medium, extra large and extra-extra-extra large |
-| `contrast` | Increase Contrast |
+| `contrast`               | Increase Contrast                                                           |
 
 Locale, right-to-left, sign-in personas, offline and motion aren't applied on the simulator yet; the picture says so
 in its notes. Pass what your app needs through `env` and variants of your own if you need them now.

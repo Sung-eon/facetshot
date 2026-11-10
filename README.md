@@ -4,7 +4,7 @@
 
 facetshot takes pictures of your web pages, iOS and Mac screens, Electron and Tauri windows, Storybook stories and
 SwiftUI views across a grid of devices and display settings, and gives you back one contact sheet per screen plus a
-short list of what looks broken. It was built for AI coding agents, which need to *see* a UI change before they can
+short list of what looks broken. It was built for AI coding agents, which need to _see_ a UI change before they can
 honestly say it's done — but it works just as well from your own terminal.
 
 ```
@@ -23,11 +23,11 @@ Found (2):
 Each sheet is a grid — devices down the side, variants across the top — so one image shows you how a screen holds up
 everywhere:
 
-| | light | dark | large |
-|---|---|---|---|
-| **desktop** | ▢ | ▢ | ▢ |
-| **tablet** | ▢ | ▢ | ▢ |
-| **phone** | ▢ | ▢ | ▢ |
+|             | light | dark | large |
+| ----------- | ----- | ---- | ----- |
+| **desktop** | ▢     | ▢    | ▢     |
+| **tablet**  | ▢     | ▢    | ▢     |
+| **phone**   | ▢     | ▢    | ▢     |
 
 ## Why it exists
 
@@ -76,13 +76,13 @@ This registers facetshot's MCP server and adds a short skill that teaches the ag
 
 ## What you can point it at
 
-| Write | To see |
-|---|---|
-| `/settings` or `https://…` | a web page |
-| `app:/inbox` | an app screen, opened by deep link on an iOS simulator or in a desktop window |
-| `story:button--primary`, `story:Button/*` | Storybook stories |
-| `preview:Settings/Account` | SwiftUI views rendered without launching the app |
-| `flows/delete-account.yaml` | a state you reach by clicking and typing |
+| Write                                     | To see                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------------------- |
+| `/settings` or `https://…`                | a web page                                                                    |
+| `app:/inbox`                              | an app screen, opened by deep link on an iOS simulator or in a desktop window |
+| `story:button--primary`, `story:Button/*` | Storybook stories                                                             |
+| `preview:Settings/Account`                | SwiftUI views rendered without launching the app                              |
+| `flows/delete-account.yaml`               | a state you reach by clicking and typing                                      |
 
 Choose devices with `--on` and display settings with `--as`, and click or type your way to a state first with `--do`:
 
@@ -113,16 +113,16 @@ requests (`--format md`), and a `manifest.json` for scripts (`--format json`).
 
 ## Platform support
 
-| | macOS | Linux | Windows |
-|---|---|---|---|
-| Web pages (Chromium, WebKit, Firefox) | ✓ | ✓ | ✓ |
-| Storybook | ✓ | ✓ | ✓ |
-| Electron | ✓ | ✓ | ✓ |
-| iOS simulator | ✓ | — | — |
-| SwiftUI snapshots | ✓ | — | — |
-| Native Mac windows | ✓ | — | — |
-| Tauri | ✓ (window, and the UI in WebKit) | planned | planned |
-| Android | planned | planned | planned |
+|                                       | macOS                            | Linux   | Windows |
+| ------------------------------------- | -------------------------------- | ------- | ------- |
+| Web pages (Chromium, WebKit, Firefox) | ✓                                | ✓       | ✓       |
+| Storybook                             | ✓                                | ✓       | ✓       |
+| Electron                              | ✓                                | ✓       | ✓       |
+| iOS simulator                         | ✓                                | —       | —       |
+| SwiftUI snapshots                     | ✓                                | —       | —       |
+| Native Mac windows                    | ✓                                | —       | —       |
+| Tauri                                 | ✓ (window, and the UI in WebKit) | planned | planned |
+| Android                               | planned                          | planned | planned |
 
 Everything marked ✓ is tested on macOS. Web, Storybook and Electron use only Playwright, which runs the same way on
 Linux and Windows, but haven't been tried there yet — reports welcome.

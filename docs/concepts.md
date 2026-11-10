@@ -6,35 +6,35 @@ A few ideas explain everything facetshot does.
 
 Every picture is one **target** on one **device** in one **variant**.
 
-- A **target** is *what* you want to see: a web path, an app screen, a Storybook story, a SwiftUI view, or a flow
+- A **target** is _what_ you want to see: a web path, an app screen, a Storybook story, a SwiftUI view, or a flow
   (a few clicks and keystrokes that end in a picture). You tell facetshot which kind by how you write it:
 
-  | Written as | Kind |
-  |---|---|
-  | `/path`, `https://…` | web page |
-  | `app:/path` | app screen (iOS simulator or desktop window), opened by deep link |
-  | `story:id`, `story:Title/*` | Storybook story |
-  | `preview:Name`, `preview:Group/*` | SwiftUI scene |
-  | `flows/name.yaml` | flow |
+  | Written as                        | Kind                                                              |
+  | --------------------------------- | ----------------------------------------------------------------- |
+  | `/path`, `https://…`              | web page                                                          |
+  | `app:/path`                       | app screen (iOS simulator or desktop window), opened by deep link |
+  | `story:id`, `story:Title/*`       | Storybook story                                                   |
+  | `preview:Name`, `preview:Group/*` | SwiftUI scene                                                     |
+  | `flows/name.yaml`                 | flow                                                              |
 
   You can also give targets short names in your config (`aliases: { cart: '/shop/cart' }`).
 
-- A **device** is *where*: a browser window of a certain size, a simulator, or a desktop window size. The built-in
+- A **device** is _where_: a browser window of a certain size, a simulator, or a desktop window size. The built-in
   ones are below; your config can add more.
 
-  | Name | What |
-  |---|---|
-  | `desktop` | browser, 1440×900 |
-  | `laptop` | browser, 1280×800 |
-  | `tablet-landscape`, `tablet-portrait` | browser, 1180×820 and 820×1180, touch |
-  | `phone`, `phone-small` | mobile browser, 390×844 and 360×740 |
-  | `iphone` | iPhone simulator |
-  | `ipad-portrait`, `ipad-landscape`, `ipad-half` | iPad simulator, both ways up and in half of Split View |
-  | `window`, `window-small`, `mac`, `mac-narrow` | a desktop app's window at 1280×800, 960×640, 1280×800, 1040×640 |
+  | Name                                           | What                                                            |
+  | ---------------------------------------------- | --------------------------------------------------------------- |
+  | `desktop`                                      | browser, 1440×900                                               |
+  | `laptop`                                       | browser, 1280×800                                               |
+  | `tablet-landscape`, `tablet-portrait`          | browser, 1180×820 and 820×1180, touch                           |
+  | `phone`, `phone-small`                         | mobile browser, 390×844 and 360×740                             |
+  | `iphone`                                       | iPhone simulator                                                |
+  | `ipad-portrait`, `ipad-landscape`, `ipad-half` | iPad simulator, both ways up and in half of Split View          |
+  | `window`, `window-small`, `mac`, `mac-narrow`  | a desktop app's window at 1280×800, 960×640, 1280×800, 1040×640 |
 
   **Groups** name several devices at once: `review` (desktop, both tablets, phone), `web`, `ios`, `apple`, `windows`.
 
-- A **variant** is *how*: light or dark, larger text, more contrast, right-to-left, offline, a different signed-in
+- A **variant** is _how_: light or dark, larger text, more contrast, right-to-left, offline, a different signed-in
   person. Built in: `light`, `dark`, `large`, `xlarge`, `xxl`, `contrast`, `forced`, `rtl`, `offline`, `print`.
   Join variants with `+` to combine them: `dark+large`. Groups: `modes` (light, dark, large) and `a11y` (light, dark,
   xxl, contrast).
@@ -77,7 +77,7 @@ The last 20 runs are kept. To keep one for good, save it as a [baseline](compari
 
 ## The background helper
 
-The first time you run facetshot it starts a small background process (the *daemon*). The daemon keeps the browser,
+The first time you run facetshot it starts a small background process (the _daemon_). The daemon keeps the browser,
 your app's servers, simulators and test data ready between runs, which is most of why the second run is fast. Every
 run on the machine goes through it — from your terminal, from agents, from MCP — so they share one browser and the
 machine-wide limits.

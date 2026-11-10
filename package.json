@@ -17,7 +17,9 @@
 	},
 	"scripts": {
 		"test": "bun test test",
-		"check": "bun --bun tsc --noEmit -p ."
+		"check": "bun --bun tsc --noEmit -p .",
+		"format": "prettier --write .",
+		"lint": "prettier --check ."
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "1.32.2",
@@ -31,7 +33,9 @@
 		"axe-core": "4.14.0"
 	},
 	"devDependencies": {
+		"@types/bun": "1.4.4",
 		"@types/pngjs": "6.0.5",
-		"@types/bun": "1.4.4"
+		"prettier": "3.9.10",
+		"typescript": "6.0.3"
 	}
 }

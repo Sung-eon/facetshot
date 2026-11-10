@@ -1,0 +1,5 @@
+bun.lock
+node_modules
+examples/*/dist
+examples/*/storybook-static
+examples/*/src-tauri/target

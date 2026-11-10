@@ -21,21 +21,21 @@ facetshot clean [--all]                 remove runs, test data, simulators; stop
 facetshot /settings /billing --on phone,desktop --as light,dark+large
 ```
 
-| Option | Meaning |
-|---|---|
-| `--on <devices>` | devices or groups, comma-separated. Default: the profile's |
-| `--as <variants>` | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's |
-| `-p, --profile <name>` | a profile from your config (default: `default`) |
-| `--diff [against]` | compare with `previous` (the default), a baseline name, a run id, or a folder |
-| `--checks <names>` | checks to run, comma-separated, or `all` (see [Checks](checks.md)) |
-| `--out <folder>` | write this run to a folder of your choice instead of `.facetshot/runs/<id>` |
-| `--clean` | empty `--out` first |
-| `--sheet-width <px>` | contact sheet width (default 1600) |
-| `--do <step>` | a step before the picture, repeatable: `--do "click:text=Save" --do shot:saved` ([Flows](flows.md#without-a-file)) |
+| Option                    | Meaning                                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                         |
+| `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                           |
+| `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                    |
+| `--diff [against]`        | compare with `previous` (the default), a baseline name, a run id, or a folder                                                      |
+| `--checks <names>`        | checks to run, comma-separated, or `all` (see [Checks](checks.md))                                                                 |
+| `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                        |
+| `--clean`                 | empty `--out` first                                                                                                                |
+| `--sheet-width <px>`      | contact sheet width (default 1600)                                                                                                 |
+| `--do <step>`             | a step before the picture, repeatable: `--do "click:text=Save" --do shot:saved` ([Flows](flows.md#without-a-file))                 |
 | `--format text\|md\|json` | what to print: the short summary (default), Markdown with each sheet as an image (for a pull request or an issue), or the manifest |
-| `--open` | open `report.html` — every picture on one page — when the run is done |
-| `--no-daemon` | do everything in this process; nothing stays running afterwards |
-| `-c, --config <file>` | use this config instead of looking for `facetshot.config.ts` upwards from here |
+| `--open`                  | open `report.html` — every picture on one page — when the run is done                                                              |
+| `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                    |
+| `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from here                                                     |
 
 Targets are described in [How it works](concepts.md#targets-devices-and-variants).
 
@@ -84,23 +84,23 @@ and deletes facetshot's own simulators. Baselines stay unless you pass `--all`.
 
 ## Exit codes
 
-| Code | Meaning |
-|---|---|
-| 0 | every picture was taken |
-| 1 | some pictures failed, or something went wrong around them (the summary says what) |
-| 2 | the command or the config is wrong |
-| 3 | something this machine needs is missing or busy (a browser, Xcode, a port, a permission) |
-| 4 | a bug in facetshot — please report it |
+| Code | Meaning                                                                                  |
+| ---- | ---------------------------------------------------------------------------------------- |
+| 0    | every picture was taken                                                                  |
+| 1    | some pictures failed, or something went wrong around them (the summary says what)        |
+| 2    | the command or the config is wrong                                                       |
+| 3    | something this machine needs is missing or busy (a browser, Xcode, a port, a permission) |
+| 4    | a bug in facetshot — please report it                                                    |
 
 Problems found by checks don't change the exit code: they're there for you to read.
 
 ## Environment variables
 
-| Variable | Effect |
-|---|---|
-| `FACETSHOT_HOME` | where machine-wide state lives (default `~/.facetshot`): the daemon's socket and log, locks, caches |
-| `FACETSHOT_NO_DAEMON` | same as `--no-daemon` for every command, including the MCP server |
-| `FACETSHOT_IDLE_MINUTES` | how long the background helper waits before stopping (default 15) |
-| `FACETSHOT_CONFIG` | the config the MCP server uses |
-| `FACETSHOT_CWD` | the folder the MCP server looks for a config from |
-| `FACETSHOT_MCP_MAX_IMAGES` | sheets per MCP answer (default 4) |
+| Variable                   | Effect                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------- |
+| `FACETSHOT_HOME`           | where machine-wide state lives (default `~/.facetshot`): the daemon's socket and log, locks, caches |
+| `FACETSHOT_NO_DAEMON`      | same as `--no-daemon` for every command, including the MCP server                                   |
+| `FACETSHOT_IDLE_MINUTES`   | how long the background helper waits before stopping (default 15)                                   |
+| `FACETSHOT_CONFIG`         | the config the MCP server uses                                                                      |
+| `FACETSHOT_CWD`            | the folder the MCP server looks for a config from                                                   |
+| `FACETSHOT_MCP_MAX_IMAGES` | sheets per MCP answer (default 4)                                                                   |

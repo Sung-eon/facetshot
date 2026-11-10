@@ -8,12 +8,12 @@ A **flow** gets you there with a few steps, and takes a picture wherever you say
 start: /settings/account
 steps:
   - click: "role=button[name='Delete account']"
-  - wait: "role=dialog"
+  - wait: 'role=dialog'
   - shot: confirm
-  - fill: "input[name=confirm]"
-    with: "wrong words"
+  - fill: 'input[name=confirm]'
+    with: 'wrong words'
   - click: "role=button[name='Delete']"
-  - wait: "text=Type DELETE to confirm"
+  - wait: 'text=Type DELETE to confirm'
   - shot: error
 ```
 
@@ -38,21 +38,21 @@ Write each step as `<step>:<value>`; `fill` and `select` take `<selector>=<text>
 
 ## Steps
 
-| Step | Does |
-|---|---|
-| `click: <selector>` | clicks the first match |
-| `tap: <selector>` | taps it (touch devices) |
-| `hover: <selector>` | moves the pointer over it |
-| `focus: <selector>` | focuses it |
-| `fill: <selector>` + `with: <text>` | replaces a field's text |
-| `type: <text>` | types into whatever has focus |
-| `press: <key>` | presses a key: `Enter`, `Escape`, `Control+A` |
-| `select: <selector>` + `option: <value>` | picks an option in a `<select>` |
-| `scroll: <selector>` or `scroll: <pixels>` | scrolls an element into view, or scrolls by that much |
-| `wait: <selector>` | waits until it's visible (up to 15 s) |
-| `gone: <selector>` | waits until it's hidden |
-| `goto: <path>` | opens another address |
-| `shot: <name>` | waits for the screen to be ready, then takes a picture |
+| Step                                       | Does                                                   |
+| ------------------------------------------ | ------------------------------------------------------ |
+| `click: <selector>`                        | clicks the first match                                 |
+| `tap: <selector>`                          | taps it (touch devices)                                |
+| `hover: <selector>`                        | moves the pointer over it                              |
+| `focus: <selector>`                        | focuses it                                             |
+| `fill: <selector>` + `with: <text>`        | replaces a field's text                                |
+| `type: <text>`                             | types into whatever has focus                          |
+| `press: <key>`                             | presses a key: `Enter`, `Escape`, `Control+A`          |
+| `select: <selector>` + `option: <value>`   | picks an option in a `<select>`                        |
+| `scroll: <selector>` or `scroll: <pixels>` | scrolls an element into view, or scrolls by that much  |
+| `wait: <selector>`                         | waits until it's visible (up to 15 s)                  |
+| `gone: <selector>`                         | waits until it's hidden                                |
+| `goto: <path>`                             | opens another address                                  |
+| `shot: <name>`                             | waits for the screen to be ready, then takes a picture |
 
 A flow with no `shot` step takes one picture at the end.
 

@@ -97,13 +97,13 @@ facetshot launches the app for each picture, finds its window and captures only 
 a running SwiftUI app opens a second window instead of navigating the first, so the screen is given at launch.) It tells
 the app what it wants through environment variables, which a few lines in your app's debug build can honour:
 
-| Variable | Means |
-|---|---|
-| `FACETSHOT_ROUTE` | the deep link (`myapp:///settings`) to open at launch |
-| `FACETSHOT_WINDOW_SIZE` | `1280x800`: size the main window's content to this |
-| `FACETSHOT_APPEARANCE` | `light` or `dark` |
-| `FACETSHOT_TEXT` | `default`, `large`, `xlarge` or `xxl` |
-| `FACETSHOT_READY_FILE` | write this file when the screen has finished loading (with `readyFile: true`) |
+| Variable                | Means                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `FACETSHOT_ROUTE`       | the deep link (`myapp:///settings`) to open at launch                         |
+| `FACETSHOT_WINDOW_SIZE` | `1280x800`: size the main window's content to this                            |
+| `FACETSHOT_APPEARANCE`  | `light` or `dark`                                                             |
+| `FACETSHOT_TEXT`        | `default`, `large`, `xlarge` or `xxl`                                         |
+| `FACETSHOT_READY_FILE`  | write this file when the screen has finished loading (with `readyFile: true`) |
 
 Without a ready file, facetshot waits until two captures in a row are identical. If the app doesn't size its own
 window, facetshot asks System Events to resize it, which needs the Accessibility permission. Pictures come out at the

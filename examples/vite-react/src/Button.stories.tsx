@@ -14,6 +14,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {};
 export const Secondary: Story = { args: { variant: 'secondary' } };
-export const LongLabel: Story = { args: { children: 'Save changes and send them to everyone on the team' } };
+export const LongLabel: Story = {
+	args: { children: 'Save changes and send them to everyone on the team' }
+};
 /** A story facetshot leaves out: the `facetshot-skip` tag. */
 export const Playground: Story = { tags: ['facetshot-skip'] };

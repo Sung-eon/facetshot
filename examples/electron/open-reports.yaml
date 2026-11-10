@@ -1,6 +1,6 @@
 # A flow in the Electron app: start on Today, click through to Reports, take a picture there.
 start: /
 steps:
-  - click: "text=Reports"
+  - click: 'text=Reports'
   - wait: "section[data-view='/reports'] h1"
   - shot: reports-from-today

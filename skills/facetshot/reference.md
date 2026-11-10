@@ -8,10 +8,10 @@ A flow reaches a state a URL can't. Selectors are Playwright's: CSS, `text=Delet
 start: /settings
 steps:
   - click: "role=button[name='Delete account']"
-  - wait: "role=dialog"
+  - wait: 'role=dialog'
   - shot: confirm
-  - fill: "input[name=confirm]"
-    with: "delete"
+  - fill: 'input[name=confirm]'
+    with: 'delete'
   - shot: filled
 ```
 
@@ -40,6 +40,7 @@ ready: {
 ## Results
 
 Each run writes to `.facetshot/runs/<id>/` (and `.facetshot/latest`):
+
 - `<screen>.sheet.jpg` — the contact sheet
 - `<screen>/<device>.<variant>.png` — each picture
 - `manifest.json` — every cell: status, error, timing, findings, diff ratio

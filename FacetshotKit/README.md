@@ -35,24 +35,24 @@ Most people never run the commands below themselves: the facetshot CLI runs them
 
 ## Running it
 
-| | Command |
-|---|---|
-| Mac (any package) | `FACETSHOT_OUT=/abs/out swift test --filter Screens` |
-| iOS simulator, build once | `xcodebuild build-for-testing -scheme <Package>-Package -destination 'platform=iOS Simulator,name=<sim>' -derivedDataPath <dd>` |
+|                              | Command                                                                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mac (any package)            | `FACETSHOT_OUT=/abs/out swift test --filter Screens`                                                                                                                                                      |
+| iOS simulator, build once    | `xcodebuild build-for-testing -scheme <Package>-Package -destination 'platform=iOS Simulator,name=<sim>' -derivedDataPath <dd>`                                                                           |
 | iOS simulator, take pictures | `TEST_RUNNER_FACETSHOT_OUT=/abs/out xcodebuild test-without-building -scheme <Package>-Package -destination 'platform=iOS Simulator,name=<sim>' -derivedDataPath <dd> -only-testing:<TestTarget>/Screens` |
 
 `xcodebuild` hands `TEST_RUNNER_<NAME>` to the test process as `<NAME>`; FacetshotKit also reads the prefixed name.
 
 ## The environment
 
-| Variable | Meaning |
-|---|---|
-| `FACETSHOT_OUT` | Absolute output folder. Absent: do nothing. |
-| `FACETSHOT_LIST=1` | Write `<out>/scenes.json` (`[{"id","title","tags"}]`) and render nothing. |
-| `FACETSHOT_SCENES` | Comma-separated patterns over scene ids. No `*`/`?`: a substring. Otherwise a glob over the whole id: `*` within a `/` segment, `**` across segments, `?` one character. Empty: every scene. |
-| `FACETSHOT_DEVICES` | JSON array of devices (below). Default: a 440×956 @3x iPhone on iOS, a 1280×800 @2x window on macOS. |
-| `FACETSHOT_VARIANTS` | JSON array of variants (below). Default: `light` and `dark`. |
-| `FACETSHOT_SETTLE_MS` | The longest a picture waits for its view to stop changing (default 1500). |
+| Variable              | Meaning                                                                                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FACETSHOT_OUT`       | Absolute output folder. Absent: do nothing.                                                                                                                                                  |
+| `FACETSHOT_LIST=1`    | Write `<out>/scenes.json` (`[{"id","title","tags"}]`) and render nothing.                                                                                                                    |
+| `FACETSHOT_SCENES`    | Comma-separated patterns over scene ids. No `*`/`?`: a substring. Otherwise a glob over the whole id: `*` within a `/` segment, `**` across segments, `?` one character. Empty: every scene. |
+| `FACETSHOT_DEVICES`   | JSON array of devices (below). Default: a 440×956 @3x iPhone on iOS, a 1280×800 @2x window on macOS.                                                                                         |
+| `FACETSHOT_VARIANTS`  | JSON array of variants (below). Default: `light` and `dark`.                                                                                                                                 |
+| `FACETSHOT_SETTLE_MS` | The longest a picture waits for its view to stop changing (default 1500).                                                                                                                    |
 
 A device: `{"name":"iphone","width":440,"height":956,"scale":3,"idiom":"phone","orientation":"portrait","horizontalSizeClass":"compact","verticalSizeClass":"regular","safeArea":{"top":62,"bottom":34,"left":0,"right":0}}`.
 `idiom` is `phone`, `pad` or `mac`; `orientation` defaults from width and height; size classes default to what iOS would
@@ -92,10 +92,10 @@ the window's interface style and appearance), so views backed by UIKit or AppKit
 until two in a row are byte-for-byte the same (layout done, `.task` work in, animations over), or until the settle time is up.
 
 - **iOS** — a `UIHostingController` as the root of a `UIWindow`, with the safe area given as `additionalSafeAreaInsets`.
-  - *With an app host* (a test target whose `TEST_HOST` is an app), the window joins the host's window scene and is drawn
+  - _With an app host_ (a test target whose `TEST_HOST` is an app), the window joins the host's window scene and is drawn
     with `drawHierarchy(in:afterScreenUpdates:)`: what the render server shows, so Liquid Glass, materials, sheets and alerts
     are in it. (This path is written but not yet exercised by a project's tests; the package-test path below is.)
-  - *Without one* (a Swift package's tests), there is no window scene and no render server to ask, so the layer
+  - _Without one_ (a Swift package's tests), there is no window scene and no render server to ask, so the layer
     tree is drawn with `CALayer.render(in:)`. Layout, text, colour, `List`, `ScrollView`, `TextField` and the rest are right;
     **glass and blur are drawn flat, and presentations (sheets, alerts, popovers) and other windows do not appear**. Give a scene
     the content of a sheet rather than the sheet when it should be pictured everywhere.
