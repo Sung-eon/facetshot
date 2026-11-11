@@ -18,9 +18,8 @@ import type { Locator, Page } from 'playwright';
 import { UsageError } from './errors.ts';
 
 /**
- * A step. Where a step takes an element, it is a Playwright selector (CSS, `text=`, `role=`), `#<n>` for an element a
- * session listed (`look`), or `@<x>,<y>` for a point on the screen in CSS pixels (the session's pictures are in the
- * same units).
+ * A step. Where a step takes an element, it is a Playwright selector (CSS, `text=`, `role=`), a ref a session listed
+ * (`e12`), or `@<x>,<y>` for a point on the screen in CSS pixels (the session's pictures are in the same units).
  */
 export type Step =
 	| { click: string }
@@ -207,14 +206,13 @@ export async function playInPage(
 }
 
 const TIMEOUT = 10_000;
-/** The element a step names, or the point it names (`@x,y`). `#n` is an element a session listed. */
+/** The element a step names, or the point it names (`@x,y`). */
 function aim(page: Page, target: string): { point: { x: number; y: number } } | { at: Locator } {
 	const point = /^@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(target.trim());
 	if (point) return { point: { x: Number(point[1]), y: Number(point[2]) } };
-	const ref = /^#(\d+)$/.exec(target.trim());
-	return {
-		at: page.locator(ref ? `[data-facetshot-ref="${ref[1]}"]` : target).first()
-	};
+	// A ref from a session's list (`e12`, `ref=e12`, `f1e3` in a frame), from Playwright's accessibility snapshot.
+	const ref = /^(?:ref=)?((?:f\d+)?e\d+)$/.exec(target.trim());
+	return { at: ref ? page.getByRef(ref[1]) : page.locator(target).first() };
 }
 
 /** Does one step (anything but `shot`) in a page. `open` shows an address the way the driver does. */

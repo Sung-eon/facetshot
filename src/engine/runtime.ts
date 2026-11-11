@@ -45,10 +45,19 @@ export class Runtime {
 					if (/Executable doesn't exist|browserType.launch/.test(message)) {
 						throw new EnvironmentError(
 							`Playwright's ${engine} isn't installed.`,
-							`Install it once: npx playwright install ${engine}`
+							`Install it once: bunx playwright install ${engine}`
 						);
 					}
-					throw error;
+					// What the browser itself said as it gave up, rather than Playwright's general "failed to launch".
+					const said = message
+						.replace(/\x1b\[[0-9;]*m/g, '')
+						.split('\n')
+						.map((line) => /\[err\]\s*(.+)$/.exec(line)?.[1]?.trim())
+						.filter((line): line is string => !!line && !/headless mode/i.test(line));
+					throw new EnvironmentError(
+						`${engine} didn't start${said.length ? `: ${said[said.length - 1]}` : '.'}`,
+						`Try reinstalling it (bunx playwright install ${engine}), or leave ${engine} out of --browser.`
+					);
 				}
 			})();
 			this.browsers.set(engine, browser);

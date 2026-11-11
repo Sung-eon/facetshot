@@ -7,10 +7,10 @@ enough to fit in the agent's context.
 ## Connecting your agent
 
 ```sh
-npx facetshot init --agent claude     # Claude Code
-npx facetshot init --agent cursor     # Cursor
-npx facetshot init --agent codex      # Codex
-npx facetshot init --agent all
+bunx facetshot init --agent claude     # Claude Code
+bunx facetshot init --agent cursor     # Cursor
+bunx facetshot init --agent codex      # Codex
+bunx facetshot init --agent all
 ```
 
 What this does:
@@ -29,7 +29,7 @@ To set it up by hand, the MCP server is a local stdio server:
 ```json
 {
 	"mcpServers": {
-		"facetshot": { "command": "npx", "args": ["facetshot", "mcp"] }
+		"facetshot": { "command": "bunx", "args": ["facetshot", "mcp"] }
 	}
 }
 ```
@@ -72,8 +72,8 @@ Long runs report progress as they go, so an agent (and you, watching it) can see
 When the agent doesn't know the steps yet — what's in this menu, what happens after Save — `capture` with `steps`
 means guessing them all up front. A session lets it look, decide and act one step at a time instead:
 
-1. `open` a page. The answer lists what's on screen, numbered: `#6 button "Save" @496,362`.
-2. `act` with steps that use those numbers, a selector, or a point on the picture: `["fill:#4=Grace", "click:#6"]`,
+1. `open` a page. The answer lists what's on screen, each with a ref: `e18 button "Save" @195,362`.
+2. `act` with steps that use those refs, a selector, or a point on the picture: `["fill:e14=Grace", "click:e18"]`,
    `["rightclick:@320,120"]`. Each answer is the new picture, the log lines since the last step (console, errors,
    requests, the servers' output) and any console errors or failed requests.
 3. `close` it, with `saveAs` to keep the steps as a flow that `capture` can play on every device.

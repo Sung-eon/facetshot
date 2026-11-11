@@ -56,6 +56,7 @@ const COMMANDS = [
 /** Flags that take a value. Everything else is a switch. */
 const VALUED = new Set([
 	'url',
+	'browser',
 	'on',
 	'as',
 	'p',
@@ -140,8 +141,9 @@ Usage
 
 Sessions (a page kept open to work step by step)
   facetshot open <target> [--on device] [--as variant]  open a page; prints its id, a picture, logs and what's clickable
-  facetshot act <id> <step…> [--elements] [--full]       do steps, then show the page again
-  facetshot look <id> [--elements] [--full]              show the page again
+  facetshot act <id> <step…> [--full] [--tree]          do steps, then show the page again
+  facetshot look <id> [--full] [--tree]                  show the page again
+                         (--no-elements, --no-picture: leave out the list of what's on screen, or the picture)
   facetshot close <id> [--save flows/name.yaml]          close it (and keep the steps that worked as a flow)
   facetshot sessions                                    the open sessions
   facetshot logs <id|run|latest> [--follow] [--level debug|info|warn|error] [--json]
@@ -150,7 +152,7 @@ Steps (--do, act, flows)
   click: dblclick: rightclick: tap: longpress: hover: focus:  <element>
   fill:<element>=<text>  select:<element>=<option>  drag:<element>><element>  type:<text>  press:Shift+A
   scroll:600  scroll:<element>  scroll:<element>=600  wait:<element>  gone:<element>  goto:/path  back  forward  reload
-  An element is a selector (text=Save, role=button[name='Save'], CSS), #n from a session's list, or @x,y on its picture.
+  An element is a selector (text=Save, role=button[name='Save'], CSS), a ref from a session's list (e12), or @x,y.
 
 Targets
   /path or https://…     a web page            app:/path        an app screen (simulator or desktop app)
@@ -160,6 +162,8 @@ Targets
 Options
   --on phone,desktop     devices or groups (default: the profile's)
   --as dark,large        variants; combine with + (dark+large)
+  --browser webkit       web pages in other engines too: chromium (the default), webkit (Safari's), firefox;
+                         or per device: --on phone@webkit
   -p, --profile name     a named set of devices and variants from your config
   --diff [against]       compare with the previous run, a baseline, or a run id
   --checks a,b|all       which checks to run (facetshot list checks)
@@ -375,6 +379,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 		targets: positional,
 		on: list(flags.on),
 		as: list(flags.as),
+		browsers: list(flags.browser),
 		profile: typeof flags.profile === 'string' ? flags.profile : undefined,
 		checks: list(flags.checks),
 		diff: typeof flags.diff === 'string' ? flags.diff : undefined,

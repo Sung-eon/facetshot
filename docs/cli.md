@@ -32,6 +32,7 @@ facetshot /settings /billing --on phone,desktop --as light,dark+large
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                         |
 | `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                           |
+| `--browser <engines>`     | web pages in other engines too: `chromium` (default), `webkit` (Safari's), `firefox`; or per device, `--on phone@webkit`           |
 | `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                    |
 | `--diff [against]`        | compare with `previous` (the default), a baseline name, a run id, or a folder                                                      |
 | `--checks <names>`        | checks to run, comma-separated, or `all` (see [Checks](checks.md))                                                                 |
@@ -93,13 +94,13 @@ and deletes facetshot's own simulators. Baselines stay unless you pass `--all`.
 
 See [Sessions](sessions.md) for the whole story.
 
-| Command            | Options                                                                                         |
-| ------------------ | ----------------------------------------------------------------------------------------------- |
-| `open <target>`    | `--on <device>`, `--as <variant>` (one each), `--json`                                          |
-| `act <id> <step…>` | `--elements` (list what's clickable), `--full` (whole page), `--level <level>` (logs), `--json` |
-| `look <id>`        | the same as `act`                                                                               |
-| `close <id>`       | `--save <file>`: write the steps that worked as a flow                                          |
-| `sessions`         | `--json`                                                                                        |
+| Command            | Options                                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `open <target>`    | `--on <device>`, `--as <variant>`, `--browser <engine>` (one each), `--json`                                                                                             |
+| `act <id> <step…>` | `--no-elements`, `--no-picture` (leave out the list or the picture), `--tree` (the page's text and structure), `--full` (whole page), `--level <level>` (logs), `--json` |
+| `look <id>`        | the same as `act`                                                                                                                                                        |
+| `close <id>`       | `--save <file>`: write the steps that worked as a flow                                                                                                                   |
+| `sessions`         | `--json`                                                                                                                                                                 |
 
 `act` exits with 1 when a step didn't work; the rest of its answer shows where the page ended up.
 

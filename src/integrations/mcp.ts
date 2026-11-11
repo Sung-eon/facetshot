@@ -31,6 +31,7 @@ import type { Manifest } from '../types.ts';
 import { VERSION } from '../version.ts';
 import { parseStep } from '../flows.ts';
 import { describeView, type View } from '../session.ts';
+import type { LogLevel } from '../logs.ts';
 
 /** How much image a single answer may carry: sheets, and the longest side of an inspected picture. */
 const MAX_SHEETS = Number(process.env.FACETSHOT_MCP_MAX_IMAGES ?? 4);
@@ -102,6 +103,32 @@ function cellImages(manifest: Manifest): Content[] {
 	return content;
 }
 
+/** A run as data, for clients that read structured results: where things are and what was found, no pictures. */
+function runData(manifest: Manifest): Record<string, unknown> {
+	return {
+		runId: manifest.runId,
+		out: manifest.out,
+		counts: manifest.counts,
+		errors: manifest.errors,
+		screens: manifest.screens.map((screen) => ({
+			...screen,
+			sheet: screen.sheet ? join(manifest.out, screen.sheet) : undefined
+		})),
+		findings: groupFindings(manifest).map(({ finding, screen, where }) => ({
+			...finding,
+			screen,
+			cells: where
+		})),
+		logs: manifest.logs
+			? {
+					...manifest.logs,
+					text: join(manifest.out, manifest.logs.text),
+					json: join(manifest.out, manifest.logs.json)
+				}
+			: undefined
+	};
+}
+
 const failure = (error: unknown) => ({
 	content: [{ type: 'text' as const, text: explain(error) }],
 	isError: true
@@ -114,6 +141,8 @@ export function createServer(): McpServer {
 			instructions:
 				'Use facetshot to see the app the way users do, after changing UI code and before saying it looks right. ' +
 				'Start with `check` (text only, cheap) to find broken screens, `capture` the ones worth seeing, fix, then `compare`. ' +
+				'To find out what a click, right-click or typing does, open a session (open, then act step by step, then close). ' +
+				'Read the logs in each answer before guessing why a screen looks wrong. ' +
 				'Never write your own screenshot script. Targets: "/path" for web pages, "app:/path" for app screens, ' +
 				'"story:id" for Storybook, "preview:Name" for SwiftUI scenes, a flow file for clicks and typing.'
 		}
@@ -153,6 +182,12 @@ export function createServer(): McpServer {
 				'Variants, e.g. ["light","dark","large"]; "dark+large" combines. Default: the profile\'s.'
 			),
 		profile: z.string().optional().describe('A named set of devices and variants from the config.'),
+		browsers: z
+			.array(z.enum(['chromium', 'webkit', 'firefox']))
+			.optional()
+			.describe(
+				'Browser engines for web pages, when asked to check them: "webkit" (Safari\'s engine), "firefox". Default: Chromium only.'
+			),
 		steps: z
 			.array(z.string())
 			.optional()
@@ -165,12 +200,14 @@ export function createServer(): McpServer {
 		devices?: string[];
 		variants?: string[];
 		profile?: string;
+		browsers?: string[];
 		steps?: string[];
 	};
 	const requestOf = (args: TargetsArgs): RunRequest => ({
 		targets: args.targets,
 		on: args.devices,
 		as: args.variants,
+		browsers: args.browsers,
 		profile: args.profile,
 		steps: args.steps?.map(parseStep)
 	});
@@ -191,7 +228,7 @@ export function createServer(): McpServer {
 						'How pictures come back: "sheets" one grid per screen (default, cheapest to read), "cells" every picture on its own (for a few cells, to read details), "none" paths only.'
 					)
 			},
-			annotations: { readOnlyHint: true, openWorldHint: false }
+			annotations: { readOnlyHint: true, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
@@ -206,7 +243,8 @@ export function createServer(): McpServer {
 							? cellImages(manifest)
 							: sheets(manifest);
 				return {
-					content: [{ type: 'text', text: summarize(manifest, { absolute: true }) }, ...pictures]
+					content: [{ type: 'text', text: summarize(manifest, { absolute: true }) }, ...pictures],
+					structuredContent: runData(manifest)
 				};
 			} catch (error) {
 				return failure(error);
@@ -227,7 +265,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('Which checks; default all but accessibility. "all" adds axe-core.')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: false }
+			annotations: { readOnlyHint: true, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
@@ -240,7 +278,7 @@ export function createServer(): McpServer {
 					? summarize(manifest)
 					: `No problems found on ${manifest.screens.length} screen(s) × ${manifest.devices.length} device(s) × ${manifest.variants.length} variant(s).` +
 						(manifest.counts.failed ? `\n${summarize(manifest)}` : '');
-				return { content: [{ type: 'text', text }] };
+				return { content: [{ type: 'text', text }], structuredContent: runData(manifest) };
 			} catch (error) {
 				return failure(error);
 			}
@@ -257,15 +295,21 @@ export function createServer(): McpServer {
 				targets: targetsShape.targets.optional(),
 				devices: targetsShape.devices,
 				variants: targetsShape.variants,
+				browsers: targetsShape.browsers,
 				against: z.string().optional().describe('"previous" (default) or a baseline name.')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: false }
+			annotations: { readOnlyHint: true, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
 				let request: RunRequest;
 				if (args.targets?.length)
-					request = { targets: args.targets, on: args.devices, as: args.variants };
+					request = {
+						targets: args.targets,
+						on: args.devices,
+						as: args.variants,
+						browsers: args.browsers
+					};
 				else {
 					const loaded = await loadConfig({ file: configFile(), cwd: cwd() });
 					const file = join(stateDir(loaded.config), 'last-request.json');
@@ -285,7 +329,8 @@ export function createServer(): McpServer {
 					content: [
 						{ type: 'text', text: `${head}\n\n${summarize(manifest, { absolute: true })}` },
 						...sheets(manifest, true)
-					]
+					],
+					structuredContent: runData(manifest)
 				};
 			} catch (error) {
 				return failure(error);
@@ -315,7 +360,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('Show the difference image instead (if the run compared).')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: false }
+			annotations: { readOnlyHint: true, openWorldHint: true }
 		},
 		async (args) => {
 			try {
@@ -384,7 +429,7 @@ export function createServer(): McpServer {
 			inputSchema: {
 				what: z.enum(['devices', 'variants', 'profiles', 'checks', 'runs']).default('devices')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: false }
+			annotations: { readOnlyHint: true, openWorldHint: true }
 		},
 		async (args) => {
 			try {
@@ -434,34 +479,67 @@ export function createServer(): McpServer {
 		}
 	);
 
-	const viewContent = (view: View): Content[] => [
-		{ type: 'text', text: describeView(view) },
-		{
-			type: 'image',
-			data: encodePng(fit(readPng(view.image), MAX_SIDE)).toString('base64'),
-			mimeType: 'image/png'
-		}
-	];
+	/** A view as text and, unless turned off, the picture; the same view as data for clients that read it. */
+	const viewAnswer = (view: View) => ({
+		content: [
+			{ type: 'text', text: describeView(view) },
+			...(view.image
+				? [
+						{
+							type: 'image',
+							data: encodePng(fit(readPng(view.image), MAX_SIDE)).toString('base64'),
+							mimeType: 'image/png'
+						}
+					]
+				: [])
+		] as Content[],
+		structuredContent: { ...view } as Record<string, unknown>,
+		isError: view.failed ? true : undefined
+	});
 	const lookShape = {
 		elements: z
 			.boolean()
-			.optional()
+			.default(true)
 			.describe(
-				'List what can be clicked or typed into, numbered: a step can then say "click:#3". Default true for open, false for act.'
+				'List what on screen can be acted on, each with a ref ("e12") for the next step. Refs last until the page changes, so every answer lists them afresh.'
 			),
+		picture: z
+			.boolean()
+			.default(true)
+			.describe(
+				"Return the picture. false answers in text only: cheaper for steps you needn't see."
+			),
+		tree: z
+			.boolean()
+			.optional()
+			.describe("Also return the page's accessibility tree: all its text and structure, as text."),
 		full: z.boolean().optional().describe('Picture the whole page, not just the screen.'),
 		logLevel: z
 			.enum(['debug', 'info', 'warn', 'error'])
 			.optional()
 			.describe('The least important log lines to return (default info; debug adds every request).')
 	};
+	type LookArgs = {
+		elements: boolean;
+		picture: boolean;
+		tree?: boolean;
+		full?: boolean;
+		logLevel?: LogLevel;
+	};
+	const lookOf = (args: LookArgs) => ({
+		elements: args.elements,
+		picture: args.picture,
+		tree: args.tree,
+		full: args.full,
+		logLevel: args.logLevel
+	});
 
 	server.registerTool(
 		'open',
 		{
 			title: 'Open a page to work',
 			description:
-				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers and sign-in. Returns the session id, a picture (CSS pixels), what the page logged, and what on screen can be clicked or typed into. Then use act. Close it when done.",
+				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data. Answers with the session id, a picture (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
 			inputSchema: {
 				target: z.string().describe('A path ("/settings") or a full URL.'),
 				device: z
@@ -472,22 +550,35 @@ export function createServer(): McpServer {
 					.string()
 					.optional()
 					.describe('One variant, e.g. "dark". Default: the profile\'s first.'),
+				browser: z
+					.enum(['chromium', 'webkit', 'firefox'])
+					.optional()
+					.describe('The browser engine (default Chromium); "webkit" is Safari\'s.'),
 				...lookShape
 			},
-			annotations: { readOnlyHint: false, openWorldHint: false }
+			annotations: { readOnlyHint: false, openWorldHint: true }
 		},
 		async (args) => {
 			try {
 				const { sessionCall } = await import('../daemon/client.ts');
 				const loaded = await loadConfig({ file: configFile(), cwd: cwd() });
 				const view = await sessionCall<View>('open', {
-					open: { target: args.target, on: args.device, as: args.variant },
+					open: {
+						target: args.target,
+						on: args.browser ? `${args.device ?? 'desktop'}@${args.browser}` : args.device,
+						as: args.variant
+					},
 					configFile: loaded.file,
 					cwd: cwd(),
 					env: process.env
 				});
 				opened.add(view.session);
-				return { content: viewContent(view) };
+				// Opening always pictures and lists; look again only for something else.
+				if (!args.picture || !args.elements || args.tree || args.full)
+					return viewAnswer(
+						await sessionCall<View>('look', { id: view.session, options: lookOf(args) })
+					);
+				return viewAnswer(view);
 			} catch (error) {
 				return failure(error);
 			}
@@ -499,31 +590,31 @@ export function createServer(): McpServer {
 		{
 			title: 'Work an open page',
 			description:
-				'Does steps in an open session, in order, stopping at the first that fails, then returns the picture, the log lines since the last look, console errors and failed requests. With no steps, just looks again. Elements: a selector ("text=Save", "role=button[name=\'Save\']"), "#n" from the list, or "@x,y" on the picture.',
+				'Does steps in an open session, in order, stopping at the first that fails, then answers like open: the picture, the log lines since the last answer, console errors and failed requests, and fresh refs. With no steps, just looks again. Name an element by its ref ("e12"), a point on the picture ("@x,y"), or a selector ("text=Save", "role=button[name=\'Save\']").',
 			inputSchema: {
 				session: z.string().describe('The id open returned, e.g. "s-1a2b3c".'),
 				steps: z
 					.array(z.string())
 					.default([])
 					.describe(
-						'e.g. "click:#3", "rightclick:@420,180", "dblclick:text=Title", "longpress:#5", "hover:#2", "fill:#4=hello", "type:abc", "press:Meta+K", "select:#6=Large", "drag:#7>#9", "scroll:600", "scroll:#list=400", "wait:role=dialog", "goto:/other", "back".'
+						'e.g. "click:e3", "rightclick:@420,180", "dblclick:text=Title", "longpress:e5", "hover:e2", "fill:e4=hello", "type:abc", "press:Meta+K", "select:e6=Large", "drag:e7>e9", "scroll:600", "scroll:e10=400", "wait:role=dialog", "goto:/other", "back".'
 					),
 				...lookShape
 			},
-			annotations: { readOnlyHint: false, openWorldHint: false }
+			// Steps can do anything a person can, including deleting things on a live site.
+			annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true }
 		},
 		async (args) => {
 			try {
 				const { sessionCall } = await import('../daemon/client.ts');
-				const options = { elements: args.elements, full: args.full, logLevel: args.logLevel };
 				const view = args.steps.length
 					? await sessionCall<View>('act', {
 							id: args.session,
 							steps: args.steps.map(parseStep),
-							options
+							options: lookOf(args)
 						})
-					: await sessionCall<View>('look', { id: args.session, options });
-				return { content: viewContent(view), isError: view.failed ? true : undefined };
+					: await sessionCall<View>('look', { id: args.session, options: lookOf(args) });
+				return viewAnswer(view);
 			} catch (error) {
 				return failure(error);
 			}
@@ -543,7 +634,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('A flow file to write, e.g. "flows/delete-account.yaml".')
 			},
-			annotations: { readOnlyHint: false, openWorldHint: false }
+			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
 		},
 		async (args) => {
 			try {

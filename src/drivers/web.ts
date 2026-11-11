@@ -84,6 +84,8 @@ export async function newSession(
 	}
 	const context = await browser.newContext({
 		...contextOptions(device, variant),
+		// Firefox has no mobile emulation (the meta viewport); the size, density and touch still apply.
+		...(browser.browserType().name() === 'firefox' ? { isMobile: undefined } : {}),
 		baseURL: options.baseURL,
 		storageState,
 		extraHTTPHeaders: persona?.headers
@@ -272,8 +274,9 @@ export async function builtServer(
 	});
 }
 
-export function engineOf(config: Config): Engine {
-	return config.web?.browser ?? 'chromium';
+/** The browser engine for a device: the one it was asked in (`phone@webkit`), else the config's, else Chromium. */
+export function engineOf(config: Config, device?: Device): Engine {
+	return device?.browser ?? config.web?.browser ?? 'chromium';
 }
 
 /** Navigates and waits for the document; readiness is waited for separately. */
@@ -306,8 +309,16 @@ export class WebDriver implements Driver {
 				(cell.target.kind === 'web' && cell.target.value.startsWith('/')) ||
 				cell.target.kind === 'flow'
 		);
-		// The browser starts while the app builds and its server comes up: neither needs the other.
-		const browser = ctx.runtime.browser(engineOf(ctx.config));
+		// The browsers start while the app builds and its server comes up: neither needs the other.
+		// One engine that won't start fails only its own pictures (in shoot); with none, there's nothing to do.
+		const browser = Promise.allSettled(
+			[...new Set(cells.map((cell) => engineOf(ctx.config, cell.device)))].map((engine) =>
+				ctx.runtime.browser(engine)
+			)
+		).then((outcomes) => {
+			if (outcomes.every((outcome) => outcome.status === 'rejected'))
+				throw (outcomes[0] as PromiseRejectedResult).reason;
+		});
 		browser.catch(() => {});
 		if (web?.baseURL) {
 			this.baseURL = fill(web.baseURL, ctx.values);
@@ -332,7 +343,6 @@ export class WebDriver implements Driver {
 	}
 
 	async shoot(cells: Cell[], ctx: RunContext, report: (result: CellResult) => void): Promise<void> {
-		const browser = await ctx.runtime.browser(engineOf(ctx.config));
 		const web = ctx.config.web;
 		const options: ShootOptions = {
 			ctx,
@@ -342,8 +352,11 @@ export class WebDriver implements Driver {
 		await shootInContexts(
 			cells,
 			ctx,
-			(device, variant) =>
-				newSession(browser, device, variant, web, { baseURL: this.baseURL, root: ctx.root }),
+			async (device, variant) =>
+				newSession(await ctx.runtime.browser(engineOf(ctx.config, device)), device, variant, web, {
+					baseURL: this.baseURL,
+					root: ctx.root
+				}),
 			(session, cell) => shootCell(session, cell, options, report),
 			report
 		);

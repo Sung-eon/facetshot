@@ -5,23 +5,24 @@ work. It takes about ten minutes.
 
 ## 1. Install
 
-facetshot runs on [Bun](https://bun.sh) 1.3 or newer, or Node 22.6 or newer. Add it to your project and install the
-browser it drives:
+facetshot runs on [Bun](https://bun.sh) 1.3 or newer. (Your app can be built with anything; only facetshot itself
+needs Bun. Running on Node will come with the npm release.) Add it to your project and install the browser it
+drives:
 
 ```sh
-npm i -D facetshot          # or: bun add -d facetshot / pnpm add -D facetshot
-npx playwright install chromium
+bun add -d facetshot
+bunx playwright install chromium
 ```
 
 facetshot isn't on npm yet. Until it is, clone this repository, run `bun install` in it, and add it from there:
-`bun add -d /path/to/facetshot` (or `npm i -D /path/to/facetshot`).
+`bun add -d /path/to/facetshot`.
 
 If your project already uses Playwright, facetshot uses the browsers you have.
 
 Check that everything it needs is in place:
 
 ```sh
-npx facetshot doctor
+bunx facetshot doctor
 ```
 
 `doctor` lists what it found and, for anything missing, the one command that fixes it.
@@ -31,7 +32,7 @@ npx facetshot doctor
 No config is needed for a full URL:
 
 ```sh
-npx facetshot https://example.com
+bunx facetshot https://example.com
 ```
 
 You'll see a summary like this:
@@ -50,7 +51,7 @@ happened.
 Pick devices and variants yourself with `--on` and `--as`:
 
 ```sh
-npx facetshot https://example.com --on phone --as light,dark,large
+bunx facetshot https://example.com --on phone --as light,dark,large
 ```
 
 Add `.facetshot/` to your `.gitignore` — that's where pictures and logs live.
@@ -61,7 +62,7 @@ For your own app you want short paths (`/settings`) instead of full URLs, and fa
 it write a config from what your project already uses:
 
 ```sh
-npx facetshot init
+bunx facetshot init
 ```
 
 For a Vite app, you get something like this:
@@ -87,7 +88,7 @@ recognise — it writes nothing and tells you so, instead of a config that would
 your project's folder, or tell it where an app is already running (yours, staging or production):
 
 ```sh
-npx facetshot init --url http://localhost:3000
+bunx facetshot init --url http://localhost:3000
 ```
 
 What the Vite config above means:
@@ -104,7 +105,7 @@ What the Vite config above means:
 Now take pictures of your own pages:
 
 ```sh
-npx facetshot / /settings
+bunx facetshot / /settings
 ```
 
 The first run builds and starts things, so it takes longer. Run it again and it's quick: the browser and the server
@@ -115,7 +116,7 @@ If your app needs a signed-in user, test data or an API server, see [Web apps](w
 ## 4. Let your agent use it
 
 ```sh
-npx facetshot init --agent claude     # or cursor, codex, all
+bunx facetshot init --agent claude     # or cursor, codex, all
 ```
 
 This registers facetshot's MCP server with your agent and adds a short skill that tells it when to look and how.

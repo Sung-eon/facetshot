@@ -33,27 +33,31 @@ export interface OpenRequest {
 }
 
 export interface LookOptions {
-	/** List what can be clicked or typed into, numbered for `#n` in steps. */
+	/** List what on screen can be clicked or typed into, each with a ref (`e12`) for the next step. */
 	elements?: boolean;
+	/** The page's whole accessibility tree as text: everything it says, not only what's clickable. */
+	tree?: boolean;
+	/** Take a picture (default true). Without one, an answer is text only, and cheap. */
+	picture?: boolean;
 	/** The whole page rather than what's on screen. */
 	full?: boolean;
 	/** The least important log lines to return (default `info`). */
 	logLevel?: LogLevel;
 }
 
-export interface Element {
-	ref: number;
+export interface OnScreen {
+	/** Playwright's ref from the page's accessibility snapshot: `e12`, or `f1e3` inside a frame. */
+	ref: string;
 	role: string;
 	name: string;
+	/** Its box on the picture, in CSS pixels. */
 	x: number;
 	y: number;
 	width: number;
 	height: number;
-	disabled?: boolean;
-	checked?: boolean;
+	/** Flags from the snapshot: `checked`, `disabled`, `expanded`, `selected`, `pressed`… */
+	states?: string[];
 	value?: string;
-	/** A selector that finds it again outside this session, for saved flows. */
-	selector?: string;
 }
 
 /** What a session shows after opening, a step, or a look. */
@@ -63,15 +67,17 @@ export interface View {
 	title: string;
 	device: string;
 	variant: string;
-	/** The picture, in CSS pixels (so `@x,y` in a step is a point on it). */
-	image: string;
-	width: number;
-	height: number;
+	/** The picture, in CSS pixels (so `@x,y` in a step is a point on it); none when `picture: false`. */
+	image?: string;
+	width?: number;
+	height?: number;
 	/** Log lines since the last view. */
 	logs: LogEntry[];
 	/** Console errors and failed requests since the last view. */
 	findings: Finding[];
-	elements?: Element[];
+	elements?: OnScreen[];
+	/** The accessibility tree, when asked for. */
+	tree?: string;
 	/** The step that failed, if one did; the steps before it were done and the view shows where it stopped. */
 	failed?: { step: number; error: string };
 	/** Not settled in time: still waiting for this. */
@@ -100,8 +106,6 @@ export class Session {
 	private closers: (() => Promise<void>)[] = [];
 	private tail: LogTail;
 	private busy: Promise<unknown> = Promise.resolve();
-	/** The last list's stable selectors, by `#n`. */
-	private refs = new Map<number, string>();
 	page!: PageSession;
 	private open!: (address: string) => Promise<void>;
 	start = '/';
@@ -174,7 +178,7 @@ export class Session {
 			Object.assign(ctx.values, await prepareFixtures(ctx));
 			const driver = new WebDriver();
 			await driver.prepare([cell], ctx);
-			const browser = await runtime.browser(engineOf(config));
+			const browser = await runtime.browser(engineOf(config, cell.device));
 			const made = await newSession(browser, cell.device, cell.variant, config.web, {
 				baseURL: driver.url,
 				root: ctx.root
@@ -205,8 +209,10 @@ export class Session {
 				for (const [index, step] of steps.entries()) {
 					if ('shot' in step) continue;
 					try {
+						// Worked out before the step: a click may take the element away.
+						const kept = await lasting(this.page.page, step);
 						await doStep(this.page.page, step, this.open);
-						this.steps.push(this.lasting(step));
+						this.steps.push(kept);
 					} catch (error) {
 						failed = {
 							step: index + 1,
@@ -223,16 +229,6 @@ export class Session {
 
 	look(options: LookOptions = {}): Promise<View> {
 		return this.serial(() => this.ctx.pools.web.run(() => this.view(options)));
-	}
-
-	/** The step with each `#n` replaced by a selector that still finds the element in a later run. */
-	private lasting(step: Step): Step {
-		const out: Record<string, unknown> = { ...step };
-		for (const [key, value] of Object.entries(out)) {
-			const ref = typeof value === 'string' ? /^#(\d+)$/.exec(value.trim()) : null;
-			if (ref && this.refs.has(Number(ref[1]))) out[key] = this.refs.get(Number(ref[1]));
-		}
-		return out as Step;
 	}
 
 	/** Log lines after a position, with the servers' new lines. */
@@ -255,18 +251,24 @@ export class Session {
 		const findings = await readPage(page, watch, ['console', 'network'], device);
 		watch.failures.length = 0;
 		watch.consoleErrors.length = 0;
-		this.views += 1;
-		const image = join(this.folder, `${String(this.views).padStart(3, '0')}.png`);
-		const buffer = await page.screenshot({
-			path: image,
-			fullPage: options.full ?? false,
-			animations: 'disabled',
-			caret: 'hide',
-			scale: 'css',
-			timeout: 20_000
-		});
-		const width = buffer.readUInt32BE(16);
-		const height = buffer.readUInt32BE(20);
+		let picture: Pick<View, 'image' | 'width' | 'height'> = {};
+		if (options.picture !== false) {
+			this.views += 1;
+			const image = join(this.folder, `${String(this.views).padStart(3, '0')}.png`);
+			const buffer = await page.screenshot({
+				path: image,
+				fullPage: options.full ?? false,
+				animations: 'disabled',
+				caret: 'hide',
+				scale: 'css',
+				timeout: 20_000
+			});
+			picture = { image, width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+		}
+		const snapshot =
+			options.elements || options.tree
+				? await page.ariaSnapshot({ mode: 'ai', boxes: true, timeout: 10_000 }).catch(() => '')
+				: '';
 		this.pollServers();
 		const level = options.logLevel ?? 'info';
 		const logs = atLeast(
@@ -283,19 +285,15 @@ export class Session {
 			title: await page.title().catch(() => ''),
 			device: device.name,
 			variant: variant.name,
-			image,
-			width,
-			height,
+			...picture,
 			logs,
 			findings,
-			elements: options.elements ? this.remember(await listElements(page)) : undefined,
+			elements: options.elements
+				? onScreen(snapshot, page.viewportSize() ?? { width: 1e5, height: 1e5 })
+				: undefined,
+			tree: options.tree ? snapshot.replace(/ \[box=[^\]]*\]/g, '') : undefined,
 			unsettled: settled.ready ? undefined : settled.waitingFor
 		};
-	}
-
-	private remember(elements: Element[]): Element[] {
-		this.refs = new Map(elements.map((element) => [element.ref, element.selector ?? '']));
-		return elements.map(({ selector: _, ...rest }) => rest);
 	}
 
 	info(): SessionInfo {
@@ -326,173 +324,172 @@ export class Session {
 	}
 }
 
+/** Roles a person acts on. Anything the page marks as clickable (`cursor=pointer`) counts too. */
+const ACTIONABLE = new Set([
+	'button',
+	'link',
+	'textbox',
+	'searchbox',
+	'checkbox',
+	'radio',
+	'switch',
+	'combobox',
+	'listbox',
+	'option',
+	'menuitem',
+	'menuitemcheckbox',
+	'menuitemradio',
+	'tab',
+	'slider',
+	'spinbutton',
+	'treeitem',
+	'gridcell',
+	'columnheader',
+	'separator'
+]);
+
 /**
- * What on screen can be clicked or typed into, each marked with `data-facetshot-ref` so a step can name it `#n`.
- * Only what's in the viewport, at most 150, in reading order.
+ * What on screen can be acted on, read from Playwright's accessibility snapshot in its "ai" mode: each line has the
+ * element's ref and box. A frame's boxes are relative to the frame, so they are moved by the frame's own box.
  */
-async function listElements(page: PageSession['page']): Promise<Element[]> {
-	return page
-		.evaluate(() => {
-			const selector = [
-				'a[href]',
-				'button',
-				'input:not([type=hidden])',
-				'select',
-				'textarea',
-				'summary',
-				'[contenteditable=""]',
-				'[contenteditable=true]',
-				'[tabindex]:not([tabindex="-1"])',
-				'[onclick]',
-				...[
-					'button',
-					'link',
-					'tab',
-					'menuitem',
-					'menuitemcheckbox',
-					'menuitemradio',
-					'checkbox',
-					'radio',
-					'switch',
-					'option',
-					'treeitem',
-					'combobox',
-					'textbox',
-					'slider',
-					'gridcell'
-				].map((role) => `[role=${role}]`)
-			].join(',');
-			// A selector for saved flows: by role and name where Playwright can find it that way, else a CSS path.
-			const named = [
-				'button',
-				'link',
-				'checkbox',
-				'radio',
-				'switch',
-				'tab',
-				'menuitem',
-				'option',
-				'textbox',
-				'combobox'
-			];
-			const lasting = (element: HTMLElement, role: string, name: string): string => {
-				if (named.includes(role) && name && !element.getAttribute('role')?.includes(' '))
-					return `role=${role}[name=${JSON.stringify(name)}]`;
-				if (element.id && document.querySelectorAll(`#${CSS.escape(element.id)}`).length === 1)
-					return `#${CSS.escape(element.id)}`;
+export function onScreen(
+	snapshot: string,
+	viewport: { width: number; height: number }
+): OnScreen[] {
+	const out: OnScreen[] = [];
+	/** The offset of the frame each indentation level is in. */
+	const frames: { indent: number; x: number; y: number }[] = [];
+	for (const line of snapshot.split('\n')) {
+		const match = /^(\s*)- ([\w-]+)(?: "((?:[^"\\]|\\.)*)")?(.*)$/.exec(line);
+		if (!match) continue;
+		const [, space, role, rawName, rest] = match;
+		const indent = space.length;
+		while (frames.length && frames[frames.length - 1].indent >= indent) frames.pop();
+		const offset = frames[frames.length - 1] ?? { x: 0, y: 0 };
+		const ref = /\[ref=([\w]+)\]/.exec(rest)?.[1];
+		const box = /\[box=(-?[\d.]+),(-?[\d.]+),([\d.]+),([\d.]+)\]/.exec(rest);
+		if (!box) continue;
+		const [x, y, width, height] = box.slice(1).map(Number);
+		if (role === 'iframe') frames.push({ indent, x: offset.x + x, y: offset.y + y });
+		if (!ref || !(ACTIONABLE.has(role) || rest.includes('[cursor=pointer]'))) continue;
+		const left = offset.x + x;
+		const top = offset.y + y;
+		if (width < 1 || height < 1) continue;
+		if (left + width < 0 || top + height < 0 || left > viewport.width || top > viewport.height)
+			continue;
+		const states = [
+			...rest.matchAll(/\[(checked|disabled|expanded|selected|pressed|checked=mixed|active)\]/g)
+		].map((state) => state[1]);
+		const value = /\]:\s*(.+)$/.exec(rest)?.[1]?.trim();
+		out.push({
+			ref,
+			role,
+			name: (rawName ?? '').replace(/\\"/g, '"'),
+			x: Math.round(left),
+			y: Math.round(top),
+			width: Math.round(width),
+			height: Math.round(height),
+			states: states.length ? states : undefined,
+			value: value && !value.endsWith(':') ? value.slice(0, 80) : undefined
+		});
+		if (out.length >= 200) break;
+	}
+	return out;
+}
+
+/** A step's ref (`e12`, `ref=e12`), if it names one. */
+export function refOf(target: string): string | undefined {
+	return /^(?:ref=)?((?:f\d+)?e\d+)$/.exec(target.trim())?.[1];
+}
+
+/**
+ * The step with each ref replaced by a selector that finds the element again in a later run: Playwright's own
+ * best locator for it (role and name, test id, label…), written as a selector; a CSS path when there's none.
+ */
+async function lasting(page: PageSession['page'], step: Step): Promise<Step> {
+	const out: Record<string, unknown> = { ...step };
+	for (const [key, value] of Object.entries(out)) {
+		const ref = typeof value === 'string' ? refOf(value) : undefined;
+		if (!ref) continue;
+		const element = page.getByRef(ref);
+		const code = await element
+			.normalize()
+			.then((locator) => locator.toString())
+			.catch(() => '');
+		out[key] = selectorOf(code) ?? (await cssPath(element)) ?? value;
+	}
+	return out as Step;
+}
+
+/** A Playwright locator written as code (`getByRole('button', { name: 'Save' })`), as a selector string. */
+export function selectorOf(code: string): string | undefined {
+	const quoted = `'((?:[^'\\\\]|\\\\.)*)'`;
+	const unquote = (text: string) => text.replace(/\\'/g, "'");
+	let match = new RegExp(
+		`^getByRole\\(${quoted}(?:, \\{ name: ${quoted}(, exact: true)? \\})?\\)$`
+	).exec(code);
+	if (match)
+		return match[2] === undefined
+			? `role=${match[1]}`
+			: `role=${match[1]}[name=${JSON.stringify(unquote(match[2]))}${match[3] ? 's' : 'i'}]`;
+	match = new RegExp(`^getByTestId\\(${quoted}\\)$`).exec(code);
+	if (match) return `internal:testid=[data-testid=${JSON.stringify(unquote(match[1]))}s]`;
+	match = new RegExp(
+		`^getBy(Text|Label|Placeholder|AltText|Title)\\(${quoted}(, \\{ exact: true \\})?\\)$`
+	).exec(code);
+	if (match) {
+		const engine = {
+			Text: 'text',
+			Label: 'label',
+			Placeholder: 'placeholder',
+			AltText: 'alt',
+			Title: 'title'
+		}[match[1] as 'Text'];
+		return `internal:${engine}=${JSON.stringify(unquote(match[2]))}${match[3] ? 's' : 'i'}`;
+	}
+	match = new RegExp(`^locator\\(${quoted}\\)$`).exec(code);
+	if (match) return unquote(match[1]);
+	return undefined;
+}
+
+async function cssPath(
+	element: ReturnType<PageSession['page']['getByRef']>
+): Promise<string | undefined> {
+	return element
+		.evaluate(
+			(node) => {
 				const parts: string[] = [];
 				for (
-					let at: HTMLElement | null = element;
+					let at: globalThis.Element | null = node as globalThis.Element;
 					at && at !== document.body;
 					at = at.parentElement
 				) {
+					if (at.id) {
+						parts.unshift(`#${CSS.escape(at.id)}`);
+						break;
+					}
 					const tag = at.tagName.toLowerCase();
 					const same = at.parentElement
 						? [...at.parentElement.children].filter((child) => child.tagName === at!.tagName)
 						: [];
 					parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(at) + 1})` : tag);
 				}
-				return `css=body > ${parts.join(' > ')}`;
-			};
-			for (const old of document.querySelectorAll('[data-facetshot-ref]'))
-				old.removeAttribute('data-facetshot-ref');
-			const roles: Record<string, string> = {
-				A: 'link',
-				BUTTON: 'button',
-				SELECT: 'combobox',
-				TEXTAREA: 'textbox',
-				SUMMARY: 'button'
-			};
-			const out: Element[] = [];
-			const seen = new Set<globalThis.Element>();
-			for (const element of document.querySelectorAll<HTMLElement>(selector)) {
-				if (out.length >= 150) break;
-				if (seen.has(element)) continue;
-				const box = element.getBoundingClientRect();
-				const style = getComputedStyle(element);
-				if (
-					box.width < 1 ||
-					box.height < 1 ||
-					box.bottom < 0 ||
-					box.right < 0 ||
-					box.top > innerHeight ||
-					box.left > innerWidth ||
-					style.visibility === 'hidden' ||
-					style.pointerEvents === 'none'
-				)
-					continue;
-				// The element actually on top at its middle: something covered isn't clickable.
-				const top = document.elementFromPoint(
-					Math.min(Math.max(box.left + box.width / 2, 0), innerWidth - 1),
-					Math.min(Math.max(box.top + box.height / 2, 0), innerHeight - 1)
-				);
-				if (top && top !== element && !element.contains(top) && !top.contains(element)) continue;
-				seen.add(element);
-				const input = element as HTMLInputElement;
-				const labelled = element.getAttribute('aria-labelledby');
-				const name = (
-					element.getAttribute('aria-label') ||
-					(labelled && document.getElementById(labelled)?.textContent) ||
-					(input.labels?.[0]?.textContent ?? '') ||
-					element.innerText ||
-					input.placeholder ||
-					element.title ||
-					element.getAttribute('alt') ||
-					''
-				)
-					.replace(/\s+/g, ' ')
-					.trim()
-					.slice(0, 80);
-				const tag = element.tagName;
-				const role =
-					element.getAttribute('role') ||
-					(tag === 'INPUT'
-						? ['checkbox', 'radio'].includes(input.type)
-							? input.type
-							: input.type === 'range'
-								? 'slider'
-								: ['button', 'submit', 'reset'].includes(input.type)
-									? 'button'
-									: 'textbox'
-						: (roles[tag] ?? (element.isContentEditable ? 'textbox' : 'generic')));
-				const ref = out.length + 1;
-				element.setAttribute('data-facetshot-ref', String(ref));
-				out.push({
-					ref,
-					role,
-					name,
-					x: Math.round(box.left),
-					y: Math.round(box.top),
-					width: Math.round(box.width),
-					height: Math.round(box.height),
-					disabled: input.disabled || element.getAttribute('aria-disabled') === 'true' || undefined,
-					checked:
-						tag === 'INPUT' && ['checkbox', 'radio'].includes(input.type)
-							? input.checked
-							: element.getAttribute('aria-checked') === 'true' || undefined,
-					value:
-						(tag === 'INPUT' && !['checkbox', 'radio'].includes(input.type)) ||
-						tag === 'TEXTAREA' ||
-						tag === 'SELECT'
-							? String(input.value).slice(0, 80) || undefined
-							: undefined,
-					selector: lasting(element, role, name)
-				});
-			}
-			return out;
-		})
-		.catch(() => []);
+				return `css=${parts.join(' > ')}`;
+			},
+			undefined,
+			{ timeout: 2000 }
+		)
+		.catch(() => undefined);
 }
 
 /** A view as text: where, what happened, what's clickable. Shared by the CLI and the MCP server. */
-export function describeView(view: View, options: { image?: boolean } = {}): string {
+export function describeView(view: View): string {
 	const lines = [
 		`${view.session} · ${view.device}/${view.variant} · ${view.url}${view.title ? ` · "${view.title}"` : ''}`
 	];
 	if (view.failed) lines.push(`✗ Step ${view.failed.step} didn't work: ${view.failed.error}`);
 	if (view.unsettled) lines.push(`! Not settled after 8s: still waiting for ${view.unsettled}.`);
-	if (options.image !== false)
-		lines.push(`Picture: ${view.image} (${view.width}×${view.height}, CSS pixels)`);
+	if (view.image) lines.push(`Picture: ${view.image} (${view.width}×${view.height}, CSS pixels)`);
 	for (const finding of view.findings)
 		lines.push(`${finding.severity === 'error' ? '✗' : '!'} ${finding.check}: ${finding.message}`);
 	if (view.logs.length) {
@@ -505,19 +502,19 @@ export function describeView(view: View, options: { image?: boolean } = {}): str
 		if (view.logs.length > 40) lines.push(`  …${view.logs.length - 40} earlier lines left out`);
 	}
 	if (view.elements?.length) {
-		lines.push('', `On screen (${view.elements.length}; use #n in a step):`);
+		lines.push(
+			'',
+			`On screen (${view.elements.length}; name one by its ref in a step, e.g. click:${view.elements[0].ref}):`
+		);
 		for (const element of view.elements) {
-			const state = [
-				element.disabled && 'disabled',
-				element.checked && 'checked',
-				element.value !== undefined && `value "${element.value}"`
-			]
+			const extra = [...(element.states ?? []), element.value !== undefined && `"${element.value}"`]
 				.filter(Boolean)
 				.join(', ');
 			lines.push(
-				`  #${element.ref} ${element.role}${element.name ? ` "${element.name}"` : ''} @${element.x + Math.round(element.width / 2)},${element.y + Math.round(element.height / 2)}${state ? ` (${state})` : ''}`
+				`  ${element.ref} ${element.role}${element.name ? ` "${element.name}"` : ''} @${element.x + Math.round(element.width / 2)},${element.y + Math.round(element.height / 2)}${extra ? ` (${extra})` : ''}`
 			);
 		}
 	}
+	if (view.tree) lines.push('', 'Page:', view.tree);
 	return lines.join('\n') + '\n';
 }

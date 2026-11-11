@@ -48,12 +48,23 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 		expect(openText).toContain('button "Open dialog"');
 		expect((opened.content as { type: string }[]).some((part) => part.type === 'image')).toBe(true);
 
-		const ref = /#(\d+) button "Open dialog"/.exec(openText)![1];
+		const ref = /(e\d+) button "Open dialog"/.exec(openText)![1];
 		const acted = await client.callTool({
 			name: 'act',
-			arguments: { session: id, steps: [`click:#${ref}`], elements: true }
+			arguments: { session: id, steps: [`click:${ref}`] }
 		});
 		expect(text(acted)).toContain('button "Close"');
+		// Structured too, for clients that read data.
+		expect((acted.structuredContent as { session: string }).session).toBe(id);
+
+		const textOnly = await client.callTool({
+			name: 'act',
+			arguments: { session: id, picture: false, tree: true }
+		});
+		expect((textOnly.content as { type: string }[]).every((part) => part.type === 'text')).toBe(
+			true
+		);
+		expect(text(textOnly)).toContain('dialog');
 
 		const failed = await client.callTool({
 			name: 'act',
@@ -67,9 +78,9 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 			arguments: { session: id, saveAs: 'flows-saved/dialog.yaml' }
 		});
 		expect(text(closed)).toContain('Closed');
-		// The #n became a selector that finds the button again in a run of its own.
+		// The ref became a selector that finds the button again in a run of its own.
 		const saved = readFileSync(flow, 'utf8');
-		expect(saved).toContain('role=button[name="Open dialog"]');
+		expect(saved).toContain('role=button[name="Open dialog"');
 		expect(saved).not.toContain('Not there');
 	} finally {
 		await client.close();

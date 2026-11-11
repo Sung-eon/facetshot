@@ -49,7 +49,9 @@ export function groupFindings(
 			if (finding.severity === 'info') continue;
 			const key = `${cell.screen}\u0000${finding.check}\u0000${finding.message}\u0000${finding.where ?? ''}`;
 			const group = groups.get(key) ?? { finding, screen: cell.screen, where: [] };
-			group.where.push(`${cell.device}/${cell.variant}`);
+			// The same problem twice in one picture (two cut-off lines alike) is one place.
+			if (!group.where.includes(`${cell.device}/${cell.variant}`))
+				group.where.push(`${cell.device}/${cell.variant}`);
 			groups.set(key, group);
 		}
 	}

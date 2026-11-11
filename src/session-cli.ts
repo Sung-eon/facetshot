@@ -10,6 +10,16 @@ import { describeView, type LookOptions, type View } from './session.ts';
 import { listSessions, sessionCall, sessionLogs } from './daemon/client.ts';
 
 type Flags = Record<string, string | true>;
+
+/** `--on phone --browser webkit` is `phone@webkit`; a browser alone is the default device in it. */
+function withEngine(on: string | undefined, browser: string | undefined): string | undefined {
+	if (!browser) return on;
+	if (!on)
+		throw new UsageError(
+			'--browser in a session needs a device too: facetshot open /x --on phone --browser webkit'
+		);
+	return `${on}@${browser}`;
+}
 const LEVELS = ['debug', 'info', 'warn', 'error'];
 
 function level(flags: Flags, fallback: LogLevel): LogLevel {
@@ -29,7 +39,9 @@ export async function sessionCommand(
 	flags: Flags
 ): Promise<number> {
 	const options: LookOptions = {
-		elements: flags.elements === true,
+		elements: flags['no-elements'] !== true,
+		picture: flags['no-picture'] !== true,
+		tree: flags.tree === true,
 		full: flags.full === true,
 		logLevel: level(flags, 'info')
 	};
@@ -56,7 +68,11 @@ export async function sessionCommand(
 				return value;
 			};
 			const view = await sessionCall<View>('open', {
-				open: { target: positional[0], on: one(flags.on, 'on'), as: one(flags.as, 'as') },
+				open: {
+					target: positional[0],
+					on: withEngine(one(flags.on, 'on'), one(flags.browser, 'browser')),
+					as: one(flags.as, 'as')
+				},
 				configFile: typeof flags.config === 'string' ? flags.config : undefined,
 				cwd: process.cwd(),
 				env: process.env

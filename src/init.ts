@@ -126,7 +126,7 @@ ${parts.join('\n')}
 function mcpCommand(root: string): { command: string; args: string[] } {
 	const cli = fileURLToPath(new URL('./cli.ts', import.meta.url));
 	if (cli.includes(`${join('node_modules', 'facetshot')}`))
-		return { command: 'npx', args: ['facetshot', 'mcp'] };
+		return { command: 'bunx', args: ['facetshot', 'mcp'] };
 	// Running from a checkout (not installed from npm): point at it, relative to the project when inside it.
 	const rel = relative(root, cli);
 	return { command: 'bun', args: ['--bun', rel.startsWith('..') ? cli : rel, 'mcp'] };
@@ -169,7 +169,7 @@ function installSkill(root: string, target: string): void {
 	else cpSync(SKILL, destination, { recursive: true });
 }
 const AGENT_LINE =
-	'To see screens, use facetshot (MCP tools `check`, `capture`, `compare`, or the `facetshot` command); never write a screenshot script.';
+	'To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to work a page step by step) or the `facetshot` command. Never write a screenshot script.';
 
 export async function init(options: {
 	agent?: string;
@@ -253,13 +253,24 @@ export async function init(options: {
 					'Cursor: registered the MCP server in .cursor/mcp.json and added a rule in .cursor/rules/facetshot.mdc.'
 				);
 				break;
-			case 'codex':
+			case 'codex': {
 				installSkill(root, join('.agents', 'skills', 'facetshot'));
+				// Codex reads a project's .codex/config.toml once the project is trusted; ~/.codex/config.toml otherwise.
+				const file = join(root, '.codex', 'config.toml');
+				const existing = existsSync(file) ? readFileSync(file, 'utf8') : '';
+				if (!/^\[mcp_servers\.facetshot\]/m.test(existing)) {
+					mkdirSync(dirname(file), { recursive: true });
+					writeFileSync(
+						file,
+						`${existing.trimEnd()}${existing.trim() ? '\n\n' : ''}[mcp_servers.facetshot]\ncommand = ${JSON.stringify(server.command)}\nargs = ${JSON.stringify(server.args)}\n`
+					);
+				}
 				say(
-					'Codex: added the skill to .agents/skills/facetshot. Register the MCP server in ~/.codex/config.toml:\n' +
-						`  [mcp_servers.facetshot]\n  command = "${server.command}"\n  args = ${JSON.stringify(server.args)}\n  cwd = "${root}"`
+					'Codex: added the skill to .agents/skills/facetshot and the MCP server to .codex/config.toml ' +
+						'(read once you trust this project in Codex; or copy its [mcp_servers.facetshot] to ~/.codex/config.toml).'
 				);
 				break;
+			}
 			default:
 				throw new UsageError(
 					`I don't know the agent "${agent}".`,

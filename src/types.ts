@@ -30,7 +30,13 @@ export interface Device {
 	split?: number;
 	/** Optional safe-area insets for snapshot rendering. */
 	safeArea?: { top: number; bottom: number; left: number; right: number };
+	/** web: the browser engine, when asked for one (`phone@webkit`); otherwise the config's, or Chromium. */
+	browser?: BrowserName;
 }
+
+/** The browser engines Playwright drives: Chromium (Chrome, Edge), WebKit (Safari's engine) and Firefox. */
+export type BrowserName = 'chromium' | 'webkit' | 'firefox';
+export const BROWSERS: readonly BrowserName[] = ['chromium', 'webkit', 'firefox'];
 
 export type TextSize = 'default' | 'large' | 'xlarge' | 'xxl';
 
@@ -204,7 +210,7 @@ export interface WebConfig {
 	build?: BuildStep;
 	/** The server that serves the app (preview server, production server, or dev server). */
 	serve?: Service;
-	browser?: 'chromium' | 'webkit' | 'firefox';
+	browser?: BrowserName;
 	personas?: Record<string, Persona>;
 	/** The persona used when a variant names none. */
 	persona?: string;

@@ -19,10 +19,11 @@ Steps: `click`, `dblclick`, `rightclick`, `tap`, `longpress`, `hover`, `focus`, 
 `type`, `press` (`Shift+Meta+K`), `select` + `option`, `scroll` (a selector, pixels, or a selector + `by` to scroll
 inside it), `wait` (until visible), `gone` (until hidden), `goto`, `back`, `forward`, `reload`, `shot` (a picture,
 named). With no `shot`, the end of the flow is pictured. Each shot is its own screen in the results
-(`<flow>.<shot>`). On the command line and in MCP `steps`: `drag:#2>#5`, `scroll:.list=400`, `back`.
+(`<flow>.<shot>`). On the command line and in MCP `steps`: `drag:e2>e5`, `scroll:.list=400`, `back`.
 
-Elements can also be `@x,y` (a point in CSS pixels) or, in a session, `#n` from its list. A session closed with
-`saveAs`/`--save` writes its steps as a flow, with each `#n` turned into a selector that works in later runs.
+Elements can also be `@x,y` (a point in CSS pixels) or, in a session, a ref from its latest list (`e12`). A session
+closed with `saveAs`/`--save` writes its steps as a flow, with each ref turned into a selector that works in later
+runs.
 
 ## Logs
 

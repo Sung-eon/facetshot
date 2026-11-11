@@ -224,7 +224,7 @@ export class StorybookDriver implements Driver {
 		return cell.target.kind === 'story' && cell.device.platform === 'web';
 	}
 
-	async prepare(_cells: Cell[], ctx: RunContext): Promise<void> {
+	async prepare(cells: Cell[], ctx: RunContext): Promise<void> {
 		const storybook = ctx.config.storybook;
 		if (!storybook?.url && !storybook?.build) {
 			throw new UsageError(
@@ -233,7 +233,15 @@ export class StorybookDriver implements Driver {
 			);
 		}
 		// The browser starts while Storybook builds: neither needs the other.
-		const browser = ctx.runtime.browser(engineOf(ctx.config));
+		// One engine that won't start fails only its own pictures (in shoot); with none, there's nothing to do.
+		const browser = Promise.allSettled(
+			[...new Set(cells.map((cell) => engineOf(ctx.config, cell.device)))].map((engine) =>
+				ctx.runtime.browser(engine)
+			)
+		).then((outcomes) => {
+			if (outcomes.every((outcome) => outcome.status === 'rejected'))
+				throw (outcomes[0] as PromiseRejectedResult).reason;
+		});
 		browser.catch(() => {});
 		const url = storybook.url ? fill(storybook.url, ctx.values).replace(/\/$/, '') : undefined;
 		if (url && (await healthy(url))) {
@@ -290,7 +298,6 @@ export class StorybookDriver implements Driver {
 	}
 
 	async shoot(cells: Cell[], ctx: RunContext, report: (result: CellResult) => void): Promise<void> {
-		const browser = await ctx.runtime.browser(engineOf(ctx.config));
 		const web = ctx.config.web;
 		const storybook = ctx.config.storybook ?? {};
 		const found = cells.filter((cell) => {
@@ -306,8 +313,11 @@ export class StorybookDriver implements Driver {
 		await shootInContexts(
 			found,
 			ctx,
-			(device, variant) =>
-				newSession(browser, device, variant, web, { baseURL: this.url, root: ctx.root }),
+			async (device, variant) =>
+				newSession(await ctx.runtime.browser(engineOf(ctx.config, device)), device, variant, web, {
+					baseURL: this.url,
+					root: ctx.root
+				}),
 			(session, cell) => this.shootStory(session, cell, ctx, storybook, report),
 			report
 		);

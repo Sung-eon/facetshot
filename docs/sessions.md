@@ -9,49 +9,78 @@ What to click is up to whoever drives the session. facetshot provides the page, 
 
 ## From the command line
 
-```sh
-$ facetshot open /settings --on phone --as dark
-s-3b8ec4 · phone/dark · http://localhost:5173/settings · "Settings"
-Picture: .facetshot/sessions/s-3b8ec4/001.png (390×844, CSS pixels)
+```
+$ facetshot open /settings --on phone
+s-42cb1d · phone/light · http://localhost:53268/settings · "Lantern"
+Picture: .facetshot/sessions/s-42cb1d/001.png (390×844, CSS pixels)
 
 Logs (2):
-  +0.00s INFO  navigation → http://localhost:5173/settings
-  +0.00s INFO  network GET /api/me 200 41ms
+  +0.00s INFO  navigation → http://localhost:53268/settings
+  +0.00s INFO  network GET /settings 200 3ms
 
-On screen (6; use #n in a step):
-  #1 link "Home" @40,34
-  #4 textbox "Name" @195,222 (value "Ada Lovelace")
-  #5 checkbox "Send me a weekly summary" @120,272 (checked)
-  #6 button "Save" @195,362
+On screen (6; name one by its ref in a step, e.g. click:e7):
+  e7 link "Home" @207,34
+  e8 link "Pricing" @270,34
+  e9 link "Settings" @343,34
+  e14 textbox "Name" @195,222 ("Ada Lovelace")
+  e16 checkbox "Send me a weekly summary" @27,272 (checked)
+  e18 button "Save" @195,362
 ```
+
+The first line is the session's id. You use it in every command that follows. Open the picture to see the page.
+Each line under "On screen" is something you can act on: its **ref** (`e14`), what it is, its name, and its middle
+on the picture.
 
 Then work it with `act`, giving as many steps as you like:
 
 ```sh
-facetshot act s-3b8ec4 "fill:#4=Grace Hopper" click:#6
-facetshot act s-3b8ec4 rightclick:@195,120 --elements     # open a context menu and list its items
-facetshot act s-3b8ec4 "click:role=menuitem[name='Copy link']"
-facetshot look s-3b8ec4 --full                             # the whole page, without doing anything
-facetshot close s-3b8ec4 --save flows/edit-settings.yaml    # keep the steps that worked
+facetshot act s-42cb1d "fill:e14=Grace Hopper" click:e18   # type a name, press Save
+facetshot act s-42cb1d rightclick:@120,120                 # open the context menu there
+facetshot act s-42cb1d "click:role=menuitem[name='Copy link to settings']"
+facetshot look s-42cb1d --full                             # the whole page, without doing anything
+facetshot close s-42cb1d --save flows/edit-settings.yaml   # keep the steps that worked
 ```
 
-`facetshot sessions` lists what's open. A session closes by itself after 10 minutes without use
-(`FACETSHOT_SESSION_IDLE_MINUTES`). At most 6 are open on a machine at once, because each one is a page with its own
-memory.
+Each answer looks like the one from `open`: the new picture, the log lines since the last answer (here, what the page
+logged when Save was pressed), and the list again:
+
+```
+Logs (2):
+  +0.00s INFO  console Saving settings…
+  +0.00s WARN  console The weekly summary setting is deprecated and will move to Notifications. (/assets/index-BQcy4Hsw.js:9)
+```
+
+`--no-picture` leaves the picture out and `--no-elements` the list, when you don't need them. `--tree` adds the page's
+whole accessibility tree, all its text and structure, as text. `facetshot sessions` lists what's open. A session
+closes by itself after 10 minutes without use (`FACETSHOT_SESSION_IDLE_MINUTES`). At most 6 are open on a machine at
+once, because each one is a page with its own memory.
 
 ## Naming what to touch
 
 A step that touches an element can name it three ways:
 
-| Write                                      | Means                                                                    |
-| ------------------------------------------ | ------------------------------------------------------------------------ |
-| `#4`                                       | element 4 from the last list (`open` always lists; `act --elements` too) |
-| `@195,362`                                 | that point on the picture. Pictures are in CSS pixels, so they match     |
-| `role=button[name='Save']`, `text=Save`, … | a Playwright selector, as in [flows](flows.md#selectors)                 |
+| Write                                      | Means                                                                   |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| `e14`                                      | the element with that ref in the latest list                            |
+| `@195,362`                                 | that point on the picture. Pictures are in CSS pixels, so the two match |
+| `role=button[name='Save']`, `text=Save`, … | a Playwright selector, as in [flows](flows.md#selectors)                |
 
-The list numbers belong to the session: they're renumbered each time the page is listed. When you save a session as
-a flow, each `#n` is written as a selector that finds the same element again (by its role and name where it has
-them), so the flow plays back in a later run on every device.
+Refs come from Playwright's accessibility snapshot of the page, and they last until the page changes, so use the ones
+from the latest answer. When you save a session as a flow, each ref is written as a selector that finds the same
+element again (by its role and name where it has them), so the flow plays back in a later run, on every device:
+
+```yaml
+start: /settings
+steps:
+  - fill: role=textbox[name="Name"i]
+    with: Grace Hopper
+  - click: role=button[name="Save"i]
+  - rightclick: '@120,120'
+  - shot: end
+```
+
+A point (`@120,120`) is saved as it is, so check that it still lands on the right thing on other devices, or replace
+it with a selector.
 
 ## Steps
 

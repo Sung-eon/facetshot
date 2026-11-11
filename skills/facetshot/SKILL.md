@@ -31,11 +31,12 @@ how to reach — open a session:
 
 - MCP: `open` with `target: "/settings"` (and one `device`, one `variant`) → then `act` with `steps`, as many turns as
   you need → `close` (with `saveAs: "flows/name.yaml"` to keep the steps as a flow).
-- shell: `facetshot open /settings --on phone`, `facetshot act <id> click:#6`, `facetshot close <id> --save flows/x.yaml`.
+- shell: `facetshot open /settings --on phone`, `facetshot act <id> click:e18`, `facetshot close <id> --save flows/x.yaml`.
 
-Each answer has the picture, the log lines since the last step, and (on `open`, or with `elements: true`) what's
-clickable, numbered. Name what to touch by that number (`click:#6`), a point on the picture (`rightclick:@320,120`,
-CSS pixels), or a selector (`click:role=button[name='Save']`). Close sessions when you're done.
+Each answer has the picture, the log lines since the last step, and what's on screen with refs (`e18 button "Save"`).
+Name what to touch by its ref from the latest answer (`click:e18`; refs change when the page does), a point on the
+picture (`rightclick:@320,120`, CSS pixels), or a selector (`click:role=button[name='Save']`). Pass
+`picture: false` for steps you don't need to see. Close sessions when you're done.
 
 ## Targets
 
@@ -58,6 +59,8 @@ test data facetshot makes for each run.
 - Devices: `--on phone,desktop` (MCP `devices`). Groups: `web`, `ios`, `review`. `facetshot list devices`.
 - Variants: `--as dark,large` (MCP `variants`). `dark+large` is one combined variant. `facetshot list variants`.
 - With neither, the project's `default` profile decides (usually its design-review set).
+- Browsers: Chromium unless asked. For Safari or Firefox differences, add `--browser webkit,firefox` (MCP
+  `browsers: ["webkit"]`, or `browser` on `open`). Only when the task is about those browsers: each engine adds rows.
 
 ## Rules
 

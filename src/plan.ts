@@ -2,7 +2,17 @@
  * Turns what someone typed (`/talk app:/book --on phone --as dark,large`) into the list of pictures to take.
  */
 import { DEVICES, GROUPS, PROFILES, VARIANTS, VARIANT_GROUPS } from './presets.ts';
-import type { Cell, Config, Device, Platform, Target, TargetKind, Variant } from './types.ts';
+import {
+	BROWSERS,
+	type BrowserName,
+	type Cell,
+	type Config,
+	type Device,
+	type Platform,
+	type Target,
+	type TargetKind,
+	type Variant
+} from './types.ts';
 import { UsageError } from './errors.ts';
 import { loadFlow } from './flows.ts';
 
@@ -119,19 +129,47 @@ function expand(
 	return [...new Set(out)];
 }
 
+/**
+ * Device names, groups included. `name@webkit` (or `group@firefox`) is that web device in another browser engine; its
+ * name keeps the suffix, so its pictures sit in their own row.
+ */
 export function resolveDevices(names: string[], config: Config): Device[] {
 	const devices = allDevices(config);
 	const groups = { ...GROUPS, ...config.groups };
-	return expand(names, groups, devices, 'device').map((name) => {
-		const device = devices[name];
-		if (!device) {
+	const out: Device[] = [];
+	for (const raw of names
+		.flatMap((name) => name.split(','))
+		.map((name) => name.trim())
+		.filter(Boolean)) {
+		const [base, engine] = raw.split('@') as [string, string | undefined];
+		if (engine !== undefined && !BROWSERS.includes(engine as BrowserName)) {
 			throw new UsageError(
-				`There's no device called "${name}".`,
-				`Try one of: ${[...Object.keys(groups), ...Object.keys(devices)].join(', ')}. Run "facetshot list devices" to see sizes.`
+				`"${engine}" isn't a browser facetshot knows.`,
+				`Use one of: ${BROWSERS.join(', ')}.`
 			);
 		}
-		return device;
-	});
+		for (const name of expand([base], groups, devices, 'device')) {
+			const device = devices[name];
+			if (!device) {
+				throw new UsageError(
+					`There's no device called "${name}".`,
+					`Try one of: ${[...Object.keys(groups), ...Object.keys(devices)].join(', ')}. Run "facetshot list devices" to see sizes.`
+				);
+			}
+			if (engine && device.platform !== 'web')
+				throw new UsageError(
+					`"${raw}": a browser can only be chosen for a web device, and ${name} isn't one.`
+				);
+			out.push(withBrowser(device, engine as BrowserName | undefined));
+		}
+	}
+	return [...new Map(out.map((device) => [device.name, device])).values()];
+}
+
+/** The device in a browser engine; Chromium keeps the plain name, as it's the default. */
+export function withBrowser(device: Device, engine: BrowserName | undefined): Device {
+	if (!engine || engine === 'chromium') return engine ? { ...device, browser: 'chromium' } : device;
+	return { ...device, name: `${device.name}@${engine}`, browser: engine };
 }
 
 /** `dark+large` makes one variant out of two. */
@@ -159,6 +197,8 @@ export interface PlanRequest {
 	targets: string[];
 	on?: string[];
 	as?: string[];
+	/** Browser engines for the web devices (default: the config's, or Chromium). */
+	browsers?: string[];
 	profile?: string;
 }
 
@@ -187,7 +227,25 @@ export function plan(request: PlanRequest, config: Config): Plan {
 	const targets = request.targets.map((raw) => parseTarget(raw, config));
 	const kinds = new Set(targets.map((target) => target.kind));
 	const onNames = request.on?.length ? request.on : defaultDevices(profile.on, kinds, config);
-	const devices = resolveDevices(onNames, config);
+	let devices = resolveDevices(onNames, config);
+	// `--browser webkit,firefox`: every web device in each engine asked for (Chromium only if it's among them).
+	if (request.browsers?.length) {
+		const engines = request.browsers
+			.flatMap((each) => each.split(','))
+			.map((each) => each.trim())
+			.filter(Boolean);
+		for (const engine of engines)
+			if (!BROWSERS.includes(engine as BrowserName))
+				throw new UsageError(
+					`"${engine}" isn't a browser facetshot knows.`,
+					`Use one of: ${BROWSERS.join(', ')}.`
+				);
+		devices = devices.flatMap((device) =>
+			device.platform !== 'web' || device.browser
+				? [device]
+				: engines.map((engine) => withBrowser(device, engine as BrowserName))
+		);
+	}
 	const variants = resolveVariants(request.as?.length ? request.as : profile.as, config);
 
 	const cells: Cell[] = [];

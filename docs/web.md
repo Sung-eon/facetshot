@@ -240,7 +240,30 @@ The other variants map to the browser's own emulation: `dark` to `prefers-color-
 `prefers-contrast: more`, `forced` to forced colors, `rtl` to `dir="rtl"` on the page, `offline` to no network,
 `print` to print media, and `locale`/`timezone` to the browser's language and time zone.
 
-## Choosing a browser
+## Other browsers: Safari's engine and Firefox
 
-Chromium is the default. Set `web.browser` to `webkit` (Safari's engine) or `firefox` to use another, after
-`npx playwright install webkit`.
+Pictures are taken in Chromium unless you ask for more. To see a page the way Safari or Firefox draws it, add the
+engines you want. They're used only when asked:
+
+```sh
+facetshot /pricing --browser webkit             # every web device in WebKit (Safari's engine)
+facetshot /pricing --browser chromium,webkit,firefox
+facetshot /pricing --on phone,phone@webkit      # or name the engine per device
+facetshot open /pricing --on phone --browser webkit
+```
+
+Each engine gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@firefox`), so differences between them
+are side by side. Agents pass `browsers: ["webkit"]` to `capture`, `check` and `compare`, and `browser` to `open`.
+
+Install an engine once before using it: `bunx playwright install webkit` (or `firefox`). Each is Playwright's build of
+that engine, not the Safari or Firefox app itself. They're close to the real browsers but not identical, so a final
+check in the real browser still helps for anything subtle.
+
+A few things differ by engine:
+
+- **Firefox has no mobile emulation.** Phone sizes, pixel density and touch still apply, but the page isn't told it's on
+  a phone browser (no meta viewport handling).
+- **An engine that won't start fails only its own pictures.** The rest of the run goes on, and the failure says what
+  the browser reported.
+
+To make another engine the default for a project, set `web.browser` to `webkit` or `firefox` in the config.
