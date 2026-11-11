@@ -183,10 +183,10 @@ export function createServer(): McpServer {
 			),
 		profile: z.string().optional().describe('A named set of devices and variants from the config.'),
 		browsers: z
-			.array(z.enum(['chromium', 'webkit', 'firefox']))
+			.array(z.enum(['chromium', 'webkit', 'firefox', 'chrome', 'msedge', 'moz-firefox']))
 			.optional()
 			.describe(
-				'Browser engines for web pages, when asked to check them: "webkit" (Safari\'s engine), "firefox". Default: Chromium only.'
+				'Other browsers for web pages, only when asked: "webkit" (Safari\'s engine) and "firefox" (Playwright\'s builds), or the installed "chrome", "msedge", "moz-firefox". Default: Chromium only.'
 			),
 		steps: z
 			.array(z.string())
@@ -551,7 +551,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('One variant, e.g. "dark". Default: the profile\'s first.'),
 				browser: z
-					.enum(['chromium', 'webkit', 'firefox'])
+					.enum(['chromium', 'webkit', 'firefox', 'chrome', 'msedge', 'moz-firefox'])
 					.optional()
 					.describe('The browser engine (default Chromium); "webkit" is Safari\'s.'),
 				...lookShape

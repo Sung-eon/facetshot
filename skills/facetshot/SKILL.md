@@ -59,8 +59,9 @@ test data facetshot makes for each run.
 - Devices: `--on phone,desktop` (MCP `devices`). Groups: `web`, `ios`, `review`. `facetshot list devices`.
 - Variants: `--as dark,large` (MCP `variants`). `dark+large` is one combined variant. `facetshot list variants`.
 - With neither, the project's `default` profile decides (usually its design-review set).
-- Browsers: Chromium unless asked. For Safari or Firefox differences, add `--browser webkit,firefox` (MCP
-  `browsers: ["webkit"]`, or `browser` on `open`). Only when the task is about those browsers: each engine adds rows.
+- Browsers: Chromium unless asked. When the task is about another browser, add it: `--browser webkit` (Safari's
+  engine), `firefox`, or the installed `chrome`, `msedge`, `moz-firefox` (MCP `browsers`, or `browser` on `open`).
+  Each browser adds rows, so don't add them by default.
 
 ## Rules
 

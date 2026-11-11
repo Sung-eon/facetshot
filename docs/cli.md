@@ -28,22 +28,22 @@ facetshot logs <id|run|latest>              a session's logs (live with --follow
 facetshot /settings /billing --on phone,desktop --as light,dark+large
 ```
 
-| Option                    | Meaning                                                                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                         |
-| `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                           |
-| `--browser <engines>`     | web pages in other engines too: `chromium` (default), `webkit` (Safari's), `firefox`; or per device, `--on phone@webkit`           |
-| `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                    |
-| `--diff [against]`        | compare with `previous` (the default), a baseline name, a run id, or a folder                                                      |
-| `--checks <names>`        | checks to run, comma-separated, or `all` (see [Checks](checks.md))                                                                 |
-| `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                        |
-| `--clean`                 | empty `--out` first                                                                                                                |
-| `--sheet-width <px>`      | contact sheet width (default 1600)                                                                                                 |
-| `--do <step>`             | a step before the picture, repeatable: `--do "click:text=Save" --do shot:saved` ([Flows](flows.md#without-a-file))                 |
-| `--format text\|md\|json` | what to print: the short summary (default), Markdown with each sheet as an image (for a pull request or an issue), or the manifest |
-| `--open`                  | open `report.html` — every picture on one page — when the run is done                                                              |
-| `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                    |
-| `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from here                                                     |
+| Option                    | Meaning                                                                                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                                                                                               |
+| `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                                                                                                 |
+| `--browser <engines>`     | web pages in other browsers too: `webkit` (Safari's engine), `firefox`, or the installed `chrome`, `msedge`, `moz-firefox`; or per device, `--on phone@webkit` ([Other browsers](web.md#other-browsers)) |
+| `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                                                                                          |
+| `--diff [against]`        | compare with `previous` (the default), a baseline name, a run id, or a folder                                                                                                                            |
+| `--checks <names>`        | checks to run, comma-separated, or `all` (see [Checks](checks.md))                                                                                                                                       |
+| `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                                                                                              |
+| `--clean`                 | empty `--out` first                                                                                                                                                                                      |
+| `--sheet-width <px>`      | contact sheet width (default 1600)                                                                                                                                                                       |
+| `--do <step>`             | a step before the picture, repeatable: `--do "click:text=Save" --do shot:saved` ([Flows](flows.md#without-a-file))                                                                                       |
+| `--format text\|md\|json` | what to print: the short summary (default), Markdown with each sheet as an image (for a pull request or an issue), or the manifest                                                                       |
+| `--open`                  | open `report.html` — every picture on one page — when the run is done                                                                                                                                    |
+| `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                                                                                          |
+| `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from here                                                                                                                           |
 
 Targets are described in [How it works](concepts.md#targets-devices-and-variants).
 

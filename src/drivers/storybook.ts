@@ -314,10 +314,16 @@ export class StorybookDriver implements Driver {
 			found,
 			ctx,
 			async (device, variant) =>
-				newSession(await ctx.runtime.browser(engineOf(ctx.config, device)), device, variant, web, {
-					baseURL: this.url,
-					root: ctx.root
-				}),
+				newSession(
+					await ctx.runtime.browser(engineOf(ctx.config, device), variant.appearance),
+					device,
+					variant,
+					web,
+					{
+						baseURL: this.url,
+						root: ctx.root
+					}
+				),
 			(session, cell) => this.shootStory(session, cell, ctx, storybook, report),
 			report
 		);

@@ -10,7 +10,8 @@ import { portBusy } from './engine/procs.ts';
 import { VERSION } from './version.ts';
 
 interface Line {
-	ok: boolean | 'warn';
+	/** `info`: neither good nor bad, just so (an optional browser that isn't here). */
+	ok: boolean | 'warn' | 'info';
 	what: string;
 	fix?: string;
 }
@@ -63,22 +64,42 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 		lines.push({
 			ok: false,
 			what: `Playwright Chromium doesn't start: ${explain(error)}`,
-			fix: 'npx playwright install chromium'
+			fix: 'bunx playwright install chromium'
 		});
 	}
-	if (config?.web?.browser && config.web.browser !== 'chromium') {
-		try {
-			const playwright = await import('playwright');
-			const browser = await playwright[config.web.browser].launch({ headless: true });
-			await browser.close();
-			lines.push({ ok: true, what: `Playwright ${config.web.browser} starts` });
-		} catch {
-			lines.push({
-				ok: false,
-				what: `Playwright ${config.web.browser} isn't installed`,
-				fix: `npx playwright install ${config.web.browser}`
-			});
-		}
+	// The other browsers, used only when asked (--browser): which ones this machine can start.
+	const { Runtime } = await import('./engine/runtime.ts');
+	const { BROWSERS } = await import('./types.ts');
+	const others = BROWSERS.filter((name) => name !== 'chromium');
+	const results = await Promise.all(
+		others.map(async (name) => {
+			const runtime = new Runtime();
+			try {
+				await runtime.browser(name);
+				return { name, ok: true as const };
+			} catch (error) {
+				return { name, ok: false as const, why: explain(error) };
+			} finally {
+				await runtime.close();
+			}
+		})
+	);
+	const ready = results.filter((each) => each.ok).map((each) => each.name);
+	lines.push({
+		ok: true,
+		what: `Other browsers, on request (--browser): ${ready.length ? ready.join(', ') : 'none yet'}`
+	});
+	for (const each of results) {
+		if (each.ok) continue;
+		// Only a browser the config makes the default is a problem; the rest are just not available.
+		const needed = config?.web?.browser === each.name;
+		lines.push({
+			ok: needed ? false : 'info',
+			what: `${each.name} not available: ${each.why.split('\n')[0]}`,
+			fix: ['webkit', 'firefox'].includes(each.name)
+				? `bunx playwright install ${each.name}`
+				: undefined
+		});
 	}
 
 	// Ports the config asks for.
@@ -170,7 +191,7 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 
 	for (const line of lines) {
 		process.stdout.write(
-			`${line.ok === true ? '✓' : line.ok === 'warn' ? '!' : '✗'} ${line.what}\n${line.fix ? `  → ${line.fix}\n` : ''}`
+			`${line.ok === true ? '✓' : line.ok === 'warn' ? '!' : line.ok === 'info' ? '·' : '✗'} ${line.what}\n${line.fix ? `  → ${line.fix}\n` : ''}`
 		);
 	}
 	return lines.some((line) => line.ok === false) ? EXIT.environment : EXIT.ok;

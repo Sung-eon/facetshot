@@ -240,30 +240,43 @@ The other variants map to the browser's own emulation: `dark` to `prefers-color-
 `prefers-contrast: more`, `forced` to forced colors, `rtl` to `dir="rtl"` on the page, `offline` to no network,
 `print` to print media, and `locale`/`timezone` to the browser's language and time zone.
 
-## Other browsers: Safari's engine and Firefox
+## Other browsers
 
-Pictures are taken in Chromium unless you ask for more. To see a page the way Safari or Firefox draws it, add the
-engines you want. They're used only when asked:
+Pictures are taken in Chromium unless you ask for more. Other browsers are used only when you (or your agent) ask for
+them, for one run:
 
 ```sh
-facetshot /pricing --browser webkit             # every web device in WebKit (Safari's engine)
-facetshot /pricing --browser chromium,webkit,firefox
-facetshot /pricing --on phone,phone@webkit      # or name the engine per device
-facetshot open /pricing --on phone --browser webkit
+facetshot /pricing --browser webkit                # every web device in WebKit, Safari's engine
+facetshot /pricing --browser chromium,webkit,chrome
+facetshot /pricing --on phone,phone@webkit         # or name the browser per device
+facetshot open /pricing --on phone --browser chrome
 ```
 
-Each engine gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@firefox`), so differences between them
-are side by side. Agents pass `browsers: ["webkit"]` to `capture`, `check` and `compare`, and `browser` to `open`.
+Each browser gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@chrome`), so the differences are side by
+side. Agents pass `browsers: ["webkit"]` to `capture`, `check` and `compare`, and `browser` to `open`.
 
-Install an engine once before using it: `bunx playwright install webkit` (or `firefox`). Each is Playwright's build of
-that engine, not the Safari or Firefox app itself. They're close to the real browsers but not identical, so a final
-check in the real browser still helps for anything subtle.
+| Name          | What it is                                                          | Before first use                   |
+| ------------- | ------------------------------------------------------------------- | ---------------------------------- |
+| `chromium`    | Playwright's build of Chromium (the default)                        | `bunx playwright install chromium` |
+| `webkit`      | Playwright's build of WebKit, the engine inside Safari              | `bunx playwright install webkit`   |
+| `firefox`     | Playwright's build of Firefox                                       | `bunx playwright install firefox`  |
+| `chrome`      | the Google Chrome installed on this machine                         | nothing, if Chrome is installed    |
+| `msedge`      | the Microsoft Edge installed on this machine                        | nothing, if Edge is installed      |
+| `moz-firefox` | the Firefox app installed on this machine (experimental, see below) | nothing, if Firefox is installed   |
 
-A few things differ by engine:
+`facetshot doctor` lists which of these this machine can start.
 
-- **Firefox has no mobile emulation.** Phone sizes, pixel density and touch still apply, but the page isn't told it's on
-  a phone browser (no meta viewport handling).
-- **An engine that won't start fails only its own pictures.** The rest of the run goes on, and the failure says what
+Playwright's builds of WebKit and Firefox are close to Safari and Firefox but not identical, so for anything subtle a
+look in the real browser still helps. Safari itself can't be driven this way; `webkit` is the nearest.
+
+A few things differ by browser:
+
+- **Firefox has no mobile emulation.** Phone sizes, pixel density and touch still apply, but the page isn't told it's
+  on a phone browser (no meta viewport handling).
+- **`moz-firefox` is driven through WebDriver BiDi**, which Playwright supports experimentally. facetshot sets the
+  colour scheme through Firefox's own preferences, so light and dark work. If a picture didn't get a setting the
+  variant asked for, its notes say so instead of passing a light picture off as dark.
+- **A browser that won't start fails only its own pictures.** The rest of the run goes on, and the failure says what
   the browser reported.
 
-To make another engine the default for a project, set `web.browser` to `webkit` or `firefox` in the config.
+To make another browser the default for a project, set `web.browser` in the config.

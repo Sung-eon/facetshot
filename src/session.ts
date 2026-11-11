@@ -178,7 +178,7 @@ export class Session {
 			Object.assign(ctx.values, await prepareFixtures(ctx));
 			const driver = new WebDriver();
 			await driver.prepare([cell], ctx);
-			const browser = await runtime.browser(engineOf(config, cell.device));
+			const browser = await runtime.browser(engineOf(config, cell.device), cell.variant.appearance);
 			const made = await newSession(browser, cell.device, cell.variant, config.web, {
 				baseURL: driver.url,
 				root: ctx.root

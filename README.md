@@ -193,8 +193,8 @@ Each answer is text and images, and also structured data for clients that read i
 | `facetshot clean`                          | removes runs, test data and anything left running                         |
 | `facetshot mcp`                            | runs the MCP server over stdio (your agent starts this)                   |
 
-Common options: `--on` devices, `--as` variants (`+` combines: `dark+large`), `--browser webkit,firefox` other
-engines besides Chromium, `-p` a profile, `--do` a step before
+Common options: `--on` devices, `--as` variants (`+` combines: `dark+large`), `--browser webkit,chrome` other
+browsers besides Chromium, `-p` a profile, `--do` a step before
 the picture, `--diff [against]`, `--checks`, `--format text|md|json`, `--open` (the HTML report), `--out` a folder.
 See the [command reference](docs/cli.md).
 

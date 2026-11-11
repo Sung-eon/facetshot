@@ -162,8 +162,8 @@ Targets
 Options
   --on phone,desktop     devices or groups (default: the profile's)
   --as dark,large        variants; combine with + (dark+large)
-  --browser webkit       web pages in other engines too: chromium (the default), webkit (Safari's), firefox;
-                         or per device: --on phone@webkit
+  --browser webkit       web pages in other browsers too: webkit (Safari's engine), firefox, or the installed
+                         chrome, msedge, moz-firefox; or per device: --on phone@webkit
   -p, --profile name     a named set of devices and variants from your config
   --diff [against]       compare with the previous run, a baseline, or a run id
   --checks a,b|all       which checks to run (facetshot list checks)

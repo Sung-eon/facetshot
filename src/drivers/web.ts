@@ -117,6 +117,19 @@ export async function newSession(
 	};
 }
 
+/**
+ * Some browsers (an installed Firefox over WebDriver BiDi, so far) don't take every emulated setting. Says so when the
+ * page doesn't see the colour scheme the variant asked for, rather than letting a light picture pass for dark.
+ */
+async function schemeNotTaken(session: PageSession): Promise<string | undefined> {
+	const wanted = session.variant.appearance ?? 'light';
+	const dark = await session.page
+		.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)
+		.catch(() => undefined);
+	if (dark === undefined || dark === (wanted === 'dark')) return undefined;
+	return `This browser didn't take the ${wanted} colour scheme, so the picture shows its default.`;
+}
+
 /** How the web driver and the ones built on it (Electron, Tauri's frontend) show one address in a page. */
 export interface ShootOptions {
 	ctx: RunContext;
@@ -138,6 +151,7 @@ export async function pictureOf(
 ): Promise<CellResult> {
 	const { rule, started } = options;
 	const settled = await waitReady(session.page, session.watch, rule);
+	const untaken = await schemeNotTaken(session);
 	const out = result(cell, {
 		screen,
 		ms: Date.now() - started,
@@ -149,6 +163,7 @@ export async function pictureOf(
 					`Not settled after ${(rule.timeout ?? 15_000) / 1000}s: still waiting for ${settled.waitingFor}.`
 				]
 	});
+	if (untaken) (out.notes ??= []).push(untaken);
 	const entries = session.watch.log.take();
 	if (entries.length) {
 		ctx.logs.push({
@@ -353,10 +368,16 @@ export class WebDriver implements Driver {
 			cells,
 			ctx,
 			async (device, variant) =>
-				newSession(await ctx.runtime.browser(engineOf(ctx.config, device)), device, variant, web, {
-					baseURL: this.baseURL,
-					root: ctx.root
-				}),
+				newSession(
+					await ctx.runtime.browser(engineOf(ctx.config, device), variant.appearance),
+					device,
+					variant,
+					web,
+					{
+						baseURL: this.baseURL,
+						root: ctx.root
+					}
+				),
 			(session, cell) => shootCell(session, cell, options, report),
 			report
 		);

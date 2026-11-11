@@ -34,9 +34,20 @@ export interface Device {
 	browser?: BrowserName;
 }
 
-/** The browser engines Playwright drives: Chromium (Chrome, Edge), WebKit (Safari's engine) and Firefox. */
-export type BrowserName = 'chromium' | 'webkit' | 'firefox';
-export const BROWSERS: readonly BrowserName[] = ['chromium', 'webkit', 'firefox'];
+/**
+ * Browsers facetshot can take pictures in. Playwright's own builds: `chromium` (the default), `webkit` (Safari's
+ * engine) and `firefox`. Browsers installed on the machine: `chrome`, `msedge`, and `moz-firefox` (the Firefox app,
+ * driven over WebDriver BiDi, which Playwright supports experimentally).
+ */
+export type BrowserName = 'chromium' | 'webkit' | 'firefox' | 'chrome' | 'msedge' | 'moz-firefox';
+export const BROWSERS: readonly BrowserName[] = [
+	'chromium',
+	'webkit',
+	'firefox',
+	'chrome',
+	'msedge',
+	'moz-firefox'
+];
 
 export type TextSize = 'default' | 'large' | 'xlarge' | 'xxl';
 
