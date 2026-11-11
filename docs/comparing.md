@@ -1,7 +1,7 @@
 # Comparing
 
-After a change, you usually want to know one thing: what looks different now? facetshot can compare a run with the
-one before it, or with a run you saved earlier, and show you only what changed.
+After a change, you usually want to know what looks different now. facetshot can compare a run with the one before
+it, or with a run you saved earlier, and show you only what changed.
 
 ## Against the last run
 
@@ -11,8 +11,8 @@ facetshot /settings /billing         # before your change
 facetshot diff                       # the same command again, compared with the run before
 ```
 
-`facetshot diff` repeats your last command exactly — same targets, devices and variants — and compares each picture
-with the same picture from the previous run. You can also add `--diff` to any command:
+`facetshot diff` repeats your last command exactly (the same targets, devices and variants) and compares each
+screenshot with the same one from the previous run. You can also add `--diff` to any command:
 
 ```sh
 facetshot /settings --diff           # compare with the previous run
@@ -20,7 +20,7 @@ facetshot /settings --diff           # compare with the previous run
 
 ## Against a saved baseline
 
-Runs are kept for a while (the last 20). To keep one for good, save it under a name:
+Only the last 20 runs are kept. To keep one for good, save it under a name:
 
 ```sh
 facetshot /settings /billing -p full
@@ -29,23 +29,22 @@ facetshot baseline save before-redesign
 facetshot /settings /billing -p full --diff before-redesign
 ```
 
-`facetshot baseline list` shows what you've saved; `facetshot baseline rm <name>` removes one. Baselines live in
-`.facetshot/baselines/`; commit them if your team wants to share them.
+`facetshot baseline list` shows what you've saved, and `facetshot baseline rm <name>` removes one. Baselines are kept
+in `.facetshot/baselines/`; commit them if your team wants to share them.
 
 ## What you get
 
 - The summary counts the screens that changed, and marks them with `△` in the list of sheets.
-- On a contact sheet, a changed picture has a red outline and a badge with how much of it changed.
-- Next to each changed picture there's a `.diff.png` that highlights the changed pixels.
-- In `manifest.json`, each picture has `diff.ratio` — the share of pixels that changed, from 0 to 1.
+- On a contact sheet, a changed screenshot has a red outline and a badge with how much of it changed.
+- Next to each changed screenshot there's a `.diff.png` that highlights the changed pixels.
+- In `manifest.json`, each screenshot has `diff.ratio`: the share of pixels that changed, from 0 to 1.
 
 Small differences in anti-aliasing are ignored, so a ratio above zero means something a person would notice. If a
-picture changes on every run even though nothing changed (a clock, a random avatar color), see "Keeping pictures the
-same" in [Web apps](web.md).
+screenshot changes on every run although nothing changed (a clock, a random avatar color), see
+[Keeping screenshots the same](web.md#keeping-screenshots-the-same-from-run-to-run).
 
-## Not a test suite
+## Comparing doesn't fail a run
 
-facetshot doesn't fail a run because something changed — it shows you. That's on purpose: when you're working on a
-UI, things are supposed to change. If you want a visual regression test that fails CI, Playwright's
-`toHaveScreenshot` or a hosted service is the better fit; you can still use facetshot's manifest (`diff.ratio`) to
-build one.
+A run never fails because something changed; while you work on a UI, things are supposed to change. If you want a
+visual regression test that fails CI, Playwright's `toHaveScreenshot` or a hosted service is the better fit. You can
+also read `diff.ratio` from the manifest and fail a job yourself ([Continuous integration](ci.md)).

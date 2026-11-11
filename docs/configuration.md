@@ -1,7 +1,7 @@
 # Configuration reference
 
 facetshot reads `facetshot.config.ts` (or `.mjs`, `.js`), looking upwards from the folder you run it in. Without one,
-it still works on full URLs with the built-in devices and variants.
+it still works with full URLs and the built-in devices and variants.
 
 ```ts
 import { defineConfig } from 'facetshot';
@@ -14,70 +14,59 @@ export default defineConfig({
 `defineConfig` only gives you types and autocompletion; the file is plain TypeScript, so you can compute values,
 read environment variables or import helpers.
 
-Paths are relative to the config file. Commands run in a shell, from `cwd` (relative to the config) or the config's
-folder. In commands and environment values, these placeholders are filled in:
-
-| Placeholder                            | Is                                         |
-| -------------------------------------- | ------------------------------------------ |
-| `{port}`                               | the port chosen for this service or server |
-| `{url}`                                | its address, `http://localhost:{port}`     |
-| `{services.<name>.url}`                | another service's address                  |
-| `{web.url}`                            | where the web app is being served          |
-| any name your `fixtures.setup` returns | e.g. `{project}`                           |
+Paths are relative to the config file. Commands run in a shell, from their `cwd` (relative to the config) or the
+config's folder. Commands and environment values can use placeholders such as `{port}` and `{services.api.url}`;
+[Placeholders](auth-and-data.md#placeholders) lists them and when each one is available.
 
 ## Settings that differ per checkout or per person
 
-The config is code, so it can read environment variables — and it is always read in the environment of whoever
-asked for the pictures, even when the background helper runs it. A teammate or an agent can pick another database
-or server without editing the file:
+The config is code, so it can read environment variables. It is always evaluated with the environment of whoever
+asked for the screenshots, even when the background helper runs it, so a teammate or an agent can choose another
+database or server without editing the file:
 
 ```ts
 const database = process.env.SHOTS_DB ?? 'app_dev';
 ```
 
-When several checkouts of one project take pictures at once (agents in separate git worktrees, say), give each its
-own ports with `stablePorts`. Each checkout gets a block of ports the first time and keeps it from then on, which
-matters when a port ends up inside a build (an API address in the web bundle). A removed checkout gives its block
+Commands facetshot starts (builds, servers) don't inherit that environment: they get the background helper's own
+environment plus their `env`. Read a variable in the config and pass it in `env` when a command needs it.
+
+When several checkouts of one project take screenshots at once (agents in separate git worktrees, say), give each
+its own ports with `stablePorts`. Each checkout gets a block of ports the first time and keeps it from then on, which
+helps when a port ends up inside a build (an API address in the web bundle). A removed checkout gives its block
 back. Blocks come from 5400–5999 unless you pass `{ from, to }`, and are kept in `~/.facetshot/ports.json`.
 
 ```ts
 import { defineConfig, stablePorts } from 'facetshot';
 
 const [webPort, apiPort] = stablePorts(import.meta.dirname, 2);
-
-export default defineConfig({
-	services: {
-		api: { cmd: 'npm run api', port: apiPort, env: { CORS_ORIGIN: `http://localhost:${webPort}` } }
-	},
-	web: {
-		build: { cmd: 'vite build', inputs: ['src'], env: { VITE_API: `http://localhost:${apiPort}` } },
-		serve: { cmd: `vite preview --port ${webPort} --strictPort`, port: webPort }
-	}
-});
 ```
 
-Checkouts then never share or stop each other's servers. Runs from the same checkout share one set, through the
+[A complete example](auth-and-data.md#a-complete-example-web-app-and-api) uses these ports for a web app and its
+API.
+
+With `stablePorts`, checkouts never share or stop each other's servers. Runs from the same checkout share one set, through the
 background helper.
 
 ## Top level
 
-| Key         | Type                   | Default                         |                                                                    |
-| ----------- | ---------------------- | ------------------------------- | ------------------------------------------------------------------ |
-| `out`       | string                 | `.facetshot`                    | where runs, logs, build stamps and baselines go                    |
-| `devices`   | object                 |                                 | add or change devices (below)                                      |
-| `groups`    | `{ name: string[] }`   |                                 | name several devices                                               |
-| `variants`  | object                 |                                 | add or change variants (below)                                     |
-| `profiles`  | `{ name: { on, as } }` | `default`: review × light, dark | devices and variants to use when the command doesn't say           |
-| `aliases`   | `{ name: target }`     |                                 | short names for targets                                            |
-| `checks`    | string[]               | `['console', 'network']`        | checks run while taking pictures                                   |
-| `services`  | object                 |                                 | servers your app needs ([Web apps](web.md#servers-your-app-needs)) |
-| `fixtures`  | object                 |                                 | test data ([Web apps](web.md#test-data))                           |
-| `web`       | object                 |                                 | web pages (below)                                                  |
-| `storybook` | object                 |                                 | [Storybook](storybook.md)                                          |
-| `desktop`   | object                 |                                 | [Electron, Tauri or a Mac app](desktop.md)                         |
-| `apple`     | object                 |                                 | [iOS simulator and Mac builds](ios.md)                             |
-| `swift`     | object                 |                                 | [SwiftUI snapshots](swiftui.md)                                    |
-| `limits`    | object                 |                                 | how much runs at once (below)                                      |
+| Key         | Type                   | Default                         |                                                           |
+| ----------- | ---------------------- | ------------------------------- | --------------------------------------------------------- |
+| `out`       | string                 | `.facetshot`                    | where runs, logs, build stamps and baselines go           |
+| `devices`   | object                 |                                 | add or change devices (below)                             |
+| `groups`    | `{ name: string[] }`   |                                 | name several devices                                      |
+| `variants`  | object                 |                                 | add or change variants (below)                            |
+| `profiles`  | `{ name: { on, as } }` | `default`: review × light, dark | devices and variants to use when the command doesn't say  |
+| `aliases`   | `{ name: target }`     |                                 | short names for targets                                   |
+| `checks`    | string[]               | `['console', 'network']`        | checks run while taking screenshots ([Checks](checks.md)) |
+| `services`  | object                 |                                 | servers your app needs (below)                            |
+| `fixtures`  | object                 |                                 | test data (below)                                         |
+| `web`       | object                 |                                 | web pages (below)                                         |
+| `storybook` | object                 |                                 | [Storybook](storybook.md)                                 |
+| `desktop`   | object                 |                                 | [Electron, Tauri or a Mac app](desktop.md)                |
+| `apple`     | object                 |                                 | [iOS simulator and Mac builds](ios.md)                    |
+| `swift`     | object                 |                                 | [SwiftUI snapshots](swiftui.md)                           |
+| `limits`    | object                 |                                 | how much runs at once (below)                             |
 
 ## `devices`
 
@@ -91,17 +80,19 @@ devices: {
 }
 ```
 
-| Field                          | For            |                                                                               |
-| ------------------------------ | -------------- | ----------------------------------------------------------------------------- |
-| `platform`                     | all            | `web`, `ios` or `window`                                                      |
-| `width`, `height`              | all            | size in CSS pixels or points                                                  |
-| `scale`                        | all            | pixel density (default 2)                                                     |
-| `mobile`, `touch`, `userAgent` | web            | phone browser behaviour                                                       |
-| `model`                        | ios            | simulator device type, as Xcode names it                                      |
-| `orientation`                  | ios            | `portrait` or `landscape`                                                     |
-| `split`                        | ios            | width as a fraction of the screen, for Split View (the app is told the width) |
-| `idiom`, `safeArea`            | ios, snapshots | what a snapshot renderer assumes                                              |
-| `label`                        | all            | a friendlier name                                                             |
+| Field                          | For            |                                                                                                 |
+| ------------------------------ | -------------- | ----------------------------------------------------------------------------------------------- |
+| `platform`                     | all            | `web`, `ios` or `window`                                                                        |
+| `width`, `height`              | all            | size in CSS pixels or points                                                                    |
+| `scale`                        | all            | pixel density (default 2)                                                                       |
+| `mobile`, `touch`, `userAgent` | web            | phone browser behaviour                                                                         |
+| `model`                        | ios            | simulator device type, as Xcode names it                                                        |
+| `orientation`                  | ios            | `portrait` or `landscape`                                                                       |
+| `split`                        | ios            | width as a fraction of the screen, for Split View (the app is told the width)                   |
+| `idiom`, `safeArea`            | ios, snapshots | what a snapshot renderer assumes                                                                |
+| `label`                        | all            | a friendlier name                                                                               |
+| `extends`                      | all            | a built-in device to start from; the other fields change it                                     |
+| `browser`                      | web            | the browser for this device: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox` |
 
 ## `variants`
 
@@ -115,18 +106,18 @@ variants: {
 }
 ```
 
-| Field        | Values                                      |
-| ------------ | ------------------------------------------- |
-| `appearance` | `light`, `dark`                             |
-| `text`       | `default`, `large`, `xlarge`, `xxl`         |
-| `contrast`   | `more`, `forced`                            |
-| `motion`     | `reduce` (the default for pictures), `full` |
-| `locale`     | a BCP 47 tag, e.g. `de-DE`                  |
-| `timezone`   | an IANA zone, e.g. `Asia/Seoul`             |
-| `direction`  | `ltr`, `rtl`                                |
-| `persona`    | a name from `web.personas`                  |
-| `network`    | `offline`                                   |
-| `media`      | `print`                                     |
+| Field        | Values                                         |
+| ------------ | ---------------------------------------------- |
+| `appearance` | `light`, `dark`                                |
+| `text`       | `default`, `large`, `xlarge`, `xxl`            |
+| `contrast`   | `more`, `forced`                               |
+| `motion`     | `reduce` (the default for screenshots), `full` |
+| `locale`     | a BCP 47 tag, e.g. `de-DE`                     |
+| `timezone`   | an IANA zone, e.g. `Asia/Seoul`                |
+| `direction`  | `ltr`, `rtl`                                   |
+| `persona`    | a name from `web.personas`                     |
+| `network`    | `offline`                                      |
+| `media`      | `print`                                        |
 
 ## `web`
 
@@ -135,21 +126,34 @@ variants: {
 | `baseURL`             | where your app runs, if you start it yourself                                                           |
 | `build`               | `{ cmd, inputs, output?, cwd?, env?, heavy? }`: a build that runs when `inputs` change                  |
 | `serve`               | `{ cmd, port?, health?, reuse?, cwd?, env?, startTimeout? }`: the server for the app                    |
-| `browser`             | `chromium` (default), `webkit`, `firefox`                                                               |
-| `personas`, `persona` | who is signed in ([Web apps](web.md#who-is-signed-in))                                                  |
+| `browser`             | the default browser: `chromium` (default), `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`       |
+| `personas`, `persona` | who is signed in (below)                                                                                |
 | `storage`             | `localStorage` entries set before the page loads                                                        |
 | `ready`               | `{ idle?, visible?, gone?, when?, timeout?, routes? }` ([Web apps](web.md#when-a-page-counts-as-ready)) |
 | `block`               | URL globs to abort                                                                                      |
 | `rewrite`             | `[{ from, to }]`: URL prefixes to send elsewhere                                                        |
-| `mask`                | selectors painted over in pictures                                                                      |
+| `mask`                | selectors painted over in screenshots                                                                   |
 | `css`                 | CSS added to every page                                                                                 |
 | `textSizes`           | root font sizes for `large`, `xlarge`, `xxl` (default 125%, 150%, 200%)                                 |
 | `clock`               | freeze the page's clock at this time (ISO 8601)                                                         |
 | `fullPage`            | take the whole page instead of the screen (default false)                                               |
 
+### `web.personas`
+
+Each key names a persona. See [Personas](auth-and-data.md#personas) for how each field behaves.
+
+| Field          |                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| `cookies`      | `[{ name, value, domain?, path? }]`; `domain` defaults to the app's host name, `path` to `/` |
+| `headers`      | request headers sent with every request, including requests to other sites                   |
+| `storage`      | `localStorage` entries                                                                       |
+| `storageState` | a Playwright storage state file                                                              |
+| `login`        | a flow that signs in; its result is saved in `.facetshot/auth/`                              |
+| `ttl`          | minutes a `login` result is reused (default 720)                                             |
+
 ## `services`
 
-Each key names a service; see [Web apps](web.md#servers-your-app-needs).
+Each key names a service; see [Services](auth-and-data.md#services).
 
 | Field               |                                                       |
 | ------------------- | ----------------------------------------------------- |
@@ -161,22 +165,26 @@ Each key names a service; see [Web apps](web.md#servers-your-app-needs).
 
 ## `fixtures`
 
-| Field               |                                                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `setup(ctx)`        | makes test data; returns `{ name: value }` for placeholders. `ctx.label`, `ctx.record(kind, id, extra?)`, `ctx.services`, `ctx.log` |
-| `remove(item, ctx)` | removes one recorded item: `{ kind, id, extra }`                                                                                    |
-| `reuse`             | keep the data while the background helper is up (default true)                                                                      |
+| Field               |                                                                                                                                                                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup(ctx)`        | a function that makes test data and returns `{ name: value }` (strings) for placeholders. `ctx` has `runId`, `label`, `services`, `record(kind, id, extra?)` and `log` ([Test data](auth-and-data.md#test-data)) |
+| `remove(item, ctx)` | removes one recorded item: `{ kind, id, extra }`                                                                                                                                                                 |
+| `reuse`             | keep the data while the background helper is up (default true)                                                                                                                                                   |
 
 ## `limits`
 
-| Field        | Default                                                 |                                                                                       |
-| ------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `webPages`   | 4                                                       | browser pages at once, across all web devices; never more than the machine's 4        |
-| `simulators` | 2                                                       | simulators booted at once; never more than the machine's 2                            |
-| `maxLoad`    | 3                                                       | above this many times the core count (1-minute load average), work goes one at a time |
-| `lockDir`    | `~/.facetshot/locks`                                    | where machine-wide locks live                                                         |
-| `lockNames`  | `{ build: 'build.lock', macWindow: 'mac-window.lock' }` | lock names, to share locks with your own scripts                                      |
+| Field        | Default                                                 |                                                                                                                |
+| ------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `webPages`   | 4                                                       | browser pages being worked at once, across all web devices; never more than 4                                  |
+| `simulators` | 2                                                       | simulators booted at once; never more than 2                                                                   |
+| `maxLoad`    | 3                                                       | with `--no-daemon` only: above this many times the core count (1-minute load average), work goes one at a time |
+| `lockDir`    | `~/.facetshot/locks`                                    | where machine-wide locks live                                                                                  |
+| `lockNames`  | `{ build: 'build.lock', macWindow: 'mac-window.lock' }` | lock names, to share locks with your own scripts                                                               |
+
+The limits of 4 pages and 2 simulators hold with or without the background helper. A project can lower them for
+itself but not raise them. The background helper uses its own load brake, at three times the core count.
 
 Locks are folders created with `mkdir`, so shell scripts can take the same ones: `mkdir build.lock` before a build,
 `rmdir build.lock` after. Point `lockDir` and `lockNames` at the locks your team's scripts already use, and facetshot
-takes its turn with them. Heavy builds run one at a time on the machine: they share the `build` lock. See [Speed and machine safety](performance.md).
+takes its turn with them. Heavy builds share the `build` lock, so only one runs at a time. See
+[Speed and machine safety](performance.md).

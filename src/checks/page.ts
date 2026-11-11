@@ -20,7 +20,7 @@ export type CheckName = (typeof ALL_CHECKS)[number];
 export const CHECK_HELP: Record<CheckName, string> = {
 	console: 'Errors the page logged or threw.',
 	network: 'Requests that failed or answered 4xx/5xx.',
-	overflow: 'The page is wider than the screen (sideways scrolling).',
+	overflow: 'The page is wider than the screen (horizontal scrolling).',
 	clipped: 'Text cut off by its box, a line clamp, or the screen edge.',
 	covered: 'Buttons and links another element sits on top of.',
 	images: 'Images that failed to load.',
@@ -85,7 +85,7 @@ export function inPage(args: { checks: string[]; touch: boolean; width: number }
 			findings.push({
 				check: 'overflow',
 				severity: 'error',
-				message: `The page is ${wide - screenWidth}px wider than the screen, so it scrolls sideways.`,
+				message: `The page is ${wide - screenWidth}px wider than the screen, so it scrolls horizontally.`,
 				where: worst ? describe(worst) : undefined
 			});
 		}
@@ -117,7 +117,7 @@ export function inPage(args: { checks: string[]; touch: boolean; width: number }
 				if (style.overflowX === 'auto' || style.overflowX === 'scroll') break;
 				const edge = at.getBoundingClientRect();
 				if (box.right > edge.right + 1 || box.left < edge.left - 1) {
-					cut = style.textOverflow === 'ellipsis' ? 'ellipsis' : 'cut sideways';
+					cut = style.textOverflow === 'ellipsis' ? 'ellipsis' : 'cut off at the side';
 					break;
 				}
 				if (
@@ -126,7 +126,7 @@ export function inPage(args: { checks: string[]; touch: boolean; width: number }
 					(box.bottom > edge.bottom + 2 || box.top < edge.top - 2) &&
 					edge.height > 4
 				) {
-					cut = 'cut top/bottom';
+					cut = 'cut off at the top or bottom';
 					break;
 				}
 				if (

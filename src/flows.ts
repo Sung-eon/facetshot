@@ -93,6 +93,10 @@ export function loadFlow(file: string, root: string): Flow {
 			'A flow has `start:` (where to begin, e.g. /settings) and `steps:` (a list).'
 		);
 	}
+	// `- back` (a bare word) is the same as `- back: true`.
+	flow.steps = flow.steps.map((step) =>
+		typeof step === 'string' && BARE.has(step) ? ({ [step]: true } as Step) : step
+	);
 	flow.steps.forEach((step, index) => {
 		const key = Object.keys(step ?? {}).find((name) => KEYS.includes(name));
 		if (!key) {

@@ -1,13 +1,14 @@
 # Web apps
 
-Everything about taking pictures of a web app: where facetshot finds it, how it signs in, the test data it uses, and
-how it decides a page is ready.
+This page covers how facetshot finds your web app, how it decides a page is ready, how to keep screenshots the same
+from run to run, and which browsers it can use. Signing in, API servers and test data are in
+[Sign-in, servers and test data](auth-and-data.md).
 
 ## Where your app is
 
 There are two ways to tell facetshot where your app runs.
 
-**You run it, facetshot visits it.** Set `baseURL` and paths like `/settings` go there:
+You run the app, and facetshot visits it. Set `baseURL`, and paths like `/settings` go there:
 
 ```ts
 web: {
@@ -15,57 +16,69 @@ web: {
 }
 ```
 
-**facetshot builds and starts it.** Give it a build and a server:
+Or facetshot builds and starts the app. Give it a build and a server:
 
 ```ts
 web: {
 	build: {
-		cmd: 'npx vite build',
+		cmd: 'bunx --bun vite build',
 		inputs: ['src', 'public', 'index.html', 'vite.config.ts', 'package.json'],
 		output: 'dist'
 	},
-	serve: { cmd: 'npx vite preview --port {port} --strictPort', port: 'auto' }
+	serve: { cmd: 'bunx --bun vite preview --port {port} --strictPort', port: 'auto' }
 }
 ```
 
-- The build runs only when something under `inputs` changed (facetshot hashes their contents; in a git checkout it
+The commands are your app's own; use whatever your project builds and serves itself with.
+
+- The build runs only when something under `inputs` changed. facetshot hashes their contents (in a git checkout it
   reads git's index, so this is fast even for big projects). If `output` is missing, it builds again.
-- The server starts once and stays up between runs. After a rebuild it restarts, so you never look at stale code.
-- `port: 'auto'` picks a free port. Use a fixed number when something else needs to know it — for example an API
-  that only accepts requests from a known origin.
+- The server starts once and stays up between runs. After a rebuild it restarts, so you never look at old code.
+- `port: 'auto'` picks a free port. Use a fixed number when something else needs to know it, such as an API that only
+  accepts requests from a known origin ([complete example](auth-and-data.md#a-complete-example-web-app-and-api)).
+
+### Why a build and not your dev server
+
+A dev server compiles each page the first time it's opened and rebuilds after every edit, which makes the first
+screenshots slow and sometimes catches a page in the middle of a reload. A production build is compiled once, loads
+fast, and looks like what users get. If your app has no production build you can run locally, a dev server works
+too: put its command in `serve`.
 
 ### A site that's already live
 
-A staging or production site is just another address. For a quick look, give full URLs and no config at all:
+For a quick look at a staging or production site, give full URLs. No config is needed:
 
 ```sh
 facetshot https://app.example.com/pricing https://app.example.com/docs --on phone,desktop
 ```
 
-To use your config's personas, variants and checks against it, let an environment variable choose where `baseURL`
-points. `baseURL` wins over `build` and `serve`, so nothing is built or started for the web app:
+To use your config's personas, variants and checks against a live site, let an environment variable choose where
+`baseURL` points. `baseURL` wins over `build` and `serve`, so nothing is built or started for the web app:
 
 ```ts
+import { defineConfig } from 'facetshot';
+import { makeTestData, removeTestData } from './facetshot/test-data.ts';
+
 const live = process.env.SITE; // e.g. SITE=https://staging.example.com
 
 export default defineConfig({
 	web: { baseURL: live, build: { … }, serve: { … } },
 	services: live ? {} : { api: { … } },
-	fixtures: live ? undefined : { setup: './facetshot/seed.ts' }
+	fixtures: live ? undefined : { setup: makeTestData, remove: removeTestData }
 });
 ```
 
-A few things are different on a live site:
+Some things are different on a live site:
 
-- **Sign in for real.** A sign-in that only exists in development isn't there. Use a persona with a login
-  [flow](flows.md) or a saved `storageState` file, for a test account rather than a real person's.
-- **Test data is real data.** Whatever `fixtures.setup` creates lands in the live database, which is why the example
-  leaves fixtures (and local services) out when `SITE` is set. Point at pages that already exist instead.
-- **Be gentle with it.** Every picture is a page load from a real user's point of view, with rate limits,
-  analytics and alerting attached. Narrow the run with `--on`, `--as` and a short list of screens.
+- A sign-in that only exists in development isn't there. Use a persona with a `login` flow or a saved
+  `storageState` file ([Personas](auth-and-data.md#personas)), for a test account, not a real person's.
+- Whatever `fixtures.setup` creates lands in the live database. That is why the example leaves test data (and local
+  services) out when `SITE` is set. Point at pages that already exist instead.
+- Every screenshot is a real page load, counted by the site's rate limits, analytics and alerting. Narrow the run
+  with `--on`, `--as` and a short list of screens.
 
-To see how your local build differs from what users have now, take the live pictures as a baseline and compare
-([Comparing](comparing.md)):
+To see how your local build differs from what users have now, save screenshots of the live site as a baseline and
+compare ([Comparing](comparing.md)):
 
 ```sh
 SITE=https://app.example.com facetshot /pricing /docs
@@ -73,119 +86,19 @@ facetshot baseline save live
 facetshot /pricing /docs --diff live
 ```
 
-### Why a build and not your dev server
-
-Dev servers compile each page the first time it's opened and re-bundle after every edit, which makes the first
-pictures slow and sometimes catches a page halfway through a reload. A production build is compiled once, loads fast,
-and looks exactly like what users get. If your app has no production build you can run locally, a dev server works
-too — just put its command in `serve`.
-
-### Sign-in that only exists in development
-
-Many apps sign in a fake local user only in development mode, so a production build can't sign in locally. A common
-fix is a separate build mode just for screenshots, which keeps the local sign-in and can't be deployed:
-
-```ts
-build: { cmd: 'vite build --mode screenshots', inputs: [...] },
-serve: { cmd: 'vite preview --mode screenshots --port {port}' }
-```
-
-In your app, enable the local sign-in when `import.meta.env.DEV || import.meta.env.MODE === 'screenshots'`, write that
-condition inline where it's used (bundlers only drop dead code reliably when the constant is right there), and
-build that mode without a deployment adapter so the output can't be shipped by accident. Add a test that a normal
-production build doesn't contain the local user.
-
-## Servers your app needs
-
-An API, a mock server or anything else goes under `services`. Each starts before the pictures and is shared by every
-run while the daemon is up:
-
-```ts
-services: {
-	api: {
-		cmd: 'npm run api',
-		cwd: '../api',
-		port: 4000,
-		health: '/health',
-		env: { CORS_ORIGIN: 'http://localhost:5390' },
-		reuse: 'http://localhost:4000'
-	}
-}
-```
-
-- `health` is a path (or full URL) that answers 2xx once the service is ready. facetshot waits up to `startTimeout`
-  (2 minutes by default).
-- `reuse`: if this URL already answers, facetshot uses it and starts nothing.
-- If the port is taken by something that doesn't answer `health`, the run stops and tells you how to find the process.
-- The URL of each service is available as `{services.api.url}` in other commands and environment variables.
-
-## Who is signed in
-
-A **persona** is a signed-in person. Define them under `web.personas` and use one through a variant:
-
-```ts
-web: {
-	personas: {
-		admin: { cookies: [{ name: 'session', value: 'dev-admin' }] },
-		viewer: { headers: { 'X-Dev-User': 'viewer' } },
-		customer: { login: 'flows/login.yaml', ttl: 720 },
-		saved: { storageState: '.auth/customer.json' }
-	},
-	persona: 'admin'
-},
-variants: {
-	'as-viewer': { persona: 'viewer' }
-}
-```
-
-```sh
-facetshot /billing --as light,as-viewer
-```
-
-A persona can set cookies, request headers or `localStorage` entries, load a Playwright storage state file, or run a
-[flow](flows.md) that signs in (its result is cached for `ttl` minutes). `web.persona` is who is signed in when a
-variant doesn't say.
-
-## Test data
-
-Pages that show a specific record need one to exist. `fixtures.setup` makes test data before the first picture and
-returns ids for `{placeholders}` in targets; `fixtures.remove` deletes each thing it made:
-
-```ts
-fixtures: {
-	async setup(ctx) {
-		const project = await api.post('/projects', { name: ctx.label });
-		ctx.record('project', project.id);
-		return { project: project.id };
-	},
-	async remove(item) {
-		if (item.kind === 'project') await api.delete(`/projects/${item.id}`);
-	}
-},
-aliases: { project: '/projects/{project}' }
-```
-
-```sh
-facetshot project /projects
-```
-
-- `ctx.label` is `facetshot-<run id>`. Put it on what you make, so it's easy to spot.
-- `ctx.record(kind, id)` writes the item to a ledger before you return. If the run is killed, the next run removes
-  everything the ledger lists.
-- While the daemon is up, test data is made once and reused by later runs, and removed when the daemon stops. Set
-  `reuse: false` for fresh data every run, removed when that run ends.
+[Security](security.md) has more on what a run or an agent can do to a live site.
 
 ## When a page counts as ready
 
-facetshot takes a picture when all of these are true, checked every 50 ms:
+facetshot takes a screenshot when all of these are true, checked every 50 ms:
 
 1. The page has loaded and its fonts have finished loading.
-2. No request has been in flight for `idle` milliseconds (300 by default). WebSockets, event streams and anything open
-   for more than 10 seconds (long polling) don't count.
+2. No request has been in flight for `idle` milliseconds (300 by default). WebSockets, event streams and requests
+   open for more than 10 seconds (long polling) don't count.
 3. Nothing in `gone` is visible, and everything in `visible` is.
-4. The `when` expression, if any, is true.
+4. The `when` expression, if there is one, is true.
 
-Then it waits for two painted frames and takes the picture with animations stopped and the text cursor hidden.
+Then it waits for two painted frames and takes the screenshot with animations stopped and the text cursor hidden.
 
 ```ts
 web: {
@@ -199,26 +112,27 @@ web: {
 }
 ```
 
-Rules under `routes` apply to paths matching the pattern (`*` within a segment, `**` across) and add to the general
-ones. Set `idle: 0` for pages that never stop talking to the server (editors that autosave, live dashboards).
+Rules under `routes` apply to paths matching the pattern (`*` within one path segment, `**` across segments) and add
+to the general ones. Set `idle: 0` for pages that never stop talking to the server, such as editors that save
+automatically and live dashboards.
 
-If a page isn't ready after `timeout` (15 s), facetshot takes the picture anyway and tells you what it was still
-waiting for:
+If a page isn't ready after `timeout` (15 seconds by default), facetshot takes the screenshot anyway and says what it
+was still waiting for:
 
 ```
 Taken before the screen settled (2):
   editor: Not settled after 15s: still waiting for the network (PUT /docs/42/autosave).
 ```
 
-## Keeping pictures the same from run to run
+## Keeping screenshots the same from run to run
 
-Pictures should only change when your UI does. facetshot already turns off animations, blocks service workers and
-emulates `prefers-reduced-motion`. A few settings help with the rest:
+Screenshots should change only when your UI does. facetshot already turns off animations, blocks service workers and
+emulates `prefers-reduced-motion`. These settings help with the rest:
 
 ```ts
 web: {
 	clock: '2026-01-15T10:30:00Z',     // "3 minutes ago" stays "3 minutes ago"
-	mask: ['.avatar', 'time'],         // painted over in every picture
+	mask: ['.avatar', 'time'],         // painted over in every screenshot
 	storage: { 'intro-seen': '1' },    // first-run dialogs, cookie banners
 	block: ['**/analytics/**'],        // requests to stop
 	rewrite: [{ from: 'https://cdn.example.com', to: 'http://localhost:4001' }],
@@ -229,21 +143,20 @@ web: {
 ## Large text and other variants on the web
 
 Browsers have no "larger text" setting to emulate, so `large`, `xlarge` and `xxl` set the root font size to 125%,
-150% and 200%. That's what a person who raises their browser's default font size gets, and it's what `rem`-based
-layouts respond to. If your app scales text differently, change it:
+150% and 200%. That is what a person who raises their browser's default font size gets, and it's what layouts sized
+in `rem` respond to. If your app scales text differently, change the sizes:
 
 ```ts
 web: { textSizes: { large: '112.5%', xxl: '175%' } }
 ```
 
-The other variants map to the browser's own emulation: `dark` to `prefers-color-scheme`, `contrast` to
-`prefers-contrast: more`, `forced` to forced colors, `rtl` to `dir="rtl"` on the page, `offline` to no network,
-`print` to print media, and `locale`/`timezone` to the browser's language and time zone.
+The other variants use the browser's own emulation: `dark` sets `prefers-color-scheme`, `contrast` sets
+`prefers-contrast: more`, `forced` turns on forced colors, `rtl` sets `dir="rtl"` on the page, `offline` cuts the
+network, `print` uses print media, and `locale` and `timezone` set the browser's language and time zone.
 
 ## Other browsers
 
-Pictures are taken in Chromium unless you ask for more. Other browsers are used only when you (or your agent) ask for
-them, for one run:
+Screenshots are taken in Playwright's Chromium unless you ask for other browsers, for one run:
 
 ```sh
 facetshot /pricing --browser webkit                # every web device in WebKit, Safari's engine
@@ -252,31 +165,32 @@ facetshot /pricing --on phone,phone@webkit         # or name the browser per dev
 facetshot open /pricing --on phone --browser chrome
 ```
 
-Each browser gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@chrome`), so the differences are side by
-side. Agents pass `browsers: ["webkit"]` to `capture`, `check` and `compare`, and `browser` to `open`.
+Each browser gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@chrome`), so the differences are side
+by side. Agents pass `browsers` to `capture`, `check` and `compare`, and `browser` to `open`
+([MCP tools](mcp.md)). To make another browser the default for a project, set `web.browser` in the config.
 
-| Name          | What it is                                                          | Before first use                   |
-| ------------- | ------------------------------------------------------------------- | ---------------------------------- |
-| `chromium`    | Playwright's build of Chromium (the default)                        | `bunx playwright install chromium` |
-| `webkit`      | Playwright's build of WebKit, the engine inside Safari              | `bunx playwright install webkit`   |
-| `firefox`     | Playwright's build of Firefox                                       | `bunx playwright install firefox`  |
-| `chrome`      | the Google Chrome installed on this machine                         | nothing, if Chrome is installed    |
-| `msedge`      | the Microsoft Edge installed on this machine                        | nothing, if Edge is installed      |
-| `moz-firefox` | the Firefox app installed on this machine (experimental, see below) | nothing, if Firefox is installed   |
+| Name          | What it is                                               | Before first use                   |
+| ------------- | -------------------------------------------------------- | ---------------------------------- |
+| `chromium`    | Playwright's build of Chromium (the default)             | `bunx playwright install chromium` |
+| `webkit`      | Playwright's build of WebKit, the engine inside Safari   | `bunx playwright install webkit`   |
+| `firefox`     | Playwright's build of Firefox                            | `bunx playwright install firefox`  |
+| `chrome`      | the Google Chrome installed on this machine              | nothing, if Chrome is installed    |
+| `msedge`      | the Microsoft Edge installed on this machine             | nothing, if Edge is installed      |
+| `moz-firefox` | the Firefox app installed on this machine (experimental) | nothing, if Firefox is installed   |
 
 `facetshot doctor` lists which of these this machine can start.
 
-Playwright's builds of WebKit and Firefox are close to Safari and Firefox but not identical, so for anything subtle a
-look in the real browser still helps. Safari itself can't be driven this way; `webkit` is the nearest.
+Playwright's builds of WebKit and Firefox are close to Safari and Firefox but not identical, so for subtle problems
+it is still worth a look in the real browser. Safari itself can't be driven this way; `webkit` is the nearest.
 
-A few things differ by browser:
+Some things differ by browser:
 
-- **Firefox has no mobile emulation.** Phone sizes, pixel density and touch still apply, but the page isn't told it's
-  on a phone browser (no meta viewport handling).
-- **`moz-firefox` is driven through WebDriver BiDi**, which Playwright supports experimentally. facetshot sets the
-  colour scheme through Firefox's own preferences, so light and dark work. If a picture didn't get a setting the
-  variant asked for, its notes say so instead of passing a light picture off as dark.
-- **A browser that won't start fails only its own pictures.** The rest of the run goes on, and the failure says what
+- Firefox has no mobile emulation. Phone sizes, pixel density and touch still apply, but the page isn't told it's in
+  a phone browser (there is no meta viewport handling).
+- `moz-firefox` is driven over WebDriver BiDi, which Playwright supports experimentally. facetshot sets the color
+  scheme through Firefox's own preferences, so light and dark work. If a screenshot didn't get a setting the variant
+  asked for, its notes say so.
+- A browser that won't start fails only its own screenshots. The rest of the run goes on, and the failure says what
   the browser reported.
 
-To make another browser the default for a project, set `web.browser` in the config.
+See [Status and limits](status.md) for which browsers have been tested where.

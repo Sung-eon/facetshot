@@ -1,7 +1,8 @@
 # Flows
 
-Some screens don't have an address: a menu that's open, a confirmation dialog, a form with an error under one field.
-A **flow** gets you there with a few steps, and takes a picture wherever you say.
+Some screens have no address: a menu that's open, a confirmation dialog, a form with an error under one field. A
+**flow** reaches such a screen with a few steps, and takes a screenshot wherever you say. This page is also the
+reference for every step, used by flows, `--do`, sessions and the MCP tools.
 
 ```yaml
 # flows/delete-account.yaml
@@ -21,76 +22,90 @@ steps:
 facetshot flows/delete-account.yaml --on phone,desktop --as light,dark
 ```
 
-Each `shot` becomes its own screen in the results — here `delete-account.confirm` and `delete-account.error` — with
-a contact sheet each. The flow runs once per device and variant, from the start.
+Each `shot` becomes a screen of its own in the results, here `delete-account.confirm` and `delete-account.error`,
+each with its own contact sheet. The flow runs from the start once per device and variant.
 
-## Without a file
+## Steps without a file
 
-For a quick look, give the steps on the command line instead. They're played on every target you name, and each
-`shot` is a picture:
+For a quick look, give the steps on the command line with `--do`. They are played on every target you name, and
+each `shot` is a screenshot:
 
 ```sh
 facetshot /settings/account --do "click:role=button[name='Delete account']" --do "wait:role=dialog" --do shot:confirm
 ```
 
-Write each step as `<step>:<value>`; `fill` and `select` take `<selector>=<text>`
-(`--do "fill:input[name=email]=ada@example.com"`), `drag` takes `<from>><to>`, `scroll:<selector>=<pixels>` scrolls
-inside an element, and `back`, `forward` and `reload` take nothing. Agents pass the same strings in the MCP tools' `steps`.
+Agents pass the same strings in the MCP tools' `steps`, and sessions take them in `act`.
 
 ## Steps
 
-| Step                                       | Does                                                   |
-| ------------------------------------------ | ------------------------------------------------------ |
-| `click: <selector>`                        | clicks the first match                                 |
-| `dblclick: <selector>`                     | double-clicks it                                       |
-| `rightclick: <selector>`                   | right-clicks it, to open a context menu                |
-| `tap: <selector>`                          | taps it (touch devices)                                |
-| `longpress: <selector>`                    | presses and holds it for 0.8 s                         |
-| `hover: <selector>`                        | moves the pointer over it                              |
-| `focus: <selector>`                        | focuses it                                             |
-| `drag: <selector>` + `to: <selector>`      | drags it onto the other                                |
-| `fill: <selector>` + `with: <text>`        | replaces a field's text                                |
-| `type: <text>`                             | types into whatever has focus                          |
-| `press: <key>`                             | presses a key: `Enter`, `Escape`, `Control+A`          |
-| `select: <selector>` + `option: <value>`   | picks an option in a `<select>`                        |
-| `scroll: <selector>` or `scroll: <pixels>` | scrolls an element into view, or scrolls by that much  |
-| `scroll: <selector>` + `by: <pixels>`      | scrolls inside a scrollable element                    |
-| `wait: <selector>`                         | waits until it's visible (up to 15 s)                  |
-| `gone: <selector>`                         | waits until it's hidden                                |
-| `goto: <path>`                             | opens another address                                  |
-| `back`, `forward`, `reload`                | the browser's buttons                                  |
-| `shot: <name>`                             | waits for the screen to be ready, then takes a picture |
+The second column is how a step is written in a flow file; the third is the same step on the command line, in
+`act`, and in MCP `steps`.
 
-A flow with no `shot` step takes one picture at the end.
+| Step                     | In a flow file                          | Inline                      | Does                                                             |
+| ------------------------ | --------------------------------------- | --------------------------- | ---------------------------------------------------------------- |
+| click                    | `click: <element>`                      | `click:<element>`           | clicks it                                                        |
+| double-click             | `dblclick: <element>`                   | `dblclick:<element>`        | double-clicks it                                                 |
+| right-click              | `rightclick: <element>`                 | `rightclick:<element>`      | right-clicks it, to open a context menu                          |
+| tap                      | `tap: <element>`                        | `tap:<element>`             | taps it (touch devices)                                          |
+| long press               | `longpress: <element>`                  | `longpress:<element>`       | presses and holds it for 0.8 s                                   |
+| hover                    | `hover: <element>`                      | `hover:<element>`           | moves the pointer over it                                        |
+| focus                    | `focus: <element>`                      | `focus:<element>`           | focuses it                                                       |
+| drag                     | `drag: <element>` + `to: <element>`     | `drag:<element>><element>`  | drags the first onto the second                                  |
+| fill                     | `fill: <element>` + `with: <text>`      | `fill:<element>=<text>`     | replaces a field's text                                          |
+| type                     | `type: <text>`                          | `type:<text>`               | types into whatever has focus                                    |
+| press                    | `press: <key>`                          | `press:<key>`               | presses a key, with modifiers: `Enter`, `Escape`, `Shift+Meta+K` |
+| select                   | `select: <element>` + `option: <value>` | `select:<element>=<value>`  | picks an option in a `<select>`                                  |
+| scroll the page          | `scroll: <pixels>`                      | `scroll:<pixels>`           | scrolls the page by that much                                    |
+| scroll to an element     | `scroll: <element>`                     | `scroll:<element>`          | scrolls the element into view                                    |
+| scroll inside an element | `scroll: <element>` + `by: <pixels>`    | `scroll:<element>=<pixels>` | scrolls inside a scrollable element                              |
+| wait                     | `wait: <element>`                       | `wait:<element>`            | waits until it is visible (up to 15 s)                           |
+| wait until gone          | `gone: <element>`                       | `gone:<element>`            | waits until it is hidden (up to 15 s)                            |
+| go to                    | `goto: <path>`                          | `goto:<path>`               | opens another address                                            |
+| back, forward, reload    | `back` or `back: true`                  | `back`                      | the browser's buttons                                            |
+| screenshot               | `shot: <name>`                          | `shot:<name>`               | waits for the screen to be ready, then takes a screenshot        |
 
-## Selectors
+A flow with no `shot` step takes one screenshot at the end. Steps that act on an element wait up to 10 seconds for
+it.
 
-A step can also name a point, `@x,y` in CSS pixels. Selectors are Playwright's, so you can write them the way you'd
-describe the screen to someone:
+## Naming an element
 
-- `role=button[name='Save']` — by accessible role and name (the sturdiest)
-- `text=Forgot password?` — by visible text
-- `label=Email` — the field with that label
-- `#submit`, `.card:nth-child(2)`, `[data-testid=menu]` — plain CSS
+Wherever a step takes `<element>`, you can write any of these:
+
+| Write                           | Means                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `role=button[name='Save']`      | an element by its accessible role and name. This is the sturdiest choice                  |
+| `text=Forgot password?`         | an element by its visible text                                                            |
+| `label=Email`                   | the field with that label                                                                 |
+| `placeholder=Search`            | the field with that placeholder                                                           |
+| `alt=Logo`                      | the image with that alt text                                                              |
+| `title=Close`                   | the element with that `title` attribute                                                   |
+| `testid=menu`                   | the element with `data-testid="menu"`                                                     |
+| `#submit`, `.card:nth-child(2)` | plain CSS, or any other [Playwright selector](https://playwright.dev/docs/other-locators) |
+| `@x,y`                          | a point, in CSS pixels from the top left of the screen                                    |
+| `e14`                           | in a [session](sessions.md), the element with that ref in the latest list                 |
+
+`label=`, `placeholder=`, `alt=`, `title=` and `testid=` use Playwright's `getByLabel`, `getByPlaceholder`,
+`getByAltText`, `getByTitle` and `getByTestId`. `role=` and `text=` are Playwright's own selector engines. When
+several elements match, the first one is used.
 
 ## Finding the steps
 
-Don't know the steps yet? Open a [session](sessions.md), work the page one step at a time, and close it with
-`--save flows/name.yaml`: the steps that worked become a flow.
+If you don't know the steps yet, open a [session](sessions.md), try them one at a time, and close it with
+`--save flows/name.yaml`. The steps that worked become a flow.
 
 ## When a step fails
 
-The pictures the flow didn't reach are reported as failed, with the step that stopped it:
+The screenshots the flow didn't reach are reported as failed, with the step that stopped it:
 
 ```
 delete-account.error phone/light: step 6 of delete-account ({"click":"role=button[name='Delete']"}) didn't work: Timeout 10000ms exceeded.
 ```
 
-so the contact sheet shows exactly where it went wrong.
+The contact sheet then shows how far the flow got on each device.
 
 ## Flows on apps
 
 On iOS simulators and desktop windows, `goto` and `shot` work through deep links. Steps that touch the screen
-(`click`, `tap`, `fill`, `type`) need the app's UI-test runner; see [iOS simulators](ios.md) and
-[Desktop apps](desktop.md) for what each platform supports. Electron windows support every step, since they're
+(`click`, `tap`, `fill`, `type`) need the app's UI-test runner; see [iOS simulators](ios.md#flows) and
+[Desktop apps](desktop.md) for what each platform supports. Electron windows support every step, since they are
 driven like a browser.

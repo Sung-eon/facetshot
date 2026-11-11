@@ -1,10 +1,12 @@
 # AI agents
 
-Coding agents are good at changing UI code and bad at knowing what it looks like afterwards. facetshot gives them
-eyes: one call returns how a screen looks on every device that matters, plus a list of what's broken, in a form small
-enough to fit in the agent's context.
+A coding agent can change UI code, but it can't see the result unless something shows it. facetshot gives an agent
+tools that return how a screen looks on several devices, and a list of what looks wrong, in a form small enough for
+its context.
 
 ## Connecting your agent
+
+Run one of these in your project's folder:
 
 ```sh
 bunx facetshot init --agent claude     # Claude Code
@@ -13,18 +15,46 @@ bunx facetshot init --agent codex      # Codex
 bunx facetshot init --agent all
 ```
 
-What this does:
+What each one writes:
 
-| Agent       | MCP server                                       | Instructions                          |
-| ----------- | ------------------------------------------------ | ------------------------------------- |
-| Claude Code | added to `.mcp.json`                             | skill in `.claude/skills/facetshot/`  |
-| Cursor      | added to `.cursor/mcp.json`                      | rule in `.cursor/rules/facetshot.mdc` |
-| Codex       | printed for you to add to `~/.codex/config.toml` | skill in `.agents/skills/facetshot/`  |
+| Agent       | File                          | What it is                                                                                                                                                     |
+| ----------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code | `.mcp.json`                   | registers facetshot's MCP server, so the agent gets its tools                                                                                                  |
+|             | `.claude/skills/facetshot/`   | the Agent Skill: `SKILL.md` says when to look and how; `reference.md` has the details                                                                          |
+| Cursor      | `.cursor/mcp.json`            | the same MCP server, for Cursor                                                                                                                                |
+|             | `.cursor/rules/facetshot.mdc` | the skill's text as a Cursor rule                                                                                                                              |
+| Codex       | `.codex/config.toml`          | the MCP server, under `[mcp_servers.facetshot]`. Codex reads a project's file once you trust the project; otherwise copy the section to `~/.codex/config.toml` |
+|             | `.agents/skills/facetshot/`   | the Agent Skill, where Codex looks for a repository's skills                                                                                                   |
 
-It also suggests one line for your `AGENTS.md` or `CLAUDE.md`; pass `--yes` to add it. Commit these files so
-everyone on the team, and every agent, gets the same setup.
+Running `init` again is safe, but note what it does to each file:
 
-To set it up by hand, the MCP server is a local stdio server:
+- In `.mcp.json` and `.cursor/mcp.json`, only the `facetshot` entry is written; other servers are kept.
+- In `.codex/config.toml`, the section is added only if there isn't one already.
+- The skill folder is replaced each time. When facetshot sits inside your project (a clone or a monorepo), it is a
+  symbolic link to facetshot's own `skills/facetshot/`, so it can't drift from the version you run.
+- `.cursor/rules/facetshot.mdc` is overwritten each time.
+
+Commit these files, so everyone on the team, and every agent, gets the same setup.
+
+`init --agent` connects the agent even in a folder where it finds no app to build or start: it writes no config then,
+and the agent can still take screenshots of full URLs. To give it short paths like `/settings` for an app that's
+already running, add its address: `bunx facetshot init --url http://localhost:3000 --agent claude`.
+
+`init` also prints one line to add to your `CLAUDE.md` or `AGENTS.md`. With `--yes`, it appends the line to whichever
+of those files already exists (`CLAUDE.md` first); it never creates one. The line is:
+
+> To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to
+> use a page step by step) or the `facetshot` command. Never write a screenshot script.
+
+Agents tend to write a one-off screenshot script each time they want to see a screen, and the fixed sleeps in those
+scripts make them flaky. The skill and this line tell them to use facetshot instead.
+
+To check the connection, ask your agent "which facetshot tools do you have?" or "check /settings on a phone".
+
+### Setting it up by hand
+
+The MCP server is a local server that talks over standard input and output. When facetshot is installed in the
+project, the entry is:
 
 ```json
 {
@@ -34,91 +64,64 @@ To set it up by hand, the MCP server is a local stdio server:
 }
 ```
 
-It looks for `facetshot.config.ts` from the folder it's started in. Set `FACETSHOT_CONFIG` to point it elsewhere.
+When facetshot is used from a clone, `init` writes `"command": "bun", "args": ["--bun", "<path to facetshot>/src/cli.ts", "mcp"]`
+instead. The server looks for `facetshot.config.ts` from the folder it starts in; set `FACETSHOT_CONFIG` or
+`FACETSHOT_CWD` to point it elsewhere ([environment variables](cli.md#environment-variables)).
 
 ## The tools
 
-facetshot exposes eight tools. Few, small tools are deliberate: every tool's description sits in the agent's
-context on every turn.
+| Tool      | What it does                                                           |
+| --------- | ---------------------------------------------------------------------- |
+| `check`   | reads screens for problems without taking screenshots                  |
+| `capture` | takes screenshots and returns one contact sheet per screen             |
+| `compare` | repeats the last capture (or the targets given) and shows what changed |
+| `inspect` | returns one screenshot at full size, or a region of it, with its log   |
+| `list`    | lists devices, variants, profiles, checks or recent runs               |
+| `open`    | opens a page and keeps it open: a [session](sessions.md)               |
+| `act`     | does steps in a session and returns the new screenshot                 |
+| `close`   | ends a session, optionally saving its steps as a flow                  |
 
-| Tool      | What it does                                                  | Returns                                               |
-| --------- | ------------------------------------------------------------- | ----------------------------------------------------- |
-| `check`   | reads screens for problems without taking pictures            | a text list of problems                               |
-| `capture` | takes pictures on the given (or default) devices and variants | a summary and one contact sheet per screen, as images |
-| `compare` | repeats the last capture (or the targets given) and compares  | only the sheets that changed                          |
-| `inspect` | one picture at full size, or a region of it                   | an image, that picture's problems and its log lines   |
-| `list`    | devices, variants, profiles, checks, recent runs              | text                                                  |
-| `open`    | opens a page and keeps it open (a [session](sessions.md))     | its id, a picture, its log and what's clickable       |
-| `act`     | steps in a session: click, type, right-click, drag, scroll…   | the picture, the log since the last step, problems    |
-| `close`   | ends a session, optionally saving its steps as a flow         | text                                                  |
+[MCP tools](mcp.md) lists every parameter and what each tool returns.
 
-Every tool takes targets the same way the command line does (`/path`, `app:/path`, `story:…`, `preview:…`, a flow
-file) and optional `devices` and `variants`. `capture` and `check` also take `steps` — clicks, typing and waits played
-before the picture, written as on the command line (`"click:role=button[name='Delete']"`, `"shot:confirm"`) — so an
-agent can look at a menu or a dialog without writing a flow file.
+## Recommended workflow
 
-`capture` can hand pictures back three ways, chosen with `images`:
+The skill teaches agents this workflow, and it works well for people too:
 
-| `images`           | Returns                                             | Use it for                                                           |
-| ------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
-| `sheets` (default) | one grid per screen                                 | seeing how a screen holds up everywhere                              |
-| `cells`            | each picture on its own, up to 8, scaled to 1024 px | a few cells where details matter                                     |
-| `none`             | paths only                                          | when the agent's client shows files itself, or only the text matters |
+1. Check the screens you touched. Most problems show up here, as text.
+2. Capture the screens worth seeing, and read the sheets.
+3. Fix, then compare to see only what changed.
+4. Inspect a single screenshot when a detail is too small to read on the sheet.
 
-Long runs report progress as they go, so an agent (and you, watching it) can see it's working.
+When the agent doesn't know the steps to a state yet (what's in this menu, what happens after Save), a session lets
+it look, decide and act one step at a time, and then save the steps as a flow that `capture` can play on every
+device.
 
-## Working a page step by step
+Two tips:
 
-When the agent doesn't know the steps yet — what's in this menu, what happens after Save — `capture` with `steps`
-means guessing them all up front. A session lets it look, decide and act one step at a time instead:
+- Tell the agent which screens a change affects. "Check `/settings` and `/settings/billing` on phones" leads to a
+  focused look; "check the app" leads to a lot of screenshots.
+- Keep the `default` profile small. Two variants on four devices catch most layout problems day to day; before you
+  finish a feature, use the built-in `full` profile (`-p full`, or `profile: "full"`), which adds large text.
 
-1. `open` a page. The answer lists what's on screen, each with a ref: `e18 button "Save" @195,362`.
-2. `act` with steps that use those refs, a selector, or a point on the picture: `["fill:e14=Grace", "click:e18"]`,
-   `["rightclick:@320,120"]`. Each answer is the new picture, the log lines since the last step (console, errors,
-   requests, the servers' output) and any console errors or failed requests.
-3. `close` it, with `saveAs` to keep the steps as a flow that `capture` can play on every device.
+## Keeping images cheap
 
-How many steps to take is the agent's call. facetshot gives it the page, the hands and the eyes, and closes a
-forgotten session after 10 minutes.
+Images take up most of an agent's context, so the tools return as few as they can:
 
-## Keeping it cheap
-
-Images are the expensive part of an agent's context, so facetshot is careful with them:
-
-- `check` returns no images at all. It's the right first step after a change.
-- `capture` returns at most 4 sheets per call (set `FACETSHOT_MCP_MAX_IMAGES` to change that) and lists the rest by
-  name. Each sheet shows every device and variant of one screen, scaled to about 1600 pixels wide.
+- `check` returns no images at all, which makes it a good first step after a change.
+- `capture` returns at most 4 sheets per call (`FACETSHOT_MCP_MAX_IMAGES`) and lists the rest by name. Each sheet
+  shows every device and variant of one screen, about 1600 pixels wide.
 - `compare` returns only the sheets that changed.
-- `inspect` returns one picture, scaled to fit 1568 pixels, or just the region asked for — use it to read small text
+- `inspect` returns one screenshot scaled to fit 1568 pixels, or only the region asked for. Use it to read small text
   instead of capturing at a larger size.
-
-## The loop that works
-
-The skill teaches agents this loop, and it's the one we recommend for people too:
-
-1. **Check** the screens you touched. Most problems show up here, as text.
-2. **Capture** the screens worth seeing, and read the sheets.
-3. **Fix**, then **compare** to see only what changed.
-4. **Inspect** a single picture when a detail is too small on the sheet.
-
-Two things make agents noticeably better at this:
-
-- **Tell them which screens a change affects.** "Check `/settings` and `/settings/billing` on phones" leads to a
-  focused look; "check the app" leads to a lot of pictures.
-- **Keep `default` small and make a `full` profile.** Day to day, two variants on four devices catch most layout
-  problems; before you finish a feature, `-p full` adds large text.
 
 ## Several agents at once
 
-Every agent's MCP server and every terminal talks to the same background helper, which keeps one browser and
-enforces the machine's limits (four pages, two simulators, one heavy build at a time). Ten agents taking pictures at
-once queue for those, rather than starting ten browsers. See [Speed and machine safety](performance.md).
+Every agent's MCP server and every terminal talks to the same background helper, so ten agents taking screenshots at
+once share one browser and the same limits instead of starting ten browsers. See
+[Speed and machine safety](performance.md#keeping-the-machine-usable).
 
-## Telling agents not to write their own scripts
+## What an agent can do
 
-Agents left alone tend to write a fresh Playwright script for every screenshot — log in, wait, take the picture —
-which is slow and gets the waiting wrong. The skill tells them not to; one line in your `AGENTS.md` or `CLAUDE.md`
-makes it stick:
-
-> To see screens, use facetshot (MCP tools `check`, `capture`, `compare`, or the `facetshot` command); never write a
-> screenshot script.
+The tools build your app, start its servers, make test data and sign in as your personas. Steps in `capture`,
+`check` and `act` can click anything a signed-in user could. Read [Security](security.md) before you let an agent
+use facetshot against a live site or with real accounts.

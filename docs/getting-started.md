@@ -1,33 +1,37 @@
 # Getting started
 
 This page takes you from nothing to a contact sheet of your own app, and then to an agent that checks its own UI
-work. It takes about ten minutes.
+work. It takes about ten minutes. Words such as _target_, _variant_ and _background helper_ are explained in the
+[glossary](concepts.md#glossary).
 
 ## 1. Install
 
-facetshot runs on [Bun](https://bun.sh) 1.3 or newer. (Your app can be built with anything; only facetshot itself
-needs Bun. Running on Node will come with the npm release.) Add it to your project and install the browser it
-drives:
+facetshot runs on [Bun](https://bun.sh) 1.3 or newer. Your app can be built with anything; only facetshot itself
+needs Bun.
+
+facetshot isn't on npm yet, so install it from a clone. From the folder that holds your project:
 
 ```sh
-bun add -d facetshot
+git clone <repository URL> facetshot
+(cd facetshot && bun install)
+cd your-project
+bun add -d ../facetshot
 bunx playwright install chromium
 ```
 
-facetshot isn't on npm yet. Until it is, clone this repository, run `bun install` in it, and add it from there:
-`bun add -d /path/to/facetshot`.
+The last line downloads Playwright's Chromium, the browser facetshot uses by default. If your project already uses
+Playwright, facetshot uses the browsers you have. Once facetshot is on npm, `bun add -d facetshot` will replace the
+first four lines.
 
-If your project already uses Playwright, facetshot uses the browsers you have.
-
-Check that everything it needs is in place:
+Check that everything is in place:
 
 ```sh
 bunx facetshot doctor
 ```
 
-`doctor` lists what it found and, for anything missing, the one command that fixes it.
+`doctor` lists what it found and, for anything missing, the command that fixes it.
 
-## 2. Take a picture of any page
+## 2. Take screenshots of any page
 
 No config is needed for a full URL:
 
@@ -35,37 +39,37 @@ No config is needed for a full URL:
 bunx facetshot https://example.com
 ```
 
-You'll see a summary like this:
+The summary looks like this:
 
 ```
-8/8 pictures · 1 screen · 4 devices × 2 variants · 4.1s (1.2s getting ready)
+8/8 screenshots · 1 screen · 4 devices × 2 variants · 4.1s (1.2s getting ready)
 
 Sheets:
   /your/project/.facetshot/runs/20261110-091502-3f1a/example.com.sheet.jpg
 ```
 
-Open the sheet. Each row is a device (a desktop, a tablet both ways up, a phone), each column a variant (light and
-dark). The individual pictures sit next to it in a folder per screen, and `manifest.json` describes everything that
-happened.
+Open the sheet. Each row is a device (a desktop, a tablet in both orientations, a phone) and each column a variant
+(light and dark). The single screenshots are in a folder next to it.
 
-Pick devices and variants yourself with `--on` and `--as`:
+Choose devices and variants with `--on` and `--as`:
 
 ```sh
 bunx facetshot https://example.com --on phone --as light,dark,large
 ```
 
-Add `.facetshot/` to your `.gitignore` — that's where pictures and logs live.
+Add `.facetshot/` to your `.gitignore`. Runs, logs and saved sign-ins are kept there.
 
 ## 3. Point it at your app
 
-For your own app you want short paths (`/settings`) instead of full URLs, and facetshot starting the app for you. Let
-it write a config from what your project already uses:
+For your own app you want short paths (`/settings`) instead of full URLs, and facetshot to build and start the app
+for you. `init` writes a config from what your project already uses (Vite, SvelteKit, Next.js, Astro, Nuxt,
+Storybook, Electron, Tauri or a Swift package):
 
 ```sh
 bunx facetshot init
 ```
 
-For a Vite app, you get something like this:
+For a Vite app that uses Bun, you get something like this:
 
 ```ts
 // facetshot.config.ts
@@ -73,8 +77,11 @@ import { defineConfig } from 'facetshot';
 
 export default defineConfig({
 	web: {
-		build: { cmd: 'npx vite build', inputs: ['src', 'public', 'index.html', 'package.json'] },
-		serve: { cmd: 'npx vite preview --port {port} --strictPort', port: 'auto' },
+		build: {
+			cmd: 'bunx --bun vite build',
+			inputs: ['src', 'public', 'index.html', 'package.json']
+		},
+		serve: { cmd: 'bunx --bun vite preview --port {port} --strictPort', port: 'auto' },
 		ready: { gone: ['[aria-busy=true]', '.spinner', '.skeleton'] }
 	},
 	profiles: {
@@ -83,35 +90,38 @@ export default defineConfig({
 });
 ```
 
-If `init` finds nothing it can build or start — the folder isn't a project, or it's a kind of app `init` doesn't
-recognise — it writes nothing and tells you so, instead of a config that would only fail later. Then either run it in
-your project's folder, or tell it where an app is already running (yours, staging or production):
+The commands are your app's own: `init` writes `bunx --bun …` when it finds `bun.lock`, and `npx …` otherwise. Change
+them to whatever your project uses to build and serve itself.
+
+What each part means:
+
+- `build` makes a production build, but only when something under `inputs` has changed since the last build. Add
+  any other file the build reads, such as `vite.config.ts`.
+- `serve` starts a server for that build. `{port}` is filled in with a free port. facetshot keeps the server
+  running between runs and restarts it after a rebuild.
+- `ready` lists what means "still loading" in your app. facetshot waits for those elements to disappear before it
+  takes a screenshot.
+- `profiles.default` is what you get when you don't pass `--on` or `--as`. `review` is a built-in group: desktop,
+  tablet in landscape and portrait, and phone.
+
+If `init` finds nothing it can build or start, it writes nothing and says what it looked for. In that case, run it in
+your project's folder, or tell it where the app is already running (your own dev server, staging or production):
 
 ```sh
 bunx facetshot init --url http://localhost:3000
 ```
 
-What the Vite config above means:
-
-- **`build`** makes a production build, and only when one of the `inputs` has changed since the last build. Pictures
-  of a production build are faster to take and closer to what your users see than pictures of a dev server.
-- **`serve`** starts a server for that build. `{port}` is filled in with a free port. facetshot keeps the server
-  running between runs and restarts it after a rebuild.
-- **`ready`** lists things that mean "still loading" in your app. facetshot waits for them to disappear before it
-  takes a picture.
-- **`profiles.default`** is what you get when you don't pass `--on` or `--as`. `review` is a built-in group: desktop,
-  tablet landscape, tablet portrait and phone.
-
-Now take pictures of your own pages:
+Now take screenshots of your own pages:
 
 ```sh
 bunx facetshot / /settings
 ```
 
-The first run builds and starts things, so it takes longer. Run it again and it's quick: the browser and the server
-are still up.
+The first run builds and starts things, so it takes longer. Run it again and it's quick, because the browser and the
+server are still running.
 
-If your app needs a signed-in user, test data or an API server, see [Web apps](web.md).
+If your app needs a signed-in user, test data or an API server, see
+[Sign-in, servers and test data](auth-and-data.md).
 
 ## 4. Let your agent use it
 
@@ -119,12 +129,13 @@ If your app needs a signed-in user, test data or an API server, see [Web apps](w
 bunx facetshot init --agent claude     # or cursor, codex, all
 ```
 
-This registers facetshot's MCP server with your agent and adds a short skill that tells it when to look and how.
-From then on, ask your agent to "check the settings page on a phone in dark mode" and it will call facetshot itself.
-See [AI agents](agents.md) for what the tools do and how to get the most out of them.
+This registers facetshot's MCP server with your agent and installs a short skill that tells it when to look and how.
+Then ask your agent to "check the settings page on a phone in dark mode" and it calls facetshot itself. See
+[AI agents](agents.md) for what this writes and how to work with an agent.
 
 ## What next
 
 - [How it works](concepts.md) explains targets, devices, variants and the background helper.
-- [Flows](flows.md) get you pictures of menus, dialogs and forms halfway through.
+- [Flows](flows.md) take screenshots of menus, dialogs and half-filled forms.
+- [Sessions](sessions.md) let you use a page step by step and see what each click does.
 - [Comparing](comparing.md) shows only what changed since the last run.

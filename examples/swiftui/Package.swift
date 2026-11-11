@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ExampleViews", targets: ["ExampleViews"]),
     ],
     dependencies: [
-        // In your own project: .package(url: "https://github.com/facetshot/facetshot", from: "0.1.0") (FacetshotKit).
+        // In your own project: .package(url: "<facetshot repository URL>", from: "0.1.0") (FacetshotKit).
         .package(path: "../.."),
     ],
     targets: [

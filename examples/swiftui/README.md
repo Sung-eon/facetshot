@@ -1,7 +1,7 @@
 # SwiftUI (FacetshotKit)
 
 A Swift package with three SwiftUI views and a test, `FacetshotRender`, that hands them to
-[FacetshotKit](../../FacetshotKit) as scenes. facetshot runs that test and collects the pictures; no app is built
+[FacetshotKit](../../FacetshotKit) as scenes. facetshot runs that test and collects the screenshots; no app is built
 or launched.
 
 ```sh

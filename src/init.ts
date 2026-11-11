@@ -169,7 +169,7 @@ function installSkill(root: string, target: string): void {
 	else cpSync(SKILL, destination, { recursive: true });
 }
 const AGENT_LINE =
-	'To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to work a page step by step) or the `facetshot` command. Never write a screenshot script.';
+	'To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to use a page step by step) or the `facetshot` command. Never write a screenshot script.';
 
 export async function init(options: {
 	agent?: string;
@@ -205,8 +205,9 @@ export async function init(options: {
 			say(
 				`- for ${found.xcode}: add an \`apple\` section by hand (docs/ios.md); init doesn't write one yet.`
 			);
-		say('Any page can be pictured without a config: facetshot https://example.com');
-		return 2;
+		say('Any page can be captured without a config: facetshot https://example.com');
+		// An agent can still be connected: it can take screenshots of full URLs without a config.
+		if (!options.agent) return 2;
 	} else {
 		writeFileSync(
 			join(root, 'facetshot.config.ts'),

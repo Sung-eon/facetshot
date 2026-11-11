@@ -53,12 +53,15 @@ export async function clean(options: { configFile?: string; all?: boolean }): Pr
 		'latest',
 		'swift-derived',
 		'last-request.json',
+		// Saved sign-ins: personas sign in again on the next run.
+		'auth',
+		'sessions',
 		...(options.all ? ['baselines'] : [])
 	]) {
 		rmSync(join(state, folder), { recursive: true, force: true });
 	}
 	say(
-		`Removed runs and logs in ${state}${options.all ? ' (baselines too)' : ' (baselines kept; --all removes them)'}.`
+		`Removed runs, logs and saved sign-ins in ${state}${options.all ? ' (baselines too)' : ' (baselines kept; --all removes them)'}.`
 	);
 	rmSync(join(homeFolder(), 'cache'), { recursive: true, force: true });
 

@@ -5,11 +5,11 @@ A minimal Electron app ("Tally"): one window, two views switched by the URL hash
 ```sh
 bun install
 bun --bun ../../src/cli.ts app:/ app:/reports                 # both screens, two window sizes, light and dark
-bun --bun ../../src/cli.ts open-reports.yaml --as dark+xxl    # a flow: click through to Reports, then a picture
+bun --bun ../../src/cli.ts open-reports.yaml --as dark+xxl    # a flow: click through to Reports, then a screenshot
 ```
 
-The first run downloads Electron's binary (this Electron fetches it the first time the `electron` package is
-loaded, not at install).
+The first run downloads Electron's binary: this version of Electron fetches it the first time the `electron`
+package is loaded, not at install.
 
 How facetshot drives it (`desktop: { kind: 'electron', main: '.', navigate: 'hash' }`):
 
@@ -21,6 +21,6 @@ How facetshot drives it (`desktop: { kind: 'electron', main: '.', navigate: 'has
   `navigate: 'http://localhost:5173{path}'` (a URL template) or `navigate: 'ipc:<channel>'` (emitted on `ipcMain`
   as if the window had sent it).
 
-The window opens on screen while it is pictured; the pictures are of the page only, never the screen.
+The window opens on screen while facetshot works; the screenshots are of the page only, never the screen.
 
 Version: Electron 45.2.

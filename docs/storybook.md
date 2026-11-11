@@ -1,11 +1,11 @@
 # Storybook
 
-If your components have [Storybook](https://storybook.js.org) stories, facetshot can take every story on every
-device and variant without any extra setup per story. Storybook 7 to 10 are supported.
+If your components have [Storybook](https://storybook.js.org) stories, facetshot can take screenshots of every story
+on every device and variant, without any setup per story. Storybook 7 to 10 are supported.
 
 ## Setup
 
-Tell facetshot where your Storybook is — one you run yourself, or a static build it makes and serves:
+Tell facetshot where your Storybook is: one you run yourself, or a static build that facetshot makes and serves:
 
 ```ts
 storybook: {
@@ -16,7 +16,7 @@ storybook: {
 ```ts
 storybook: {
 	build: {
-		cmd: 'npx storybook build -o storybook-static',
+		cmd: 'bunx --bun storybook build -o storybook-static',
 		inputs: ['src', '.storybook', 'package.json'],
 		output: 'storybook-static'
 	}
@@ -35,8 +35,8 @@ facetshot 'story:Button/*'               # a glob over titles and names
 facetshot 'story:*' --on phone,desktop   # everything
 ```
 
-Matching ignores case. Each story becomes its own screen in the results (`Button.Primary`), with a contact sheet of
-its own.
+Matching ignores case. Each story becomes a screen of its own in the results (`Button.Primary`), with its own contact
+sheet.
 
 Docs pages are left out, and so are stories you've opted out of tests: tagged `!test` (Storybook 8.1+) or
 `facetshot-skip`. A story you name exactly is always taken, whatever its tags.
@@ -57,14 +57,14 @@ A story can carry its own settings in its parameters:
 
 ```ts
 export const Live: Story = {
-	parameters: { facetshot: { skip: true } } // never pictured
+	parameters: { facetshot: { skip: true } } // never taken
 };
 export const Chart: Story = {
 	parameters: { facetshot: { ready: { visible: ['svg'] }, mask: ['.timestamp'] } }
 };
 ```
 
-If Storybook shows an error for a story, it's reported as a finding on that picture.
+If Storybook shows an error for a story, it is reported as a finding on that screenshot.
 
 ## Themes and other variants
 

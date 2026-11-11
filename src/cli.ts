@@ -175,7 +175,7 @@ Options
   --no-daemon            do everything in this process (slower next time)
   -c, --config file      use this config instead of searching for facetshot.config.ts
 
-Docs: https://github.com/facetshot/facetshot#readme`;
+Docs: README.md and docs/ in the facetshot repository.`;
 
 function lastRequestFile(state: string) {
 	return join(state, 'last-request.json');
