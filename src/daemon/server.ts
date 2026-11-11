@@ -1,6 +1,6 @@
 /**
  * The daemon: one process per machine that keeps browsers, servers, simulators and test data warm between runs, and
- * puts every run — from any terminal, agent or MCP client — through the same caps, so ten agents taking pictures at
+ * puts every run — from any terminal, agent or MCP client — through the same caps, so ten agents taking screenshots at
  * once still open one browser and at most two simulators.
  *
  * It listens on a Unix socket in ~/.facetshot, speaks HTTP over it (one JSON request in, a stream of JSON lines
@@ -256,7 +256,7 @@ export async function serve(): Promise<void> {
 		if (!found) {
 			throw new FacetshotError(
 				`There's no open session "${id}".`,
-				'Sessions close after 10 idle minutes. Open another with facetshot open <target>; facetshot sessions lists the open ones.',
+				`Sessions close after ${SESSION_IDLE_MS / 60_000} idle minutes. Open another with facetshot open <target>; facetshot sessions lists the open ones.`,
 				2
 			);
 		}

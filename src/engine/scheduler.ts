@@ -1,5 +1,5 @@
 /**
- * Keeps the machine usable while pictures are taken: a cap on how many things run at once, which drops to one while
+ * Keeps the machine usable while screenshots are taken: a cap on how many things run at once, which drops to one while
  * the machine is already overloaded (other builds, other agents) instead of piling more on. It never stops work
  * outright, so a busy machine makes facetshot slower, not stuck.
  */

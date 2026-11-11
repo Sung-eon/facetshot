@@ -1,9 +1,10 @@
 /**
- * Starting and stopping the things pictures need: servers and builds.
+ * Starting and stopping the things screenshots need: servers and builds.
  *
  * Every process facetshot starts runs in its own process group with its output in a log file, so it can be stopped
  * as a whole and, when it fails, the last lines of its log say why.
  */
+import { ownEnvironment } from '../config.ts';
 import {
 	execFile,
 	spawn,
@@ -234,7 +235,7 @@ export interface SpawnOptions {
 /** Starts a command in its own process group, output to a log file. */
 export function launch(command: Command, options: SpawnOptions): ChildProcess {
 	const out = openLog(options.logFile);
-	const env: Record<string, string> = { ...(process.env as Record<string, string>) };
+	const env: Record<string, string> = ownEnvironment();
 	for (const [key, value] of Object.entries(command.env ?? {}))
 		env[key] = fill(value, options.values);
 	const child = spawn(fill(command.cmd, options.values), {

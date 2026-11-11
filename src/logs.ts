@@ -1,7 +1,7 @@
 /**
  * What happened while a screen was on: the page's console, its errors, its requests and navigations, and the output
  * of the servers facetshot started. Kept in a bounded book per page, read by position, and written next to the
- * pictures twice: as JSON lines for programs and agents, and as plain text for people.
+ * screenshots twice: as JSON lines for programs and agents, and as plain text for people.
  */
 import {
 	closeSync,
@@ -67,7 +67,7 @@ export class LogBook {
 		return this.entries.filter((entry) => entry.seq > cursor);
 	}
 
-	/** Entries since the last `take`: what belongs to the picture just taken. */
+	/** Entries since the last `take`: what belongs to the screenshot just taken. */
 	take(): LogEntry[] {
 		const out = this.since(this.taken);
 		this.taken = this.cursor;
@@ -229,7 +229,7 @@ export function formatEntry(entry: LogEntry, origin?: number | null): string {
 }
 
 export interface LogGroup {
-	/** What the entries belong to: a picture (`screen · device · variant`), or the servers. */
+	/** What the entries belong to: a screenshot (`screen · device · variant`), or the servers. */
 	label: string;
 	started: number;
 	entries: LogEntry[];
@@ -248,7 +248,7 @@ export interface LogSummary {
 }
 
 /**
- * Writes a run's logs: every entry to `logs.ndjson`, and everything above debug to `logs.txt`, a section per picture
+ * Writes a run's logs: every entry to `logs.ndjson`, and everything above debug to `logs.txt`, a section per screenshot
  * with times from when it was opened.
  */
 export function writeLogs(folder: string, groups: LogGroup[]): LogSummary | undefined {

@@ -1,6 +1,6 @@
 /**
  * Talking to the daemon: start it if it isn't there (or runs older code), send a run, stream its progress back.
- * If it can't be reached, the run happens in this process instead, so a daemon problem never blocks a picture.
+ * If it can't be reached, the run happens in this process instead, so a daemon problem never blocks a screenshot.
  */
 import { spawn } from 'node:child_process';
 import { request as httpRequest } from 'node:http';
@@ -197,7 +197,7 @@ export async function daemonCommand(action: string): Promise<number> {
 		case 'status': {
 			const current = await status();
 			if (!current) {
-				process.stdout.write('Not running. It starts by itself with the next picture.\n');
+				process.stdout.write('Not running. It starts by itself with the next screenshot.\n');
 				return EXIT.ok;
 			}
 			process.stdout.write(

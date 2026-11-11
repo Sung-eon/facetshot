@@ -1,6 +1,6 @@
 /**
  * A native Mac app's window, pictured by the system's window capture: the app is launched from its binary (so it gets
- * an environment, and a home of facetshot's own instead of the person's settings) once per picture, on the screen
+ * an environment, and a home of facetshot's own instead of the person's settings) once per screenshot, on the screen
  * FACETSHOT_ROUTE names (the deep link), sized to the device, and its window captured by its id, never the screen
  * around it.
  *
@@ -10,7 +10,7 @@
  *
  * Permissions: capturing a window needs Screen Recording for whatever runs facetshot (the terminal, or the agent's
  * app). Sizing the window from outside, for an app that doesn't read FACETSHOT_WINDOW_SIZE, uses System Events and
- * needs Accessibility as well; without it the picture is taken at the app's own size, with a note.
+ * needs Accessibility as well; without it the screenshot is taken at the app's own size, with a note.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -73,13 +73,13 @@ async function helper(log: (message: string) => void = () => {}): Promise<string
 
 let recordingGranted = false;
 
-/** Throws what to do when this process may not record the screen (and so can't picture any window). */
+/** Throws what to do when this process may not record the screen (and so can't capture any window). */
 async function mayRecord(finder: string): Promise<void> {
 	if (recordingGranted) return;
 	const { stdout } = await exec(finder, ['check']);
 	if (stdout.trim() !== 'granted') {
 		throw new EnvironmentError(
-			"facetshot may not record the screen, so it can't picture a window.",
+			"facetshot may not record the screen, so it can't take screenshots of a window.",
 			"Allow it in System Settings → Privacy & Security → Screen & System Audio Recording, for the app facetshot runs in (your terminal, or the agent's app), then restart that app."
 		);
 	}
@@ -87,7 +87,7 @@ async function mayRecord(finder: string): Promise<void> {
 }
 
 /**
- * Pictures the largest window a process has on screen (its main window, not a sheet or panel beside it), and only
+ * Screenshots the largest window a process has on screen (its main window, not a sheet or panel beside it), and only
  * that window. Waits up to 10 s for one to appear. For any driver that launches a Mac app itself (Tauri's real window).
  */
 export async function captureMacWindow(
@@ -100,12 +100,12 @@ export async function captureMacWindow(
 	if (
 		!(await waitUntil(async () => (await windows(finder, pid)).length > 0, 10_000, { every: 200 }))
 	)
-		throw new Error(`Process ${pid} has no window on screen to picture.`);
+		throw new Error(`Process ${pid} has no window on screen to take a screenshot of.`);
 	await capture(finder, pid, file);
 	return pngSize(file);
 }
 
-/** Pictures a process's largest window (its main window, not a sheet or a panel beside it) into `file`. */
+/** Screenshots a process's largest window (its main window, not a sheet or a panel beside it) into `file`. */
 async function capture(finder: string, pid: number, file: string): Promise<void> {
 	const window = (await windows(finder, pid)).at(-1);
 	if (!window) throw new Error('The app has no window on screen any more.');
@@ -174,7 +174,7 @@ export class MacWindowDriver implements Driver {
 
 	async prepare(cells: Cell[], ctx: RunContext): Promise<void> {
 		if (process.platform !== 'darwin')
-			throw new EnvironmentError('Mac app windows can only be pictured on a Mac.');
+			throw new EnvironmentError('Mac app windows can only be captured on a Mac.');
 		const settings = macSettings(ctx.config);
 		const [app, finder] = await Promise.all([
 			obtainApp(settings.what, settings.source, ctx),
@@ -285,7 +285,7 @@ export class MacWindowDriver implements Driver {
 	/**
 	 * Starts the app on one screen and waits for its window. The screen is given at launch (FACETSHOT_ROUTE, the deep
 	 * link) rather than opened afterwards: a SwiftUI app answers a link from outside with a new window of its default
-	 * size, not the one facetshot sized. So each picture is its own launch, a second or two on a Mac.
+	 * size, not the one facetshot sized. So each screenshot is its own launch, a second or two on a Mac.
 	 */
 	private async launch(
 		binary: string,
@@ -396,7 +396,7 @@ export class MacWindowDriver implements Driver {
 			});
 			if (!settled.stable)
 				extra.push(
-					`Still changing after ${(settled.ms / 1000).toFixed(1)} s; this is the last picture.`
+					`Still changing after ${(settled.ms / 1000).toFixed(1)} s; this is the last screenshot.`
 				);
 			report({
 				...result(cell, { screen }),
@@ -445,7 +445,7 @@ export class MacWindowDriver implements Driver {
 					await open(step.goto);
 				} else {
 					throw new Error(
-						`step ${index + 1} of ${flow.name} (${JSON.stringify(step)}): a Mac window can only be opened on a deep link (goto) and pictured (shot); ` +
+						`step ${index + 1} of ${flow.name} (${JSON.stringify(step)}): a Mac window can only be opened on a deep link (goto) and captured (shot); ` +
 							'pressing and typing in a native Mac app is not supported.'
 					);
 				}

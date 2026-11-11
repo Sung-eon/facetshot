@@ -6,7 +6,7 @@
 /** web: a browser viewport. ios: a simulator. window: a desktop app's window (native macOS, Electron or Tauri). */
 export type Platform = 'web' | 'ios' | 'window';
 
-/** Where a picture is taken: a browser viewport, a simulator, or a desktop window size. */
+/** Where a screenshot is taken: a browser viewport, a simulator, or a desktop window size. */
 export interface Device {
 	name: string;
 	platform: Platform;
@@ -35,7 +35,7 @@ export interface Device {
 }
 
 /**
- * Browsers facetshot can take pictures in. Playwright's own builds: `chromium` (the default), `webkit` (Safari's
+ * Browsers facetshot can take screenshots in. Playwright's own builds: `chromium` (the default), `webkit` (Safari's
  * engine) and `firefox`. Browsers installed on the machine: `chrome`, `msedge`, and `moz-firefox` (the Firefox app,
  * driven over WebDriver BiDi, which Playwright supports experimentally).
  */
@@ -51,7 +51,7 @@ export const BROWSERS: readonly BrowserName[] = [
 
 export type TextSize = 'default' | 'large' | 'xlarge' | 'xxl';
 
-/** How a picture is taken: one column of the contact sheet. Each field is one axis; unset means the platform default. */
+/** How a screenshot is taken: one column of the contact sheet. Each field is one axis; unset means the platform default. */
 export interface Variant {
 	name: string;
 	appearance?: 'light' | 'dark';
@@ -79,7 +79,7 @@ export interface Target {
 	slug: string;
 }
 
-/** One picture to take. */
+/** One screenshot to take. */
 export interface Cell {
 	target: Target;
 	device: Device;
@@ -115,7 +115,7 @@ export interface CellResult {
 	ms: number;
 	/** Why it failed, written so the reader knows what to do. */
 	error?: string;
-	/** Readiness gave up and the picture was taken anyway. */
+	/** Readiness gave up and the screenshot was taken anyway. */
 	readyTimedOut?: boolean;
 	findings?: Finding[];
 	diff?: { against: string; ratio: number; image?: string };
@@ -138,7 +138,7 @@ export interface Manifest {
 	runId: string;
 	startedAt: string;
 	ms: number;
-	/** Time spent before the first picture (builds, servers, sign-in, fixtures). */
+	/** Time spent before the first screenshot (builds, servers, sign-in, fixtures). */
 	prepareMs: number;
 	root: string;
 	out: string;
@@ -151,7 +151,7 @@ export interface Manifest {
 	counts: { ok: number; failed: number; skipped: number; findings: number; changed?: number };
 	/**
 	 * What the pages and the servers logged during the run, relative to the run folder: `text` for people (a section
-	 * per picture), `json` with one entry per line for programs.
+	 * per screenshot), `json` with one entry per line for programs.
 	 */
 	logs?: { text: string; json: string; count: number; errors: number; warnings: number };
 }
@@ -232,7 +232,7 @@ export interface WebConfig {
 	block?: string[];
 	/** URL rewrites, e.g. files served from a fixed host. */
 	rewrite?: { from: string; to: string }[];
-	/** Selectors painted over in every picture (clocks, avatars with random colors). */
+	/** Selectors painted over in every screenshot (clocks, avatars with random colors). */
 	mask?: string[];
 	/** CSS injected into every page. */
 	css?: string;
@@ -240,7 +240,7 @@ export interface WebConfig {
 	textSizes?: Partial<Record<Exclude<TextSize, 'default'>, string>>;
 	/** Freeze the page clock at this instant (ISO), so "3 minutes ago" stays put. */
 	clock?: string;
-	/** Fill every picture to the full page height instead of the viewport. Default false. */
+	/** Fill every screenshot to the full page height instead of the viewport. Default false. */
 	fullPage?: boolean;
 }
 

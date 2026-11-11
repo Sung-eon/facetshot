@@ -4,7 +4,7 @@
  *
  * The story list comes from Storybook's `index.json` (format v4/v5, Storybook 7 to 10). A target is an id
  * (`story:button--primary`), a title or `title/name` (`story:Button`, `story:Button/Primary`), or a glob over ids
- * and `title/name` (`story:Button/*`, `story:Forms/**`, `story:*`). One planned cell becomes one picture per
+ * and `title/name` (`story:Button/*`, `story:Forms/**`, `story:*`). One planned cell becomes one screenshot per
  * story; each story is its own screen.
  *
  * What a story says about itself:
@@ -233,7 +233,7 @@ export class StorybookDriver implements Driver {
 			);
 		}
 		// The browser starts while Storybook builds: neither needs the other.
-		// One engine that won't start fails only its own pictures (in shoot); with none, there's nothing to do.
+		// One engine that won't start fails only its own screenshots (in shoot); with none, there's nothing to do.
 		const browser = Promise.allSettled(
 			[...new Set(cells.map((cell) => engineOf(ctx.config, cell.device)))].map((engine) =>
 				ctx.runtime.browser(engine)
@@ -321,7 +321,8 @@ export class StorybookDriver implements Driver {
 					web,
 					{
 						baseURL: this.url,
-						root: ctx.root
+						root: ctx.root,
+						stateDir: ctx.stateDir
 					}
 				),
 			(session, cell) => this.shootStory(session, cell, ctx, storybook, report),

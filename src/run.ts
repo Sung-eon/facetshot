@@ -1,5 +1,5 @@
 /**
- * One run, start to finish: plan the pictures, get servers and test data ready, hand the cells to the drivers, then
+ * One run, start to finish: plan the screenshots, get servers and test data ready, hand the cells to the drivers, then
  * compare, draw the sheets and write the manifest.
  */
 import {
@@ -31,9 +31,9 @@ import { ALL_CHECKS } from './checks/page.ts';
 import { LogBook, LogTail, writeLogs } from './logs.ts';
 
 export interface RunRequest extends PlanRequest {
-	/** Steps to play on every target before its picture (clicks, typing…); each `shot` step is a picture. */
+	/** Steps to play on every target before its screenshot (clicks, typing…); each `shot` step is a screenshot. */
 	steps?: Step[];
-	/** Read the screens and report findings; take no pictures. */
+	/** Read the screens and report findings; take no screenshots. */
 	checkOnly?: boolean;
 	/** Checks to run (default: the config's, or console + network). `all` for every check. */
 	checks?: string[];
@@ -55,7 +55,7 @@ export interface RunOptions {
 	signal?: AbortSignal;
 	/** Caps shared with other runs (the daemon passes the machine's). */
 	pools?: RunContext['pools'];
-	/** Called as each picture finishes: for progress. */
+	/** Called as each screenshot finishes: for progress. */
 	onCell?: (result: CellResult, done: number, total: number) => void;
 }
 
@@ -78,9 +78,10 @@ export function newContext(
 		stateDir: stateDir(config),
 		values: {},
 		services: {},
+		// A project's limits can lower the machine's, never raise them, with or without the background helper.
 		pools: options.pools ?? {
-			web: new Pool(limits.webPages ?? 4, limits.maxLoad ?? 3),
-			simulators: new Pool(limits.simulators ?? 2, limits.maxLoad ?? 3)
+			web: new Pool(Math.min(limits.webPages ?? 4, 4), limits.maxLoad ?? 3),
+			simulators: new Pool(Math.min(limits.simulators ?? 2, 2), limits.maxLoad ?? 3)
 		},
 		locks: {
 			build: join(lockDir, limits.lockNames?.build ?? 'build.lock'),
@@ -129,7 +130,7 @@ export function readManifest(folder: string): Manifest | undefined {
 	return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Manifest) : undefined;
 }
 
-/** Where to find the pictures to compare with. */
+/** Where to find the screenshots to compare with. */
 function comparisonFolder(config: Config, against: string, current: string): string | undefined {
 	const state = stateDir(config);
 	if (against === 'previous') {
@@ -226,18 +227,18 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 		);
 		prepareMs = Date.now() - started;
 		// Nothing could start because of how it was asked (no config, a missing setting): say so plainly and stop,
-		// rather than a report of pictures that were never going to be taken.
+		// rather than a report of screenshots that were never going to be taken.
 		const refused = prepared.find(
 			(outcome): outcome is PromiseRejectedResult =>
 				outcome.status === 'rejected' && outcome.reason instanceof UsageError
 		);
 		if (refused && prepared.every((outcome) => outcome.status === 'rejected')) throw refused.reason;
-		// Patterns become the pictures they stand for, now that the drivers know what exists.
+		// Patterns become the screenshots they stand for, now that the drivers know what exists.
 		for (const [index, [driver, cells]] of [...assigned].entries()) {
 			if (prepared[index].status === 'fulfilled' && driver.expand)
 				assigned.set(driver, driver.expand(cells, ctx));
 		}
-		// The sheets' browser starts while the pictures are taken, not after: on runs that shoot no Chromium pages (an
+		// The sheets' browser starts while the screenshots are taken, not after: on runs that shoot no Chromium pages (an
 		// app, WebKit) its launch would otherwise come on top of the run.
 		const sheetBrowser = request.checkOnly ? undefined : runtime.browser('chromium');
 		sheetBrowser?.catch(() => {});

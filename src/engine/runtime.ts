@@ -155,7 +155,7 @@ export class Runtime {
 	}
 
 	/**
-	 * Closes the browsers only (they start again on the next picture): what a long-lived daemon does now and then.
+	 * Closes the browsers only (they start again on the next screenshot): what a long-lived daemon does now and then.
 	 * False when one wouldn't close in time; it then dies with the process, so the caller should end it soon.
 	 */
 	async closeBrowsers(): Promise<boolean> {

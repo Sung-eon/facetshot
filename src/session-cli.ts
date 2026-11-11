@@ -40,7 +40,7 @@ export async function sessionCommand(
 ): Promise<number> {
 	const options: LookOptions = {
 		elements: flags['no-elements'] !== true,
-		picture: flags['no-picture'] !== true,
+		picture: flags['no-screenshot'] !== true,
 		tree: flags.tree === true,
 		full: flags.full === true,
 		logLevel: level(flags, 'info')

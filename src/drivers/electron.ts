@@ -147,7 +147,7 @@ async function sizeWindow(
 		if (seen.width === device.width && seen.height === device.height) return undefined;
 		await page.waitForTimeout(50);
 	}
-	// A window can't be larger than the screen it is on; the picture is still taken, at the size it got.
+	// A window can't be larger than the screen it is on; the screenshot is still taken, at the size it got.
 	return `The window is ${seen.width}×${seen.height}, not ${device.width}×${device.height} (the screen may be too small).`;
 }
 

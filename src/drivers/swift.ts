@@ -209,7 +209,7 @@ export class SwiftSnapshotDriver implements Driver {
 						);
 					}
 				} catch (error) {
-					// The test may still have written pictures before it failed; collect what is there below.
+					// The test may still have written screenshots before it failed; collect what is there below.
 					if (!existsSync(join(out, 'index.json'))) {
 						for (const cell of mine) report(failed(cell, firstLine(error), Date.now() - started));
 						return;
@@ -220,7 +220,7 @@ export class SwiftSnapshotDriver implements Driver {
 		);
 	}
 
-	/** Moves FacetshotKit's pictures into the run's layout and reports one result per scene × device × variant. */
+	/** Moves FacetshotKit's screenshots into the run's layout and reports one result per scene × device × variant. */
 	private collect(
 		cells: Cell[],
 		out: string,

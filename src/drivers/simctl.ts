@@ -122,7 +122,7 @@ export async function boot(udid: string, ctx: Pick<RunContext, 'log'>): Promise<
 
 /**
  * What `simctl ui <udid> content_size` is set to for each text size. The same steps the Swift snapshot driver uses
- * (accessibility 1, 3 and 5), so a `large` picture means the same thing on every path.
+ * (accessibility 1, 3 and 5), so a `large` screenshot means the same thing on every path.
  */
 export const CONTENT_SIZE: Record<string, string> = {
 	default: 'large',

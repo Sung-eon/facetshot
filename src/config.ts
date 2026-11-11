@@ -43,6 +43,15 @@ export interface LoadedConfig {
 let reading: Promise<unknown> = Promise.resolve();
 
 /**
+ * This process's own environment, as it was when it started. Commands facetshot starts get this, not whatever
+ * `process.env` is at that moment: while a caller's config is being read, `process.env` is briefly the caller's.
+ */
+const OWN_ENVIRONMENT: Readonly<Record<string, string | undefined>> = { ...process.env };
+export function ownEnvironment(): Record<string, string> {
+	return { ...(OWN_ENVIRONMENT as Record<string, string>) };
+}
+
+/**
  * Runs `work` with `process.env` as the caller's. A config is code and reads its environment (which database, which
  * ports); in the daemon, the environment that matters is the one of whoever asked for the run, not the daemon's own.
  */

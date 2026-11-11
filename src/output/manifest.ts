@@ -49,7 +49,7 @@ export function groupFindings(
 			if (finding.severity === 'info') continue;
 			const key = `${cell.screen}\u0000${finding.check}\u0000${finding.message}\u0000${finding.where ?? ''}`;
 			const group = groups.get(key) ?? { finding, screen: cell.screen, where: [] };
-			// The same problem twice in one picture (two cut-off lines alike) is one place.
+			// The same problem twice in one screenshot (two cut-off lines alike) is one place.
 			if (!group.where.includes(`${cell.device}/${cell.variant}`))
 				group.where.push(`${cell.device}/${cell.variant}`);
 			groups.set(key, group);
@@ -69,7 +69,7 @@ export function summarize(
 	const total = manifest.cells.length;
 	const lines: string[] = [];
 	const head = [
-		`${ok}/${total} pictures`,
+		`${ok}/${total} screenshots`,
 		`${manifest.screens.length} screen${manifest.screens.length === 1 ? '' : 's'}`,
 		`${manifest.devices.length} device${manifest.devices.length === 1 ? '' : 's'} × ${manifest.variants.length} variant${manifest.variants.length === 1 ? '' : 's'}`,
 		`${seconds(manifest.ms)} (${seconds(manifest.prepareMs)} getting ready)`
@@ -128,7 +128,7 @@ export function summarize(
 		for (const [reason, screens] of reasons)
 			lines.push(`  ${[...new Set(screens)].join(', ')}: ${reason}`);
 		lines.push(
-			'  If the picture looks finished, relax web.ready for that route (e.g. idle: 0 for a page that polls).'
+			'  If the screenshot looks finished, relax web.ready for that route (e.g. idle: 0 for a page that polls).'
 		);
 	}
 	lines.push('', `Report: ${path('report.html')}`, `Details: ${path('manifest.json')}`);

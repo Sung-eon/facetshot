@@ -128,8 +128,8 @@ const list = (value: string | true | undefined) =>
 const HELP = `facetshot ${VERSION} — every screen, on every device, in every mode, in one command.
 
 Usage
-  facetshot <targets…> [--on devices] [--as variants]   take pictures
-  facetshot check <targets…>                            read the screens for problems, no pictures
+  facetshot <targets…> [--on devices] [--as variants]   take screenshots
+  facetshot check <targets…>                            read the screens for problems, no screenshots
   facetshot diff                                        run the last command again and show what changed
   facetshot list [devices|variants|profiles|checks|runs]
   facetshot init [--url <address>] [--agent claude|codex|cursor|all]  write a starter config and connect your agent
@@ -140,10 +140,10 @@ Usage
   facetshot clean                                       remove runs, test data, and anything left running
 
 Sessions (a page kept open to work step by step)
-  facetshot open <target> [--on device] [--as variant]  open a page; prints its id, a picture, logs and what's clickable
+  facetshot open <target> [--on device] [--as variant]  open a page; prints its id, a screenshot, logs and what's clickable
   facetshot act <id> <step…> [--full] [--tree]          do steps, then show the page again
   facetshot look <id> [--full] [--tree]                  show the page again
-                         (--no-elements, --no-picture: leave out the list of what's on screen, or the picture)
+                         (--no-elements, --no-screenshot: leave out the list of what's on screen, or the screenshot)
   facetshot close <id> [--save flows/name.yaml]          close it (and keep the steps that worked as a flow)
   facetshot sessions                                    the open sessions
   facetshot logs <id|run|latest> [--follow] [--level debug|info|warn|error] [--json]
@@ -157,7 +157,7 @@ Steps (--do, act, flows)
 Targets
   /path or https://…     a web page            app:/path        an app screen (simulator or desktop app)
   story:id or Button/*   Storybook stories      preview:Name     SwiftUI previews
-  flows/name.yaml        a flow (clicks, typing, then pictures)
+  flows/name.yaml        a flow (clicks, typing, then screenshots)
 
 Options
   --on phone,desktop     devices or groups (default: the profile's)
@@ -170,8 +170,8 @@ Options
   --out folder           write this run to a folder of your choice
   --clean                empty --out first
   --format text|md|json  what to print: a short summary (default), Markdown with the sheets, or the manifest
-  --open                 open report.html, every picture on one page, when done
-  --do <step>            a step before the picture, repeatable: --do "click:text=Save" --do shot:saved
+  --open                 open report.html, every screenshot on one page, when done
+  --do <step>            a step before the screenshot, repeatable: --do "click:text=Save" --do shot:saved
   --no-daemon            do everything in this process (slower next time)
   -c, --config file      use this config instead of searching for facetshot.config.ts
 
@@ -337,7 +337,7 @@ async function baselineCommand(
 			if (!name) throw new UsageError('Name the baseline: facetshot baseline save main');
 			const latest = listRuns(config)[0];
 			if (!latest)
-				throw new UsageError('There is no run to save yet.', 'Take some pictures first.');
+				throw new UsageError('There is no run to save yet.', 'Take some screenshots first.');
 			rmSync(join(folder, name), { recursive: true, force: true });
 			cpSync(join(state, 'runs', latest), join(folder, name), { recursive: true });
 			process.stdout.write(

@@ -1,6 +1,6 @@
 /**
  * Tauri apps. A Tauri window is the system's web view (WKWebView on macOS, WebView2 on Windows, WebKitGTK on
- * Linux), and on macOS that web view can't be driven from outside, so there are two ways to picture one:
+ * Linux), and on macOS that web view can't be driven from outside, so there are two ways to screenshot one:
  *
  * - `webkit` (the default when `desktop.frontend` is set): the app's web frontend, served as it is in the app, opened
  *   in Playwright's WebKit at the window's size — the same engine family as WKWebView, with everything the web gets
@@ -20,7 +20,7 @@
  *   `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>` and attach with Playwright's
  *   `chromium.connectOverCDP`; the window's page then works like Electron's (resize through the app, media emulation).
  * - Linux: WebKitGTK is driven over WebDriver by `tauri-driver` (cargo install tauri-driver), which wraps
- *   `WebKitWebDriver`; pictures come from WebDriver's screenshot command, checks from scripts run through it.
+ *   `WebKitWebDriver`; screenshots come from WebDriver's screenshot command, checks from scripts run through it.
  */
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

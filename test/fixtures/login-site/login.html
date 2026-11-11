@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8" /><title>Sign in</title>
+<label>Name <input id="name" /></label>
+<button
+	onclick="
+		document.cookie = 'member=' + document.getElementById('name').value + '; path=/';
+		document.body.append('Signed in');
+	"
+>
+	Sign in
+</button>

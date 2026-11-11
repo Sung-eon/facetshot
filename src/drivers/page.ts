@@ -1,7 +1,7 @@
 /**
  * Everything facetshot does to one browser page, shared by the web, Storybook and Electron drivers: making a variant
  * true (text size, direction, print), waiting until the screen has settled, reading it with checks, and taking the
- * picture.
+ * screenshot.
  */
 import { closeSync, mkdirSync, openSync, readFileSync, readSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -187,7 +187,7 @@ export function globToRegExp(glob: string): RegExp {
 /**
  * Waits until the screen has settled: the network quiet, fonts loaded, spinners gone, wanted content shown, the
  * app's own condition true, then two frames painted. If it gives up, it says what it was still waiting for (the
- * picture is taken anyway).
+ * screenshot is taken anyway).
  */
 export async function waitReady(
 	page: Page,
@@ -376,7 +376,7 @@ export async function routeRequests(
 	return blocked;
 }
 
-/** Where a picture goes: `<screen>/<device>.<variant>.png` in the run folder, whose folder is made here. */
+/** Where a screenshot goes: `<screen>/<device>.<variant>.png` in the run folder, whose folder is made here. */
 export function imagePath(
 	runDir: string,
 	screen: string,

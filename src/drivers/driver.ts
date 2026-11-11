@@ -15,14 +15,14 @@ export interface RunContext {
 	/** `<root>/.facetshot` (or the configured folder): logs, build stamps, the fixture ledger. */
 	stateDir: string;
 	runId: string;
-	/** Where this run's pictures go. */
+	/** Where this run's screenshots go. */
 	runDir: string;
 	/** `{placeholder}` values: fixture ids, service URLs. */
 	values: Record<string, string>;
 	services: Record<string, { url: string }>;
 	/** Which checks to run on each cell. */
 	checks: string[];
-	/** False for `facetshot check`: read the screens, take no pictures. */
+	/** False for `facetshot check`: read the screens, take no screenshots. */
 	images: boolean;
 	runtime: Runtime;
 	pools: { web: Pool; simulators: Pool };
@@ -35,7 +35,7 @@ export interface RunContext {
 	atEnd(close: () => Promise<void>): void;
 	log(message: string): void;
 	signal: AbortSignal;
-	/** What each picture's page logged, a group per picture, written with the run. */
+	/** What each screenshot's page logged, a group per screenshot, written with the run. */
 	logs: LogGroup[];
 }
 
@@ -43,18 +43,18 @@ export interface Driver {
 	readonly name: string;
 	/** True if this driver takes the cell. The first driver that says yes gets it. */
 	handles(cell: Cell, config: Config): boolean;
-	/** Builds, servers, simulators: whatever must exist before the first picture. Throws if it can't be done. */
+	/** Builds, servers, simulators: whatever must exist before the first screenshot. Throws if it can't be done. */
 	prepare(cells: Cell[], ctx: RunContext): Promise<void>;
 	/**
 	 * After `prepare`, turns a pattern into the cells it stands for (`story:Button/*` → one cell per story), so
-	 * progress and failures count real pictures. Optional; cells come back unchanged without it.
+	 * progress and failures count real screenshots. Optional; cells come back unchanged without it.
 	 */
 	expand?(cells: Cell[], ctx: RunContext): Cell[];
-	/** Takes the pictures, reporting each cell as it finishes. Must report every cell it was given. */
+	/** Takes the screenshots, reporting each cell as it finishes. Must report every cell it was given. */
 	shoot(cells: Cell[], ctx: RunContext, report: (result: CellResult) => void): Promise<void>;
 }
 
-/** A result for one of a cell's pictures (`screen` differs from the cell's in a flow); ok unless `fields` say otherwise. */
+/** A result for one of a cell's screenshots (`screen` differs from the cell's in a flow); ok unless `fields` say otherwise. */
 export function result(cell: Cell, fields: Partial<CellResult> = {}): CellResult {
 	return {
 		screen: cell.screen,
@@ -71,8 +71,8 @@ export function failed(cell: Cell, error: string, ms = 0): CellResult {
 	return result(cell, { status: 'failed', ms, error });
 }
 
-/** For a picture the run was stopped before. */
-export const stopped = (cell: Cell) => failed(cell, 'Stopped before this picture.');
+/** For a screenshot the run was stopped before. */
+export const stopped = (cell: Cell) => failed(cell, 'Stopped before this screenshot.');
 
 /** For `facetshot check` on a screen that has no page to read. */
 export const unreadable = (cell: Cell, what: string) =>

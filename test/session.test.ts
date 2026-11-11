@@ -59,7 +59,7 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 
 		const textOnly = await client.callTool({
 			name: 'act',
-			arguments: { session: id, picture: false, tree: true }
+			arguments: { session: id, screenshot: false, tree: true }
 		});
 		expect((textOnly.content as { type: string }[]).every((part) => part.type === 'text')).toBe(
 			true
@@ -90,7 +90,7 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 		['--bun', cli, flow, '--on', 'desktop', '--as', 'light', '--no-daemon'],
 		{ env, cwd: site, encoding: 'utf8' }
 	);
-	expect(replay.stdout).toContain('1/1 pictures');
+	expect(replay.stdout).toContain('1/1 screenshots');
 }, 180_000);
 
 test('a run writes what its pages logged, for people and for programs', () => {

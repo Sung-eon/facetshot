@@ -185,9 +185,9 @@ export interface Settled {
 }
 
 /**
- * Takes pictures until two in a row, `gap` ms apart, are the same: the screen has stopped changing. Gives up after
+ * Takes screenshots until two in a row, `gap` ms apart, are the same: the screen has stopped changing. Gives up after
  * `cap` ms and keeps the last one. A screen that never stops (a spinner, a clock with seconds) costs the whole cap.
- * The kept picture ends up in `file`; the scratch pictures beside it are removed.
+ * The kept screenshot ends up in `file`; the scratch screenshots beside it are removed.
  */
 export async function settle(
 	take: (file: string) => Promise<void>,

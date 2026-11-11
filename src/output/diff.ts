@@ -24,7 +24,7 @@ export function diffImages(
 	if (!existsSync(previous)) return { ratio: 1, note: 'new: nothing to compare with' };
 	const before = readFileSync(previous);
 	const after = readFileSync(current);
-	// Most pictures don't change, and the same pixels make the same file: no need to decode them.
+	// Most screenshots don't change, and the same pixels make the same file: no need to decode them.
 	if (before.equals(after)) return { ratio: 0 };
 	const a = PNG.sync.read(before);
 	const b = PNG.sync.read(after);

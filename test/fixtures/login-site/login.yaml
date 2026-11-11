@@ -1,0 +1,6 @@
+start: /login.html
+steps:
+  - fill: 'label=Name'
+    with: Ada
+  - click: 'role=button[name="Sign in"]'
+  - wait: 'text=Signed in'

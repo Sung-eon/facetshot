@@ -9,8 +9,8 @@
  *   a flow are things `simctl` can't do. A small UI test (`FacetshotRunner/`) does them: built once per change of
  *   its sources into `~/.facetshot/cache/runner/`, started with `xcodebuild test-without-building` once per
  *   simulator per run, and fed one command at a time through files.
- * - A screen is ready when the app writes FACETSHOT_READY_FILE (`apple.readyFile`); one picture follows its last
- *   frame (Reduce Motion is on). Without the file, two pictures 250 ms apart being the same decide (up to 8 s).
+ * - A screen is ready when the app writes FACETSHOT_READY_FILE (`apple.readyFile`); one screenshot follows its last
+ *   frame (Reduce Motion is on). Without the file, two screenshots 250 ms apart being the same decide (up to 8 s).
  * - `split` devices (an iPad's half) can't be made from outside either: the app is launched with
  *   FACETSHOT_SPLIT_WIDTH=<points> and is expected to draw itself that wide.
  */
@@ -232,7 +232,7 @@ function lanes(cells: Cell[], slots: number): Lane[] {
 	const model = (cell: Cell) => cell.device.model ?? 'iPhone 17 Pro Max';
 	const devices = [...new Set(cells.map((cell) => cell.device.name))];
 	// Only as many lanes as may run at once: a lane beyond that shuts its simulator down and boots the next, and two
-	// simulators of one model running together are slower per picture than one doing both (measured on 10 cores).
+	// simulators of one model running together are slower per screenshot than one doing both (measured on 10 cores).
 	const perDevice = devices.length <= slots;
 	const result: Lane[] = [];
 	const seen = new Map<string, number>();
@@ -285,7 +285,7 @@ export class IosSimulatorDriver implements Driver {
 
 	async shoot(cells: Cell[], ctx: RunContext, report: (result: CellResult) => void): Promise<void> {
 		const all = this.lanes.length ? this.lanes : lanes(cells, ctx.pools.simulators.size);
-		// More lanes than may be booted at once: each is shut down when its pictures are done, to make room.
+		// More lanes than may be booted at once: each is shut down when its screenshots are done, to make room.
 		const crowded = all.length > ctx.pools.simulators.size;
 		await ctx.pools.simulators.each(
 			all,
@@ -304,7 +304,7 @@ export class IosSimulatorDriver implements Driver {
 						}
 					);
 				} catch (error) {
-					// Only what comes before the first picture (boot, install) gets here; a device's own failure is reported per device.
+					// Only what comes before the first screenshot (boot, install) gets here; a device's own failure is reported per device.
 					for (const cell of group) report(failed(cell, firstLine(error)));
 				}
 			},
@@ -353,7 +353,7 @@ export class IosSimulatorDriver implements Driver {
 			'--batteryLevel',
 			'100'
 		).catch(() => {});
-		// Reduce Motion, as the web gets prefers-reduced-motion: transitions become short fades, so one picture taken just
+		// Reduce Motion, as the web gets prefers-reduced-motion: transitions become short fades, so one screenshot taken just
 		// after the app says it's ready is the finished screen. Read by apps at launch, which comes after this.
 		await simctl(
 			'spawn',
@@ -365,7 +365,7 @@ export class IosSimulatorDriver implements Driver {
 			'-bool',
 			'true'
 		).catch(() => {});
-		// The keyboard's first-run card ("slide to type") would cover the first picture with a keyboard in it.
+		// The keyboard's first-run card ("slide to type") would cover the first screenshot with a keyboard in it.
 		await simctl(
 			'spawn',
 			udid,
@@ -545,8 +545,8 @@ export class IosSimulatorDriver implements Driver {
 			const { file, rel } = imagePath(ctx.runDir, screen, cell.device.name, cell.variant.name);
 			const shoot = (to: string) =>
 				simctl('io', sim.udid, 'screenshot', '--type=png', to).then(() => {});
-			// The app said it is ready, and Reduce Motion is on: one picture after the last frame is drawn. Without that
-			// word, wait until two pictures in a row are the same.
+			// The app said it is ready, and Reduce Motion is on: one screenshot after the last frame is drawn. Without that
+			// word, wait until two screenshots in a row are the same.
 			const settled = ready
 				? await sleep(SETTLE_AFTER_READY).then(async () => {
 						await shoot(file);
@@ -555,7 +555,7 @@ export class IosSimulatorDriver implements Driver {
 				: await settle(shoot, file, { cap: 8000, signal: ctx.signal });
 			if (!settled.stable)
 				extra.push(
-					`Still changing after ${(settled.ms / 1000).toFixed(1)} s; this is the last picture.`
+					`Still changing after ${(settled.ms / 1000).toFixed(1)} s; this is the last screenshot.`
 				);
 			let size = pngSize(file);
 			// The simulator's framebuffer stays upright; a device on its side is pictured as a person holding it sees it.
@@ -564,7 +564,7 @@ export class IosSimulatorDriver implements Driver {
 				size = pngSize(file);
 			}
 			if (cell.device.split) {
-				// The app drew itself in the left part of the screen; the picture is that part.
+				// The app drew itself in the left part of the screen; the screenshot is that part.
 				size = cropLeft(file, Math.round(size.width * cell.device.split));
 				extra.push(
 					`Split View drawn by the app itself at FACETSHOT_SPLIT_WIDTH (the simulator can't open Split View).`
@@ -619,7 +619,7 @@ export class IosSimulatorDriver implements Driver {
 		}
 	}
 
-	/** One flow step that isn't a picture. */
+	/** One flow step that isn't a screenshot. */
 	private async step(
 		sim: Simulator,
 		step: Step,

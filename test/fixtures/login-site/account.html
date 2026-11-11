@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8" /><title>Account</title>
+<h1 id="who"></h1>
+<script>
+	document.getElementById('who').textContent = /member=(\w+)/.exec(document.cookie)?.[1]
+		? 'Hello, ' + /member=(\w+)/.exec(document.cookie)[1]
+		: 'Signed out';
+</script>

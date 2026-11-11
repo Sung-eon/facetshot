@@ -1,10 +1,10 @@
 /**
  * Sessions: a screen kept open so an agent (or a person) can work it step by step — click, scroll, open a context
- * menu, type — and see the picture, the page's logs and what's clickable after each step. The daemon holds them; each
+ * menu, type — and see the screenshot, the page's logs and what's clickable after each step. The daemon holds them; each
  * is one page on one device in one variant, with the project's servers, sign-in and test data, like a run's.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { stringify } from 'yaml';
 import type { Config, Finding } from './types.ts';
@@ -37,7 +37,7 @@ export interface LookOptions {
 	elements?: boolean;
 	/** The page's whole accessibility tree as text: everything it says, not only what's clickable. */
 	tree?: boolean;
-	/** Take a picture (default true). Without one, an answer is text only, and cheap. */
+	/** Take a screenshot (default true). Without one, an answer is text only, and cheap. */
 	picture?: boolean;
 	/** The whole page rather than what's on screen. */
 	full?: boolean;
@@ -50,7 +50,7 @@ export interface OnScreen {
 	ref: string;
 	role: string;
 	name: string;
-	/** Its box on the picture, in CSS pixels. */
+	/** Its box on the screenshot, in CSS pixels. */
 	x: number;
 	y: number;
 	width: number;
@@ -67,7 +67,7 @@ export interface View {
 	title: string;
 	device: string;
 	variant: string;
-	/** The picture, in CSS pixels (so `@x,y` in a step is a point on it); none when `picture: false`. */
+	/** The screenshot, in CSS pixels (so `@x,y` in a step is a point on it); none when `picture: false`. */
 	image?: string;
 	width?: number;
 	height?: number;
@@ -181,7 +181,8 @@ export class Session {
 			const browser = await runtime.browser(engineOf(config, cell.device), cell.variant.appearance);
 			const made = await newSession(browser, cell.device, cell.variant, config.web, {
 				baseURL: driver.url,
-				root: ctx.root
+				root: ctx.root,
+				stateDir: ctx.stateDir
 			});
 			closers.push(made.close);
 			session.page = made.session;
@@ -311,6 +312,14 @@ export class Session {
 	/** The steps that worked, as a flow file that `facetshot <file>` plays again. */
 	saveFlow(file: string): string {
 		const path = resolve(this.root, file);
+		// A flow belongs to the project: a name that climbs out of it (../, an absolute path elsewhere) is refused.
+		const inside = relative(this.root, path);
+		if (!inside || inside.startsWith('..') || isAbsolute(inside)) {
+			throw new UsageError(
+				`A flow is saved inside the project (${this.root}); "${file}" is outside it.`,
+				'Give a path in the project, e.g. flows/edit-settings.yaml.'
+			);
+		}
 		mkdirSync(dirname(path), { recursive: true });
 		writeFileSync(path, stringify({ start: this.start, steps: [...this.steps, { shot: 'end' }] }));
 		return path;
@@ -489,7 +498,8 @@ export function describeView(view: View): string {
 	];
 	if (view.failed) lines.push(`✗ Step ${view.failed.step} didn't work: ${view.failed.error}`);
 	if (view.unsettled) lines.push(`! Not settled after 8s: still waiting for ${view.unsettled}.`);
-	if (view.image) lines.push(`Picture: ${view.image} (${view.width}×${view.height}, CSS pixels)`);
+	if (view.image)
+		lines.push(`Screenshot: ${view.image} (${view.width}×${view.height}, CSS pixels)`);
 	for (const finding of view.findings)
 		lines.push(`${finding.severity === 'error' ? '✗' : '!'} ${finding.check}: ${finding.message}`);
 	if (view.logs.length) {

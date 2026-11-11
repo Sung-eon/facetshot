@@ -1,6 +1,6 @@
 /**
  * `facetshot clean`: puts the machine back as it was — the daemon and everything it holds stopped, test data
- * removed, pictures and caches deleted, facetshot's own simulators deleted. Baselines stay unless `--all`.
+ * removed, screenshots and caches deleted, facetshot's own simulators deleted. Baselines stay unless `--all`.
  */
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

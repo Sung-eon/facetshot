@@ -1,5 +1,5 @@
 /**
- * Flows: a few steps to reach a state a URL can't (a menu open, a form half filled, an error shown), with a picture
+ * Flows: a few steps to reach a state a URL can't (a menu open, a form half filled, an error shown), with a screenshot
  * wherever a `shot` step says. Written in YAML or JSON:
  *
  *   start: /settings
@@ -19,7 +19,7 @@ import { UsageError } from './errors.ts';
 
 /**
  * A step. Where a step takes an element, it is a Playwright selector (CSS, `text=`, `role=`), a ref a session listed
- * (`e12`), or `@<x>,<y>` for a point on the screen in CSS pixels (the session's pictures are in the same units).
+ * (`e12`), or `@<x>,<y>` for a point on the screen in CSS pixels (the session's screenshots are in the same units).
  */
 export type Step =
 	| { click: string }
@@ -155,7 +155,7 @@ export function parseStep(text: string): Step {
 export function inlineFlow(start: string, steps: Step[], stateDir: string): string {
 	const text = stringify({ start, steps });
 	const hash = createHash('sha256').update(text).digest('hex').slice(0, 8);
-	// The file is named after its start, so the pictures are `<start>.<shot>`; the folder keeps different steps apart.
+	// The file is named after its start, so the screenshots are `<start>.<shot>`; the folder keeps different steps apart.
 	const folder = join(stateDir, 'flows', hash);
 	mkdirSync(folder, { recursive: true });
 	const name =
@@ -168,7 +168,7 @@ export function inlineFlow(start: string, steps: Step[], stateDir: string): stri
 	return file;
 }
 
-/** The pictures a flow takes, in order: each `shot` step, or the end of the flow if it has none. */
+/** The screenshots a flow takes, in order: each `shot` step, or the end of the flow if it has none. */
 export function shotNames(flow: Flow): string[] {
 	const names = flow.steps
 		.filter((step): step is { shot: string } => 'shot' in step)
@@ -178,7 +178,7 @@ export function shotNames(flow: Flow): string[] {
 
 /**
  * Plays a flow in a browser page. `onShot` is called at each `shot` step (and at the end if there are none) and is
- * expected to wait for readiness and take the picture.
+ * expected to wait for readiness and take the screenshot.
  */
 export async function playInPage(
 	page: Page,
@@ -211,8 +211,34 @@ function aim(page: Page, target: string): { point: { x: number; y: number } } | 
 	const point = /^@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(target.trim());
 	if (point) return { point: { x: Number(point[1]), y: Number(point[2]) } };
 	// A ref from a session's list (`e12`, `ref=e12`, `f1e3` in a frame), from Playwright's accessibility snapshot.
-	const ref = /^(?:ref=)?((?:f\d+)?e\d+)$/.exec(target.trim());
-	return { at: ref ? page.getByRef(ref[1]) : page.locator(target).first() };
+	return { at: locate(page, target) };
+}
+
+/**
+ * An element named the way a person would: a ref from a session's list (`e12`, `f1e3` in a frame), the shortcuts
+ * `label=`, `placeholder=`, `alt=`, `title=` and `testid=` (Playwright's getByLabel and friends), or any Playwright
+ * selector (`text=`, `role=`, CSS).
+ */
+export function locate(page: Page, target: string): Locator {
+	const trimmed = target.trim();
+	const ref = /^(?:ref=)?((?:f\d+)?e\d+)$/.exec(trimmed);
+	if (ref) return page.getByRef(ref[1]);
+	const by = /^(label|placeholder|alt|title|testid)=(.+)$/.exec(trimmed);
+	if (by) {
+		const value = by[2].replace(/^(['"])(.*)\1$/, '$2');
+		const found =
+			by[1] === 'label'
+				? page.getByLabel(value)
+				: by[1] === 'placeholder'
+					? page.getByPlaceholder(value)
+					: by[1] === 'alt'
+						? page.getByAltText(value)
+						: by[1] === 'title'
+							? page.getByTitle(value)
+							: page.getByTestId(value);
+		return found.first();
+	}
+	return page.locator(trimmed).first();
 }
 
 /** Does one step (anything but `shot`) in a page. `open` shows an address the way the driver does. */
@@ -286,9 +312,9 @@ export async function doStep(
 			} else await aimed.at.scrollIntoViewIfNeeded({ timeout: TIMEOUT });
 		}
 	} else if ('wait' in step)
-		await page.locator(step.wait).first().waitFor({ state: 'visible', timeout: 15_000 });
+		await locate(page, step.wait).waitFor({ state: 'visible', timeout: 15_000 });
 	else if ('gone' in step)
-		await page.locator(step.gone).first().waitFor({ state: 'hidden', timeout: 15_000 });
+		await locate(page, step.gone).waitFor({ state: 'hidden', timeout: 15_000 });
 	else if ('goto' in step) await open(step.goto);
 	else if ('back' in step) await page.goBack({ waitUntil: 'load', timeout: 30_000 });
 	else if ('forward' in step) await page.goForward({ waitUntil: 'load', timeout: 30_000 });

@@ -1,5 +1,5 @@
 /**
- * Checks that read a page instead of looking at it: each turns something a reviewer would spot in a picture into a
+ * Checks that read a page instead of looking at it: each turns something a reviewer would spot in a screenshot into a
  * line of text, so an agent can find the broken screen without opening every image.
  *
  * `inPage` runs inside the browser and must not use anything from outside its own body.

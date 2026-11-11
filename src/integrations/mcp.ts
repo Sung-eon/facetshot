@@ -2,13 +2,13 @@
  * facetshot as an MCP server over stdio, so an agent can look at the app without knowing the command line.
  *
  * Tools, kept few and small on purpose — every tool's schema sits in the agent's context on every turn:
- *   capture  pictures, answered with the contact sheets themselves
+ *   capture  screenshots, answered with the contact sheets themselves
  *   check    what is wrong on the screens, as text (cheapest)
  *   compare  what changed since the last run or a baseline
- *   inspect  one picture at full size, or a part of it, with what its page logged
+ *   inspect  one screenshot at full size, or a part of it, with what its page logged
  *   list     devices, variants, profiles, scenes and recent runs
  *   open     a page kept open to work step by step (a session)
- *   act      steps in a session — click, type, right-click, scroll — then the picture, logs and what's clickable
+ *   act      steps in a session — click, type, right-click, scroll — then the screenshot, logs and what's clickable
  *   close    ends a session, optionally keeping its steps as a flow
  *
  * Runs go through the daemon like the command line's, so several agents' servers share one browser and the
@@ -33,7 +33,7 @@ import { parseStep } from '../flows.ts';
 import { describeView, type View } from '../session.ts';
 import type { LogLevel } from '../logs.ts';
 
-/** How much image a single answer may carry: sheets, and the longest side of an inspected picture. */
+/** How much image a single answer may carry: sheets, and the longest side of an inspected screenshot. */
 const MAX_SHEETS = Number(process.env.FACETSHOT_MCP_MAX_IMAGES ?? 4);
 const MAX_SIDE = 1568;
 
@@ -82,7 +82,7 @@ function sheets(manifest: Manifest, onlyChanged = false): Content[] {
 	return content;
 }
 
-/** Each picture on its own, scaled to fit 1024 px, at most MAX_CELLS of them. */
+/** Each screenshot on its own, scaled to fit 1024 px, at most MAX_CELLS of them. */
 const MAX_CELLS = Number(process.env.FACETSHOT_MCP_MAX_CELLS ?? 8);
 function cellImages(manifest: Manifest): Content[] {
 	const cells = manifest.cells.filter((cell) => cell.image);
@@ -97,13 +97,13 @@ function cellImages(manifest: Manifest): Content[] {
 	if (cells.length > MAX_CELLS) {
 		content.push({
 			type: 'text',
-			text: `${cells.length - MAX_CELLS} more picture(s) not shown; use images: "sheets", fewer devices or variants, or inspect.`
+			text: `${cells.length - MAX_CELLS} more screenshot(s) not shown; use images: "sheets", fewer devices or variants, or inspect.`
 		});
 	}
 	return content;
 }
 
-/** A run as data, for clients that read structured results: where things are and what was found, no pictures. */
+/** A run as data, for clients that read structured results: where things are and what was found, no screenshots. */
 function runData(manifest: Manifest): Record<string, unknown> {
 	return {
 		runId: manifest.runId,
@@ -192,7 +192,7 @@ export function createServer(): McpServer {
 			.array(z.string())
 			.optional()
 			.describe(
-				'Steps before each picture, to reach a menu, dialog or half-filled form: "click:role=button[name=\'Delete\']", "fill:#email=a@b.co", "press:Enter", "wait:role=dialog", "shot:confirm" (a picture; without any, one at the end).'
+				'Steps before each screenshot, to reach a menu, dialog or half-filled form: "click:role=button[name=\'Delete\']", "fill:#email=a@b.co", "press:Enter", "wait:role=dialog", "shot:confirm" (a screenshot; without any, one at the end).'
 			)
 	};
 	type TargetsArgs = {
@@ -215,9 +215,9 @@ export function createServer(): McpServer {
 	server.registerTool(
 		'capture',
 		{
-			title: 'Take pictures',
+			title: 'Take screenshots',
 			description:
-				'Takes pictures of screens on several devices and variants and returns one contact sheet per screen (rows = devices, columns = variants), plus a short summary of failures and problems found.',
+				'Takes screenshots of screens on several devices and variants and returns one contact sheet per screen (rows = devices, columns = variants), plus a short summary of failures and problems found.',
 			inputSchema: {
 				...targetsShape,
 				diff: z.string().optional().describe('Also compare with "previous" or a baseline name.'),
@@ -225,10 +225,10 @@ export function createServer(): McpServer {
 					.enum(['sheets', 'cells', 'none'])
 					.default('sheets')
 					.describe(
-						'How pictures come back: "sheets" one grid per screen (default, cheapest to read), "cells" every picture on its own (for a few cells, to read details), "none" paths only.'
+						'How screenshots come back: "sheets" one grid per screen (default, cheapest to read), "cells" every screenshot on its own (for a few cells, to read details), "none" paths only.'
 					)
 			},
-			annotations: { readOnlyHint: true, openWorldHint: true }
+			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
@@ -257,7 +257,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Check screens',
 			description:
-				'Reads screens for problems without taking pictures: console errors, failed requests, sideways scrolling, cut-off text, covered buttons, broken images, blank pages, small tap targets (and accessibility with checks=["all"]). Cheapest way to find what to look at.',
+				'Reads screens for problems without taking screenshots: console errors, failed requests, horizontal scrolling, cut-off text, covered buttons, broken images, blank pages, small tap targets (and accessibility with checks=["all"]). Cheapest way to find what to look at.',
 			inputSchema: {
 				...targetsShape,
 				checks: z
@@ -265,7 +265,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('Which checks; default all but accessibility. "all" adds axe-core.')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: true }
+			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
@@ -290,7 +290,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Compare with before',
 			description:
-				'Takes the same pictures again (the last capture, or the targets given) and shows only what changed since the previous run or a saved baseline.',
+				'Takes the same screenshots again (the last capture, or the targets given) and shows only what changed since the previous run or a saved baseline.',
 			inputSchema: {
 				targets: targetsShape.targets.optional(),
 				devices: targetsShape.devices,
@@ -298,7 +298,7 @@ export function createServer(): McpServer {
 				browsers: targetsShape.browsers,
 				against: z.string().optional().describe('"previous" (default) or a baseline name.')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: true }
+			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
@@ -343,7 +343,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Look closer',
 			description:
-				'Returns one picture from a run at full size (scaled to fit 1568 px), or a region of it. Use after capture when a sheet is too small to read.',
+				'Returns one screenshot from a run at full size (scaled to fit 1568 px), or a region of it. Use after capture when a sheet is too small to read.',
 			inputSchema: {
 				screen: z.string().describe('The screen name as the summary shows it.'),
 				device: z.string(),
@@ -360,7 +360,7 @@ export function createServer(): McpServer {
 					.optional()
 					.describe('Show the difference image instead (if the run compared).')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: true }
+			annotations: { readOnlyHint: true, openWorldHint: false }
 		},
 		async (args) => {
 			try {
@@ -375,19 +375,19 @@ export function createServer(): McpServer {
 				);
 				if (!cell) {
 					throw new Error(
-						`No picture for ${args.screen} ${args.device}/${args.variant} in run ${id}. Screens: ${manifest.screens.map((s) => s.screen).join(', ')}.`
+						`No screenshot for ${args.screen} ${args.device}/${args.variant} in run ${id}. Screens: ${manifest.screens.map((s) => s.screen).join(', ')}.`
 					);
 				}
 				const rel = args.diff ? cell.diff?.image : cell.image;
 				if (!rel)
 					throw new Error(
 						args.diff
-							? 'That picture has no difference image.'
-							: `That picture failed: ${cell.error ?? 'no image'}.`
+							? 'That screenshot has no difference image.'
+							: `That screenshot failed: ${cell.error ?? 'no image'}.`
 					);
 				let image = readPng(join(manifest.out, rel));
 				if (args.region) {
-					// Pixels per point: the picture's width over the device's.
+					// Pixels per point: the screenshot's width over the device's.
 					const device = allDevices(loaded.config)[args.device];
 					const deviceScale = device ? image.width / device.width : 1;
 					image = crop(image, {
@@ -429,7 +429,7 @@ export function createServer(): McpServer {
 			inputSchema: {
 				what: z.enum(['devices', 'variants', 'profiles', 'checks', 'runs']).default('devices')
 			},
-			annotations: { readOnlyHint: true, openWorldHint: true }
+			annotations: { readOnlyHint: true, openWorldHint: false }
 		},
 		async (args) => {
 			try {
@@ -479,7 +479,7 @@ export function createServer(): McpServer {
 		}
 	);
 
-	/** A view as text and, unless turned off, the picture; the same view as data for clients that read it. */
+	/** A view as text and, unless turned off, the screenshot; the same view as data for clients that read it. */
 	const viewAnswer = (view: View) => ({
 		content: [
 			{ type: 'text', text: describeView(view) },
@@ -503,17 +503,17 @@ export function createServer(): McpServer {
 			.describe(
 				'List what on screen can be acted on, each with a ref ("e12") for the next step. Refs last until the page changes, so every answer lists them afresh.'
 			),
-		picture: z
+		screenshot: z
 			.boolean()
 			.default(true)
 			.describe(
-				"Return the picture. false answers in text only: cheaper for steps you needn't see."
+				"Return the screenshot. false answers in text only: cheaper for steps you needn't see."
 			),
 		tree: z
 			.boolean()
 			.optional()
 			.describe("Also return the page's accessibility tree: all its text and structure, as text."),
-		full: z.boolean().optional().describe('Picture the whole page, not just the screen.'),
+		full: z.boolean().optional().describe('Screenshot the whole page, not just the screen.'),
 		logLevel: z
 			.enum(['debug', 'info', 'warn', 'error'])
 			.optional()
@@ -521,14 +521,14 @@ export function createServer(): McpServer {
 	};
 	type LookArgs = {
 		elements: boolean;
-		picture: boolean;
+		screenshot: boolean;
 		tree?: boolean;
 		full?: boolean;
 		logLevel?: LogLevel;
 	};
 	const lookOf = (args: LookArgs) => ({
 		elements: args.elements,
-		picture: args.picture,
+		picture: args.screenshot,
 		tree: args.tree,
 		full: args.full,
 		logLevel: args.logLevel
@@ -539,7 +539,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Open a page to work',
 			description:
-				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data. Answers with the session id, a picture (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
+				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data. Answers with the session id, a screenshot (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
 			inputSchema: {
 				target: z.string().describe('A path ("/settings") or a full URL.'),
 				device: z
@@ -573,8 +573,8 @@ export function createServer(): McpServer {
 					env: process.env
 				});
 				opened.add(view.session);
-				// Opening always pictures and lists; look again only for something else.
-				if (!args.picture || !args.elements || args.tree || args.full)
+				// Opening always screenshots and lists; look again only for something else.
+				if (!args.screenshot || !args.elements || args.tree || args.full)
 					return viewAnswer(
 						await sessionCall<View>('look', { id: view.session, options: lookOf(args) })
 					);
@@ -590,7 +590,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Work an open page',
 			description:
-				'Does steps in an open session, in order, stopping at the first that fails, then answers like open: the picture, the log lines since the last answer, console errors and failed requests, and fresh refs. With no steps, just looks again. Name an element by its ref ("e12"), a point on the picture ("@x,y"), or a selector ("text=Save", "role=button[name=\'Save\']").',
+				'Does steps in an open session, in order, stopping at the first that fails, then answers like open: the screenshot, the log lines since the last answer, console errors and failed requests, and fresh refs. With no steps, just looks again. Name an element by its ref ("e12"), a point on the screenshot ("@x,y"), or a selector ("text=Save", "role=button[name=\'Save\']").',
 			inputSchema: {
 				session: z.string().describe('The id open returned, e.g. "s-1a2b3c".'),
 				steps: z
@@ -664,7 +664,7 @@ export function createServer(): McpServer {
 /** Sessions this server opened and hasn't closed: closed when the agent goes. */
 const opened = new Set<string>();
 
-/** A picture's log lines from its run, for inspect. */
+/** A screenshot's log lines from its run, for inspect. */
 function cellLog(manifest: Manifest, label: string): string {
 	if (!manifest.logs) return '';
 	const file = join(manifest.out, manifest.logs.json);
@@ -693,14 +693,17 @@ export async function serveMcp(): Promise<void> {
 	await server.connect(new StdioServerTransport());
 	// Stays up until the client closes stdin, or a signal ends it: either way through `process.exit`, so whatever a
 	// run in this process started is killed as it goes (see `track` in engine/procs.ts).
-	for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
-		process.once(signal, () => process.exit(0));
-	await new Promise<void>((done) => process.stdin.once('close', done));
-	if (opened.size) {
+	// Either way, the sessions this server opened are closed first (within 5 s), so none waits out its idle time.
+	const closeSessions = async () => {
+		if (!opened.size) return;
 		const { sessionCall } = await import('../daemon/client.ts');
 		await Promise.race([
 			Promise.allSettled([...opened].map((id) => sessionCall('close', { id }))),
 			new Promise((done) => setTimeout(done, 5000))
 		]);
-	}
+	};
+	for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
+		process.once(signal, () => void closeSessions().finally(() => process.exit(0)));
+	await new Promise<void>((done) => process.stdin.once('close', done));
+	await closeSessions();
 }

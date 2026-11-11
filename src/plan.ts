@@ -1,5 +1,5 @@
 /**
- * Turns what someone typed (`/talk app:/book --on phone --as dark,large`) into the list of pictures to take.
+ * Turns what someone typed (`/talk app:/book --on phone --as dark,large`) into the list of screenshots to take.
  */
 import { DEVICES, GROUPS, PROFILES, VARIANTS, VARIANT_GROUPS } from './presets.ts';
 import {
@@ -32,7 +32,7 @@ export function slugify(text: string): string {
 		.replace(/[^\p{L}\p{N}._-]+/gu, '-')
 		.replace(/-+/g, '-')
 		.replace(/^-|-$/g, '');
-	// A screen's pictures sit in a folder of its name beside the run's own files, which it must not take.
+	// A screen's screenshots sit in a folder of its name beside the run's own files, which it must not take.
 	return RESERVED.has(slug) ? `${slug}-page` : slug || 'home';
 }
 
@@ -131,7 +131,7 @@ function expand(
 
 /**
  * Device names, groups included. `name@webkit` (or `group@firefox`) is that web device in another browser engine; its
- * name keeps the suffix, so its pictures sit in their own row.
+ * name keeps the suffix, so its screenshots sit in their own row.
  */
 export function resolveDevices(names: string[], config: Config): Device[] {
 	const devices = allDevices(config);

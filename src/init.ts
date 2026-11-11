@@ -195,7 +195,7 @@ export async function init(options: {
 	if (existing) say(`Keeping your config: ${existing}`);
 	else if (nothing) {
 		// Writing a config that guesses would only fail later, further from the reason.
-		say(`Found no app to picture in ${root}`);
+		say(`Found no app to take screenshots of in ${root}`);
 		say('(no web framework in package.json, and no Storybook, Electron, Tauri or Swift package).');
 		say("- Run this in your project's folder, or");
 		say(
@@ -227,7 +227,7 @@ export async function init(options: {
 		!existsSync(join(root, '.gitignore')) ||
 		!readFileSync(join(root, '.gitignore'), 'utf8').includes('.facetshot')
 	) {
-		say('Add `.facetshot/` to your .gitignore (pictures and logs live there).');
+		say('Add `.facetshot/` to your .gitignore (screenshots and logs live there).');
 	}
 
 	const agents =

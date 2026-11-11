@@ -1,6 +1,6 @@
 /**
  * Builds that run only when something they read has changed. The hash of the inputs is kept next to the output, so
- * the next run (or another agent in the same checkout) skips straight to the pictures.
+ * the next run (or another agent in the same checkout) skips straight to the screenshots.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';

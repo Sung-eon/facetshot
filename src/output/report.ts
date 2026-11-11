@@ -1,7 +1,7 @@
 /**
  * `report.html`: the run for people. One page, no server and nothing to install: every screen as a grid of its
- * pictures (click one for full size), what the checks found next to it, and the changed pixels on a switch when the
- * run compared. It sits in the run's folder and uses the pictures beside it.
+ * screenshots (click one for full size), what the checks found next to it, and the changed pixels on a switch when the
+ * run compared. It sits in the run's folder and uses the screenshots beside it.
  */
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -92,7 +92,7 @@ i { display: inline-block; margin-top: 4px; font-style: normal; font-size: 12px;
 label { cursor: pointer }
 @media (max-width: 700px) { img { max-width: 80vw } table, tr, td, th { display: block } }
 </style>
-<header><h1 style="font-size:18px;margin:0">facetshot</h1><p>${ok}/${manifest.cells.length} pictures${failed ? `, ${failed} failed` : ''} · ${manifest.screens.length} screens · ${(manifest.ms / 1000).toFixed(1)}s · ${escape(manifest.startedAt)}</p>
+<header><h1 style="font-size:18px;margin:0">facetshot</h1><p>${ok}/${manifest.cells.length} screenshots${failed ? `, ${failed} failed` : ''} · ${manifest.screens.length} screens · ${(manifest.ms / 1000).toFixed(1)}s · ${escape(manifest.startedAt)}</p>
 ${hasDiff ? '<label><input type="checkbox" id="diff"> show changed pixels</label>' : ''}</header>
 ${manifest.errors.length ? `<ul>${manifest.errors.map((error) => `<li class="error">${escape(error)}</li>`).join('')}</ul>` : ''}
 <nav>${manifest.screens.map(({ screen }) => `<a href="#${escape(screen)}">${escape(screen)}</a>`).join('')}</nav>

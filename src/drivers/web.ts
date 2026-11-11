@@ -1,6 +1,6 @@
 /**
  * Web pages in a real browser. One browser, one context per device × variant (so emulation is set once, not per
- * picture), each reusing its page from screen to screen, with a cap on how many work at the same time.
+ * screenshot), each reusing its page from screen to screen, with a cap on how many work at the same time.
  */
 import type { Browser, Page } from 'playwright';
 import type {
@@ -21,9 +21,9 @@ import type { Engine } from '../engine/runtime.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
 import { loadFlow, playInPage, shotNames } from '../flows.ts';
 import { fill } from '../plan.ts';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { CONFIG_NAMES } from '../config.ts';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, statSync } from 'node:fs';
 import {
 	byDeviceAndVariant,
 	failed,
@@ -47,7 +47,7 @@ import {
 	waitReady
 } from './page.ts';
 
-/** A page ready for pictures, with what watches it. Shared with Storybook, Electron and Tauri's frontend. */
+/** A page ready for screenshots, with what watches it. Shared with Storybook, Electron and Tauri's frontend. */
 export interface PageSession {
 	page: Page;
 	watch: NetworkWatch;
@@ -64,7 +64,7 @@ export async function newSession(
 	device: Device,
 	variant: Variant,
 	web: WebConfig | undefined,
-	options: { baseURL?: string; root: string; initScript?: string }
+	options: { baseURL?: string; root: string; stateDir?: string; initScript?: string }
 ): Promise<{ session: PageSession; close: () => Promise<void> }> {
 	const personaName = variant.persona ?? web?.persona;
 	const persona: Persona | undefined = personaName ? web?.personas?.[personaName] : undefined;
@@ -76,7 +76,9 @@ export async function newSession(
 	}
 	const storageState = persona?.storageState
 		? resolve(options.root, persona.storageState)
-		: undefined;
+		: persona?.login
+			? await signedIn(browser, personaName!, persona, web, options)
+			: undefined;
 	if (storageState && !existsSync(storageState)) {
 		throw new UsageError(
 			`The persona "${personaName}" points at ${storageState}, which doesn't exist.`
@@ -119,7 +121,7 @@ export async function newSession(
 
 /**
  * Some browsers (an installed Firefox over WebDriver BiDi, so far) don't take every emulated setting. Says so when the
- * page doesn't see the colour scheme the variant asked for, rather than letting a light picture pass for dark.
+ * page doesn't see the colour scheme the variant asked for, rather than letting a light screenshot pass for dark.
  */
 async function schemeNotTaken(session: PageSession): Promise<string | undefined> {
 	const wanted = session.variant.appearance ?? 'light';
@@ -127,7 +129,76 @@ async function schemeNotTaken(session: PageSession): Promise<string | undefined>
 		.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)
 		.catch(() => undefined);
 	if (dark === undefined || dark === (wanted === 'dark')) return undefined;
-	return `This browser didn't take the ${wanted} colour scheme, so the picture shows its default.`;
+	return `This browser didn't take the ${wanted} colour scheme, so the screenshot shows its default.`;
+}
+
+/** Sign-ins in progress, by the file they write: two pages asking at once share one sign-in. */
+const signingIn = new Map<string, Promise<string>>();
+
+/**
+ * A persona's signed-in state, from its login flow: played once in a fresh context, saved as a Playwright storage
+ * state file in `<state>/auth/`, and used again until it's `ttl` minutes old (default 720).
+ */
+async function signedIn(
+	browser: Browser,
+	name: string,
+	persona: Persona,
+	web: WebConfig | undefined,
+	options: { baseURL?: string; root: string; stateDir?: string }
+): Promise<string> {
+	const file = join(
+		options.stateDir ?? join(options.root, '.facetshot'),
+		'auth',
+		`${slugifyName(name)}.json`
+	);
+	const fresh = () => {
+		try {
+			return Date.now() - statSync(file).mtimeMs < (persona.ttl ?? 720) * 60_000;
+		} catch {
+			return false;
+		}
+	};
+	if (fresh()) return file;
+	const running = signingIn.get(file);
+	if (running) return running;
+	const work = (async () => {
+		const flow = loadFlow(persona.login!, options.root);
+		const context = await browser.newContext({ baseURL: options.baseURL, serviceWorkers: 'block' });
+		try {
+			await routeRequests(context, web);
+			const page = await context.newPage();
+			try {
+				await playInPage(
+					page,
+					flow,
+					(address) => navigate(page, address),
+					async () => {}
+				);
+			} catch (error) {
+				throw new UsageError(
+					`Signing in as "${name}" with ${persona.login} didn't work: ${firstLine(error)}`,
+					'Fix the login flow (try its steps in a session: facetshot open <its start>), or give the persona a storageState file instead.'
+				);
+			}
+			// Whatever the flow ends on, the sign-in has to have finished: let its requests settle.
+			await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+			mkdirSync(dirname(file), { recursive: true });
+			await context.storageState({ path: file });
+			return file;
+		} finally {
+			await context.close().catch(() => {});
+		}
+	})();
+	signingIn.set(file, work);
+	try {
+		return await work;
+	} finally {
+		signingIn.delete(file);
+	}
+}
+
+function slugifyName(name: string): string {
+	return name.replace(/[^\w.-]+/g, '-');
 }
 
 /** How the web driver and the ones built on it (Electron, Tauri's frontend) show one address in a page. */
@@ -188,7 +259,7 @@ export async function pictureOf(
 	return out;
 }
 
-/** One cell: open it (or play its flow), wait, read, shoot. Reports one result per picture. */
+/** One cell: open it (or play its flow), wait, read, shoot. Reports one result per screenshot. */
 export async function shootCell(
 	session: PageSession,
 	cell: Cell,
@@ -325,7 +396,7 @@ export class WebDriver implements Driver {
 				cell.target.kind === 'flow'
 		);
 		// The browsers start while the app builds and its server comes up: neither needs the other.
-		// One engine that won't start fails only its own pictures (in shoot); with none, there's nothing to do.
+		// One engine that won't start fails only its own screenshots (in shoot); with none, there's nothing to do.
 		const browser = Promise.allSettled(
 			[...new Set(cells.map((cell) => engineOf(ctx.config, cell.device)))].map((engine) =>
 				ctx.runtime.browser(engine)
@@ -375,7 +446,8 @@ export class WebDriver implements Driver {
 					web,
 					{
 						baseURL: this.baseURL,
-						root: ctx.root
+						root: ctx.root,
+						stateDir: ctx.stateDir
 					}
 				),
 			(session, cell) => shootCell(session, cell, options, report),

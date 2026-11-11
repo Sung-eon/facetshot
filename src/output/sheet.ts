@@ -1,6 +1,6 @@
 /**
  * Contact sheets: every device and variant of one screen on one image, labelled, so a person or a model reads one
- * picture instead of twelve. Drawn as an HTML page in the browser facetshot already has, so there is no image library
+ * screenshot instead of twelve. Drawn as an HTML page in the browser facetshot already has, so there is no image library
  * to install.
  */
 import { writeFileSync } from 'node:fs';

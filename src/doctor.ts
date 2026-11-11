@@ -152,7 +152,7 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 		if (config?.desktop?.kind === 'macos' || config?.desktop?.kind === 'tauri' || config?.apple) {
 			lines.push({
 				ok: 'warn',
-				what: 'Mac window pictures need Screen Recording permission for the app running facetshot.',
+				what: 'Mac window screenshots need Screen Recording permission for the app running facetshot.',
 				fix: 'System Settings → Privacy & Security → Screen & System Audio Recording → allow your terminal or agent app'
 			});
 		}
