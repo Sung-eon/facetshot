@@ -159,7 +159,8 @@ Options
   --as dark,large        variants; combine with + (dark+large)
   --browser webkit       web pages in other browsers too: webkit (Safari's engine), firefox, or the installed
                          chrome, msedge, moz-firefox; or per device: --on phone@webkit
-  -p, --profile name     a named set of devices and variants from your config
+  -p, --profile name     a named set of devices and variants from your config; with no targets,
+                         the profile's own targets (a batch you run again and again)
   --diff, --diff=name    compare with the previous run, or with a baseline or run id
   --checks a,b|all       which checks to run (facetshot list checks)
   --out folder           write this run to a folder of your choice
@@ -336,7 +337,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 	});
 	switch (command) {
 		case 'run':
-			if (!positional.length) {
+			if (!positional.length && typeof flags.profile !== 'string') {
 				process.stdout.write(`${HELP}\n`);
 				return EXIT.usage;
 			}

@@ -69,6 +69,26 @@ profiles: {
 facetshot /settings -p full
 ```
 
+A profile can also say what to take, with `targets`. Then it is a whole batch you run again and again, for example
+before each release, with no targets on the command line:
+
+```ts
+release: {
+	targets: ['/', '/pricing', '/settings', 'flows/*.yaml'],
+	on: ['review', 'iphone'],
+	as: ['light', 'dark', 'large']
+}
+```
+
+```sh
+facetshot -p release
+```
+
+Each target is taken on the profile's devices that can show it: here the web pages on the review devices, and any
+`app:` flow on the iPhone. A target no device in the profile can show gets the usual devices for its kind instead.
+Targets you name on the command line replace the profile's. [Flows](flows.md#a-batch-to-run-again) shows how to
+build such a batch.
+
 ## What a run gives you
 
 Each run gets a folder, `.facetshot/runs/<run id>/`, and `.facetshot/latest` points at the newest one. The last 20

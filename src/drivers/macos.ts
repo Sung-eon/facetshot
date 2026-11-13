@@ -40,6 +40,7 @@ import {
 	result,
 	stopped,
 	unreadable,
+	notApplied,
 	type Driver,
 	type RunContext
 } from './driver.ts';
@@ -238,19 +239,7 @@ export class MacWindowDriver implements Driver {
 			notes.push(
 				`Text size is up to the app on a Mac (FACETSHOT_TEXT=${variant.text}); facetshot can't check it took.`
 			);
-		const ignored = (
-			[
-				'contrast',
-				'locale',
-				'timezone',
-				'direction',
-				'persona',
-				'network',
-				'media',
-				'motion'
-			] as const
-		).filter((axis) => variant[axis]);
-		if (ignored.length) notes.push(`Not applied on a Mac window: ${ignored.join(', ')}.`);
+		notes.push(...notApplied(variant, ['appearance', 'text'], 'on a Mac window'));
 
 		const binary = this.executable(app.path);
 		const args = [

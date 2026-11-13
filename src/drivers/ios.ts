@@ -50,6 +50,7 @@ import {
 	result,
 	stopped,
 	unreadable,
+	notApplied,
 	type Driver,
 	type RunContext
 } from './driver.ts';
@@ -506,11 +507,7 @@ export class IosSimulatorDriver implements Driver {
 		await set('increase_contrast', variant.contrast === 'more' ? 'enabled' : 'disabled').catch(
 			() => {}
 		);
-		const ignored = (
-			['locale', 'timezone', 'direction', 'persona', 'network', 'media', 'motion'] as const
-		).filter((axis) => variant[axis]);
-		if (variant.contrast === 'forced') ignored.push('contrast' as never);
-		return ignored.length ? [`Not applied in the simulator: ${ignored.join(', ')}.`] : [];
+		return notApplied(variant, ['appearance', 'text', ['contrast', 'more']], 'in the simulator');
 	}
 
 	private async shootCell(

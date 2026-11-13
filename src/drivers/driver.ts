@@ -3,7 +3,7 @@
  * runtime they share. A new platform is a new Driver; nothing else in facetshot needs to change.
  */
 import type { LogGroup } from '../logs.ts';
-import type { Cell, CellResult, Config } from '../types.ts';
+import type { Cell, CellResult, Config, Variant } from '../types.ts';
 import { firstLine, UsageError } from '../errors.ts';
 import { fill, unfilled } from '../plan.ts';
 import type { Pool } from '../engine/scheduler.ts';
@@ -139,4 +139,37 @@ export function reporter(report: (result: CellResult) => void) {
 			for (const cell of cells) if (!reported.has(cell)) report(failed(cell, firstLine(error)));
 		}
 	};
+}
+
+type Axis = Exclude<keyof Variant, 'name'>;
+const AXES: Axis[] = [
+	'appearance',
+	'text',
+	'contrast',
+	'motion',
+	'locale',
+	'timezone',
+	'direction',
+	'persona',
+	'network',
+	'media'
+];
+
+/**
+ * A note naming the variant's settings this platform doesn't apply, so a screenshot never claims more than it
+ * shows. `applied` lists the axes the driver does set; a pair `[axis, value]` means only that value.
+ */
+export function notApplied(
+	variant: Variant,
+	applied: (Axis | [Axis, string])[],
+	where: string
+): string[] {
+	const ignored = AXES.filter((axis) => {
+		const value = variant[axis];
+		if (!value || value === 'default') return false;
+		return !applied.some((each) =>
+			Array.isArray(each) ? each[0] === axis && each[1] === value : each === axis
+		);
+	});
+	return ignored.length ? [`Not applied ${where}: ${ignored.join(', ')}.`] : [];
 }

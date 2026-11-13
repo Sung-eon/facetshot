@@ -14,7 +14,7 @@ import {
 import { join, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import type { Cell, CellResult, Config, Manifest } from './types.ts';
-import { plan, type PlanRequest } from './plan.ts';
+import { plan, targetsOf, type PlanRequest } from './plan.ts';
 import { inlineFlow, type Step } from './flows.ts';
 import { Runtime } from './engine/runtime.ts';
 import { Pool } from './engine/scheduler.ts';
@@ -163,11 +163,10 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 	options.signal?.addEventListener('abort', abort, { once: true });
 	const atEnd: (() => Promise<void>)[] = [];
 	const state = stateDir(config);
+	const named = targetsOf(request, config);
 	const targets = request.steps?.length
-		? request.targets.map((target) =>
-				inlineFlow(config.aliases?.[target] ?? target, request.steps!, state)
-			)
-		: request.targets;
+		? named.map((target) => inlineFlow(target, request.steps!, state))
+		: named;
 	const planned = plan({ ...request, targets }, config);
 	const runId = newRunId();
 	const runDir = request.out ? resolve(root, request.out) : join(state, 'runs', runId);

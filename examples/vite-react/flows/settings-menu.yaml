@@ -1,0 +1,6 @@
+# The settings page's context menu, opened near the top right where it is most likely to run off a phone's screen.
+start: /settings
+steps:
+  - rightclick: 'role=heading[name="Settings"]'
+  - wait: 'role=menu'
+  - shot: menu

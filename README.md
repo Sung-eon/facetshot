@@ -87,6 +87,8 @@ don't fail a run. For native code, swift-snapshot-testing keeps reference images
 - Reproduce a bug report such as "the menu is cut off on my phone in dark mode": open the page on `phone` as `dark`,
   right-click, and read the screenshot and the log.
 - See what a change did: `facetshot diff` repeats the last command and shows only the screens that changed.
+- Check everything before a release: list the pages and [flows](docs/flows.md#a-batch-to-run-again) in a profile once,
+  then run `facetshot -p release` whenever you need to.
 - Compare your local build with production: take screenshots of the live site, save them as a baseline, and compare.
 - Add screenshots to a pull request: `--format md` prints a Markdown summary with the sheets.
 
@@ -107,8 +109,8 @@ file contains and how to set it up by hand.
 | `check`   | reads screens for problems, without screenshots (the cheapest call)  |
 | `capture` | takes screenshots and returns one contact sheet per screen           |
 | `compare` | repeats the last capture and returns only what changed               |
-| `inspect` | one screenshot at full size, or part of it, with its log lines       |
-| `list`    | devices, variants, profiles, checks and recent runs                  |
+| `inspect` | screenshots at full size, or part of one, with their log lines       |
+| `list`    | devices, variants, profiles, flows, checks, runs and open sessions   |
 | `open`    | opens a page and keeps it open (a session)                           |
 | `act`     | does steps in a session and returns the new screenshot and log lines |
 | `close`   | closes a session, optionally saving its steps as a flow              |

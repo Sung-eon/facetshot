@@ -14,7 +14,7 @@ import { withLock } from '../engine/lock.ts';
 import { exec, runToEnd } from '../engine/procs.ts';
 import { firstLine, UsageError } from '../errors.ts';
 import { slugify } from '../plan.ts';
-import { failed, type Driver, type RunContext } from './driver.ts';
+import { failed, notApplied, type Driver, type RunContext } from './driver.ts';
 import { imagePath } from './page.ts';
 import { ensureSimulator } from './simctl.ts';
 
@@ -253,12 +253,18 @@ export class SwiftSnapshotDriver implements Driver {
 				status: entry.path ? 'ok' : 'failed',
 				ms: entry.ms,
 				error: entry.error ?? undefined,
-				notes:
-					cell.device.platform === 'ios'
+				notes: [
+					...(cell.device.platform === 'ios'
 						? [
 								'Drawn in a test host: Liquid Glass and blur are flat, sheets and alerts are not shown.'
 							]
-						: undefined
+						: []),
+					...notApplied(
+						cell.variant,
+						['appearance', 'text', 'locale', 'direction', 'contrast'],
+						'to a SwiftUI preview'
+					)
+				]
 			};
 			if (entry.path) {
 				const { file, rel } = imagePath(ctx.runDir, screen, entry.device, entry.variant);

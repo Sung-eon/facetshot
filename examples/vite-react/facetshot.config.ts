@@ -20,5 +20,13 @@ export default defineConfig({
 	},
 	aliases: { home: '/', pricing: '/pricing', settings: '/settings' },
 	checks: ['console', 'network', 'overflow', 'clipped', 'covered'],
-	profiles: { default: { on: ['desktop', 'phone'], as: ['light', 'dark'] } }
+	profiles: {
+		default: { on: ['desktop', 'phone'], as: ['light', 'dark'] },
+		// Everything worth a look before a release, run with: facetshot -p release
+		release: {
+			targets: ['/', '/pricing', '/settings', 'flows/*.yaml'],
+			on: ['review'],
+			as: ['light', 'dark', 'large']
+		}
+	}
 });

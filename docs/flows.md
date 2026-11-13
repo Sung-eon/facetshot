@@ -93,6 +93,25 @@ several elements match, the first one is used.
 If you don't know the steps yet, open a [session](sessions.md), try them one at a time, and close it with
 `--save flows/name.yaml`. The steps that worked become a flow.
 
+## A batch to run again
+
+Flows and profiles together make a plan you can run whenever you like. Decide once what to look at and how to get
+there, then let facetshot do it on every device and variant:
+
+1. Write a flow for each state that no address reaches (or save one from a session).
+2. List the pages and the flows in a profile's `targets`. A pattern such as `flows/*.yaml` takes every flow in the
+   folder.
+3. Run `facetshot -p release` (MCP: `capture` with `profile: "release"`) whenever you need to check everything.
+
+```ts
+profiles: {
+	release: { targets: ['/', '/pricing', 'flows/*.yaml'], on: ['review'], as: ['light', 'dark', 'large'] }
+}
+```
+
+The run plays the same steps everywhere, so the screenshots can be compared from one run to the next with
+`facetshot diff`. `facetshot list flows` and `facetshot list profiles` show what a project already has.
+
 ## When a step fails
 
 The screenshots the flow didn't reach are reported as failed, with the step that stopped it:

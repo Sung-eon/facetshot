@@ -1,3 +1,4 @@
+import { Glob } from 'bun';
 /**
  * Turns what someone typed (`/talk app:/book --on phone --as dark,large`) into the list of screenshots to take.
  */
@@ -9,6 +10,7 @@ import {
 	type Config,
 	type Device,
 	type Platform,
+	type Profile,
 	type Target,
 	type TargetKind,
 	type Variant
@@ -211,22 +213,52 @@ export interface Plan {
 	unmatched: string[];
 }
 
-export function plan(request: PlanRequest, config: Config): Plan {
-	if (!request.targets.length) {
-		throw new UsageError('Tell me what to shoot.', 'For example: facetshot / /settings --on phone');
-	}
+function profileOf(name: string | undefined, config: Config): Profile {
 	const profiles = { ...PROFILES, ...config.profiles };
-	const profileName = request.profile ?? 'default';
-	const profile = profiles[profileName];
+	const profile = profiles[name ?? 'default'];
 	if (!profile) {
 		throw new UsageError(
-			`There's no profile called "${profileName}".`,
+			`There's no profile called "${name}".`,
 			`Profiles: ${Object.keys(profiles).join(', ')}.`
 		);
 	}
-	const targets = request.targets.map((raw) => parseTarget(raw, config));
-	const kinds = new Set(targets.map((target) => target.kind));
-	const onNames = request.on?.length ? request.on : defaultDevices(profile.on, kinds, config);
+	return profile;
+}
+
+/** A flow file pattern, `flows/*.yaml`: expanded here, since an MCP client has no shell to do it. */
+const FLOW_PATTERN = /[*?{[].*\.(ya?ml|json|flow\.ts)$/;
+
+/**
+ * The targets a request names, or else its profile's (a profile with `targets` is a whole batch, run with
+ * `-p name`). Flow patterns become the files they match, in order.
+ */
+export function targetsOf(
+	request: Pick<PlanRequest, 'targets' | 'profile'>,
+	config: Config
+): string[] {
+	const named = request.targets.length
+		? request.targets
+		: (profileOf(request.profile, config).targets ?? []);
+	if (!named.length) {
+		throw new UsageError(
+			'Tell me what to shoot.',
+			'For example: facetshot / /settings --on phone, or give a profile with targets: facetshot -p <name>'
+		);
+	}
+	const root = config.root ?? process.cwd();
+	return named.flatMap((raw) => {
+		const target = config.aliases?.[raw] ?? raw;
+		if (!FLOW_PATTERN.test(target)) return [target];
+		const files = [...new Glob(target).scanSync({ cwd: root })].sort();
+		if (!files.length) throw new UsageError(`No flow files match ${target} (looked in ${root}).`);
+		return files;
+	});
+}
+
+export function plan(request: PlanRequest, config: Config): Plan {
+	const profile = profileOf(request.profile, config);
+	const targets = targetsOf(request, config).map((raw) => parseTarget(raw, config));
+	const onNames = request.on?.length ? request.on : defaultDevices(profile.on, targets, config);
 	let devices = resolveDevices(onNames, config);
 	// `--browser webkit,firefox`: every web device in each engine asked for (Chromium only if it's among them).
 	if (request.browsers?.length) {
@@ -251,8 +283,7 @@ export function plan(request: PlanRequest, config: Config): Plan {
 	const cells: Cell[] = [];
 	const unmatched: string[] = [];
 	for (const target of targets) {
-		const kinds =
-			target.kind === 'flow' ? flowPlatforms(target.value, config) : PLATFORMS[target.kind];
+		const kinds = platformsOf(target, config);
 		const fits = devices.filter((device) => kinds.includes(device.platform));
 		if (!fits.length) {
 			unmatched.push(
@@ -267,7 +298,14 @@ export function plan(request: PlanRequest, config: Config): Plan {
 			}
 		}
 	}
-	return { targets, devices, variants, cells, unmatched };
+	// Only the devices something is shown on: a profile's web devices mean nothing to a run of app screens.
+	const used = new Set(cells.map((cell) => cell.device.name));
+	const shown = cells.length ? devices.filter((device) => used.has(device.name)) : devices;
+	return { targets, devices: shown, variants, cells, unmatched };
+}
+
+function platformsOf(target: Target, config: Config): Platform[] {
+	return target.kind === 'flow' ? flowPlatforms(target.value, config) : PLATFORMS[target.kind];
 }
 
 /** A flow is shown where its start is: an `app:` start on apps, anything else in a browser or an Electron window. */
@@ -284,16 +322,29 @@ function flowPlatforms(file: string, config: Config): Platform[] {
 	}
 }
 
+/** The devices an app screen is shown on when nothing names any: the ones the config can build or launch. */
+function appFallback(config: Config): string[] {
+	const groups: string[] = [];
+	if (config.apple?.ios || !(config.desktop || config.apple?.macos)) groups.push('ios');
+	if (config.desktop && config.desktop.kind !== 'macos') groups.push('windows');
+	else if (config.desktop || config.apple?.macos) groups.push('mac');
+	return groups;
+}
+
 /**
- * When no devices are named, the profile decides; but a profile made for the web says nothing useful about an
- * app target, so app-only requests fall back to the `ios` group (and the other way round).
+ * When no devices are named, the profile decides. A profile made for the web says nothing useful about an app
+ * screen (and the other way round), so each target the profile's devices can't show gets the usual ones for its
+ * kind: the review devices for the web, and for apps the ones the config can build or launch.
  */
-function defaultDevices(profileOn: string[], kinds: Set<TargetKind>, config: Config): string[] {
-	const devices = resolveDevices(profileOn, config);
-	const platforms = new Set(devices.map((device) => device.platform));
-	const wants = new Set([...kinds].flatMap((kind) => PLATFORMS[kind]));
-	const covered = [...wants].some((platform) => platforms.has(platform));
-	if (covered) return profileOn;
-	if (wants.has('ios') || wants.has('window')) return ['ios'];
-	return ['web'];
+function defaultDevices(profileOn: string[], targets: Target[], config: Config): string[] {
+	const covered = new Set(resolveDevices(profileOn, config).map((device) => device.platform));
+	const names = [...profileOn];
+	for (const target of targets) {
+		const platforms = platformsOf(target, config);
+		if (platforms.some((platform) => covered.has(platform))) continue;
+		const extra = platforms.includes('web') ? ['review'] : appFallback(config);
+		for (const name of extra) if (!names.includes(name)) names.push(name);
+		for (const device of resolveDevices(extra, config)) covered.add(device.platform);
+	}
+	return names;
 }

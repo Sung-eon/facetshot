@@ -36,6 +36,7 @@ import {
 	groupBy,
 	reporter,
 	result,
+	notApplied,
 	type Driver,
 	type RunContext
 } from './driver.ts';
@@ -277,7 +278,14 @@ export class TauriDriver implements Driver {
 						const out = result(cell, {
 							ms: Date.now() - started,
 							readyTimedOut: settled ? undefined : true,
-							notes: ["The app's real window: no page checks (they need the web engine)."]
+							notes: [
+								"The app's real window: no page checks (they need the web engine).",
+								...notApplied(
+									variant,
+									['appearance', 'text', 'locale', 'timezone', 'motion'],
+									"in the app's window"
+								)
+							]
 						});
 						if (ctx.images) {
 							const { file, rel } = imagePath(ctx.runDir, cell.screen, device.name, variant.name);

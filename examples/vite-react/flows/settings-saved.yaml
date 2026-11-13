@@ -1,0 +1,7 @@
+start: /settings
+steps:
+  - fill: 'role=textbox[name="Name"i]'
+    with: Grace Hopper
+  - click: 'role=button[name="Save"i]'
+  - wait: 'role=status'
+  - shot: saved

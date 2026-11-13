@@ -145,9 +145,9 @@ export function createServer(): McpServer {
 	const targetsShape = {
 		targets: z
 			.array(z.string())
-			.min(1)
+			.optional()
 			.describe(
-				'What to look at: "/settings" (web), "app:/talk" (app), "story:button--primary", "preview:Book/Page", "flows/x.yaml". Aliases from the config work too.'
+				'What to look at: "/settings" (web), "app:/talk" (app), "story:button--primary", "preview:Book/Page", "flows/x.yaml" or "flows/*.yaml". Aliases from the config work too. Leave out to run the profile\'s own targets.'
 			),
 		devices: z
 			.array(z.string())
@@ -159,7 +159,12 @@ export function createServer(): McpServer {
 			.describe(
 				'Variants, e.g. ["light","dark","large"]; "dark+large" combines. Default: the profile\'s.'
 			),
-		profile: z.string().optional().describe('A named set of devices and variants from the config.'),
+		profile: z
+			.string()
+			.optional()
+			.describe(
+				'A profile from the config (list what: "profiles"): its devices and variants, and with no targets given, its targets too.'
+			),
 		browsers: z
 			.array(z.enum(['chromium', 'webkit', 'firefox', 'chrome', 'msedge', 'moz-firefox']))
 			.optional()
@@ -174,7 +179,7 @@ export function createServer(): McpServer {
 			)
 	};
 	type TargetsArgs = {
-		targets: string[];
+		targets?: string[];
 		devices?: string[];
 		variants?: string[];
 		profile?: string;
@@ -182,7 +187,7 @@ export function createServer(): McpServer {
 		steps?: string[];
 	};
 	const requestOf = (args: TargetsArgs): RunRequest => ({
-		targets: args.targets,
+		targets: args.targets ?? [],
 		on: args.devices,
 		as: args.variants,
 		browsers: args.browsers,

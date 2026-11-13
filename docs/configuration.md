@@ -50,23 +50,23 @@ background helper.
 
 ## Top level
 
-| Key         | Type                   | Default                         |                                                           |
-| ----------- | ---------------------- | ------------------------------- | --------------------------------------------------------- |
-| `out`       | string                 | `.facetshot`                    | where runs, logs, build stamps and baselines go           |
-| `devices`   | object                 |                                 | add or change devices (below)                             |
-| `groups`    | `{ name: string[] }`   |                                 | name several devices                                      |
-| `variants`  | object                 |                                 | add or change variants (below)                            |
-| `profiles`  | `{ name: { on, as } }` | `default`: review × light, dark | devices and variants to use when the command doesn't say  |
-| `aliases`   | `{ name: target }`     |                                 | short names for targets                                   |
-| `checks`    | string[]               | `['console', 'network']`        | checks run while taking screenshots ([Checks](checks.md)) |
-| `services`  | object                 |                                 | servers your app needs (below)                            |
-| `fixtures`  | object                 |                                 | test data (below)                                         |
-| `web`       | object                 |                                 | web pages (below)                                         |
-| `storybook` | object                 |                                 | [Storybook](storybook.md)                                 |
-| `desktop`   | object                 |                                 | [Electron, Tauri or a Mac app](desktop.md)                |
-| `apple`     | object                 |                                 | [iOS simulator and Mac builds](ios.md)                    |
-| `swift`     | object                 |                                 | [SwiftUI snapshots](swiftui.md)                           |
-| `limits`    | object                 |                                 | how much runs at once (below)                             |
+| Key         | Type                             | Default                         |                                                                                                                                                     |
+| ----------- | -------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `out`       | string                           | `.facetshot`                    | where runs, logs, build stamps and baselines go                                                                                                     |
+| `devices`   | object                           |                                 | add or change devices (below)                                                                                                                       |
+| `groups`    | `{ name: string[] }`             |                                 | name several devices                                                                                                                                |
+| `variants`  | object                           |                                 | add or change variants (below)                                                                                                                      |
+| `profiles`  | `{ name: { targets?, on, as } }` | `default`: review × light, dark | devices and variants to use when the command doesn't say, and with `targets`, what to take when it names nothing ([Profiles](concepts.md#profiles)) |
+| `aliases`   | `{ name: target }`               |                                 | short names for targets                                                                                                                             |
+| `checks`    | string[]                         | `['console', 'network']`        | checks run while taking screenshots ([Checks](checks.md))                                                                                           |
+| `services`  | object                           |                                 | servers your app needs (below)                                                                                                                      |
+| `fixtures`  | object                           |                                 | test data (below)                                                                                                                                   |
+| `web`       | object                           |                                 | web pages (below)                                                                                                                                   |
+| `storybook` | object                           |                                 | [Storybook](storybook.md)                                                                                                                           |
+| `desktop`   | object                           |                                 | [Electron, Tauri or a Mac app](desktop.md)                                                                                                          |
+| `apple`     | object                           |                                 | [iOS simulator and Mac builds](ios.md)                                                                                                              |
+| `swift`     | object                           |                                 | [SwiftUI snapshots](swiftui.md)                                                                                                                     |
+| `limits`    | object                           |                                 | how much runs at once (below)                                                                                                                       |
 
 ## `devices`
 
