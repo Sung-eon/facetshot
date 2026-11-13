@@ -31,6 +31,21 @@ export interface AxNode {
 	actions?: string[];
 }
 
+/** A tree as the helpers write it, one JSON object per line (the Mac helper and the iOS runner alike). */
+export function parseNodes(text: string): AxNode[] {
+	return text
+		.split('\n')
+		.filter(Boolean)
+		.map((line) => JSON.parse(line) as AxNode);
+}
+
+const WINDOW_BUTTONS: Record<string, string> = {
+	AXCloseButton: 'Close',
+	AXMinimizeButton: 'Minimize',
+	AXZoomButton: 'Zoom',
+	AXFullScreenButton: 'Full screen'
+};
+
 /** Accessibility roles as the web names them, so `role=button[name="Save"]` means the same thing everywhere. */
 const ROLES: Record<string, string> = {
 	AXButton: 'button',
@@ -133,11 +148,7 @@ export class MacUi {
 
 	async screen(): Promise<MacScreen> {
 		const [window, text] = await Promise.all([this.window(), this.run(['tree'], 30_000)]);
-		const nodes = text
-			.split('\n')
-			.filter(Boolean)
-			.map((line) => JSON.parse(line) as AxNode);
-		return { window, nodes };
+		return { window, nodes: parseNodes(text) };
 	}
 
 	/** What can be acted on, with fresh refs, at points on the window's screenshot. */
@@ -164,6 +175,8 @@ export class MacUi {
 				(x + node.width < 0 || y + node.height! < 0 || x > window.width || y > window.height)
 			)
 				continue;
+			// The window's own buttons have no title, only a kind.
+			const name = node.name || WINDOW_BUTTONS[node.subrole ?? ''] || '';
 			const ref = `e${out.length + 1}`;
 			this.refs.set(ref, node);
 			const states = [
@@ -178,7 +191,7 @@ export class MacUi {
 			out.push({
 				ref,
 				role,
-				name: node.name,
+				name,
 				x,
 				y,
 				width: Math.round(node.width),
@@ -255,7 +268,15 @@ export class MacUi {
 		const press = async (target: string, action: 'AXPress' | 'AXShowMenu') => {
 			if (!this.isPoint(target)) {
 				const { node } = await this.find(target);
-				if (node.actions?.includes(action)) return this.action(node, action);
+				// Some controls list an action they then can't do (SwiftUI's context menus): real input instead.
+				if (
+					node.actions?.includes(action) &&
+					(await this.action(node, action).then(
+						() => true,
+						() => false
+					))
+				)
+					return;
 			}
 			const [x, y] = await this.point(target);
 			await real('click', x, y, action === 'AXShowMenu' ? 'right' : 'left', 1);

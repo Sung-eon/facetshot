@@ -24,7 +24,7 @@ import {
 	writeFileSync
 } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import type { Cell, CellResult, Config, Device, Variant } from '../types.ts';
 import { homeFolder } from '../config.ts';
@@ -33,8 +33,10 @@ import { withLock } from '../engine/lock.ts';
 import { exec, launch, runToEnd, sleep, stopGroup, tail, within } from '../engine/procs.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
 import { loadFlow, shotNames, type Step } from '../flows.ts';
+import { matcher, parseNodes } from './mac-ui.ts';
 import {
 	appEnv,
+	bundleExecutable,
 	deepLink,
 	obtainApp,
 	selectorLabel,
@@ -46,6 +48,7 @@ import {
 	failed,
 	failRest,
 	fillAddress,
+	keepLog,
 	reporter,
 	result,
 	stopped,
@@ -55,6 +58,7 @@ import {
 	type RunContext
 } from './driver.ts';
 import { imagePath, pngSize } from './page.ts';
+import { LogBook, recordSystemLog } from '../logs.ts';
 import { PNG } from 'pngjs';
 import { boot, CONTENT_SIZE, ensureSimulator, simctl, simulatorName } from './simctl.ts';
 
@@ -114,8 +118,8 @@ class RunnerSession {
 		return new RunnerSession(folder, child, log);
 	}
 
-	/** One command; throws with the runner's reason if it couldn't do it. */
-	async send(words: string[], timeout = 60_000): Promise<void> {
+	/** One command; throws with the runner's reason if it couldn't do it. Returns what it wrote, if anything. */
+	async send(words: string[], timeout = 60_000): Promise<string | undefined> {
 		const n = this.next++;
 		const command = join(this.folder, `${n}.cmd`);
 		writeFileSync(
@@ -132,6 +136,8 @@ class RunnerSession {
 		await sleep(20);
 		const [status, why] = readFileSync(answer, 'utf8').trim().split('\t');
 		if (status !== 'ok') throw new Error(why ?? status);
+		const data = join(this.folder, `${n}.data`);
+		return existsSync(data) ? readFileSync(data, 'utf8') : undefined;
 	}
 
 	async stop(): Promise<void> {
@@ -213,6 +219,8 @@ interface Simulator {
 	name: string;
 	readyFile: string;
 	runner?: RunnerSession;
+	/** What the app writes to the system log inside the simulator, while facetshot works on it. */
+	log?: { book: LogBook; stop: () => void };
 	orientation: 'portrait' | 'landscape';
 	settings: Map<string, string>;
 }
@@ -404,6 +412,8 @@ export class IosSimulatorDriver implements Driver {
 				}
 			}
 		} finally {
+			sim.log?.stop();
+			sim.log = undefined;
 			if (sim.runner) {
 				// Left upright for whoever comes next.
 				if (sim.orientation !== 'portrait')
@@ -454,6 +464,16 @@ export class IosSimulatorDriver implements Driver {
 		const apple = ctx.config.apple!;
 		const wanted = device.orientation === 'landscape' ? 'landscape' : 'portrait';
 		sim.runner ??= await RunnerSession.start(this.runner!, sim.udid, apple.bundleId, ctx);
+		if (!sim.log) {
+			// By process name, so lines from the app's first moments are kept. Swift's print doesn't reach facetshot from
+			// a simulator; Logger, os_log and NSLog do.
+			const app = this.app!.path;
+			const book = new LogBook();
+			const stop = recordSystemLog(basename(bundleExecutable(app)), basename(app), book, {
+				command: ['xcrun', 'simctl', 'spawn', sim.udid, 'log']
+			});
+			sim.log = { book, stop };
+		}
 
 		// One launch per device: what it is launched with only changes between devices (a half has its own width).
 		const env: Record<string, string> = appEnv(apple.env, apple, undefined, ctx.values);
@@ -574,6 +594,7 @@ export class IosSimulatorDriver implements Driver {
 				readyTimedOut: ready === false || !settled.stable ? true : undefined,
 				notes: extra.length ? extra : undefined
 			});
+			if (sim.log) keepLog(ctx, out, sim.log.book, started);
 			report(out);
 		};
 
@@ -623,17 +644,50 @@ export class IosSimulatorDriver implements Driver {
 		open: (address: string) => Promise<void>
 	): Promise<void> {
 		if ('goto' in step) return open(step.goto);
-		if (!sim.runner) throw new Error("this step needs the XCUITest runner, which isn't running");
-		if ('click' in step) return sim.runner.send(['tap', selectorLabel(step.click)]);
-		if ('tap' in step) return sim.runner.send(['tap', selectorLabel(step.tap)]);
-		if ('fill' in step) return sim.runner.send(['fill', selectorLabel(step.fill), step.with]);
-		if ('type' in step) return sim.runner.send(['type', step.type]);
-		if ('wait' in step) return sim.runner.send(['wait', selectorLabel(step.wait), '15']);
-		if ('gone' in step) return sim.runner.send(['gone', selectorLabel(step.gone), '15']);
+		const runner = sim.runner;
+		if (!runner) throw new Error("this step needs the XCUITest runner, which isn't running");
+		const send = async (...words: string[]) => void (await runner.send(words));
+		/** Where a target is: `@x,y` as it is, or the middle of the first element that matches it. */
+		const point = async (target: string): Promise<string[]> => {
+			const at = /^@\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)$/.exec(target.trim());
+			if (at) return [at[1], at[2]];
+			const match = matcher(target);
+			const deadline = Date.now() + 10_000;
+			for (;;) {
+				const node = parseNodes((await runner.send(['tree'])) ?? '').find(match);
+				if (node?.width)
+					return [String(node.x! + node.width / 2), String(node.y! + node.height! / 2)];
+				if (Date.now() > deadline) throw new Error(`Nothing on screen matches ${target}.`);
+				await sleep(250);
+			}
+		};
+		/** Labels and ids go straight to the runner, which finds them itself; points and roles through the tree. */
+		const byLabel = (target: string) => !/^(@|role=)/.test(target.trim());
+		const press = async (target: string) =>
+			byLabel(target)
+				? send('tap', selectorLabel(target))
+				: send('press', ...(await point(target)));
+		if ('click' in step) return press(step.click);
+		if ('tap' in step) return press(step.tap);
+		// A context menu on iOS is a long press: the right-click of a flow written for the web or a Mac does the same.
+		if ('longpress' in step) return send('longpress', ...(await point(step.longpress)));
+		if ('rightclick' in step) return send('longpress', ...(await point(step.rightclick)));
+		if ('drag' in step) return send('drag', ...(await point(step.drag)), ...(await point(step.to)));
+		if ('fill' in step) {
+			if (byLabel(step.fill)) return send('fill', selectorLabel(step.fill), step.with);
+			await send('press', ...(await point(step.fill)));
+			return send('type', step.with);
+		}
+		if ('type' in step) return send('type', step.type);
+		if ('wait' in step)
+			return byLabel(step.wait)
+				? send('wait', selectorLabel(step.wait), '15')
+				: void (await point(step.wait));
+		if ('gone' in step) return send('gone', selectorLabel(step.gone), '15');
 		if ('scroll' in step && typeof step.scroll === 'number')
-			return sim.runner.send(['swipe', step.scroll > 0 ? 'up' : 'down']);
+			return send('swipe', step.scroll > 0 ? 'up' : 'down');
 		throw new Error(
-			`${Object.keys(step)[0]} isn't something the simulator runner can do (it presses, types, waits and swipes by accessibility label).`
+			`${Object.keys(step)[0]} isn't something a simulator can do; it takes taps, long presses, drags, typing, waits and swipes.`
 		);
 	}
 }

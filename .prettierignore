@@ -3,3 +3,7 @@ node_modules
 examples/*/dist
 examples/*/storybook-static
 examples/*/src-tauri/target
+# What `flutter create` generated: left as Flutter writes it.
+examples/flutter/ios
+examples/flutter/macos
+examples/flutter/web

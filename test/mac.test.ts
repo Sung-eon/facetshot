@@ -96,10 +96,18 @@ describe.skipIf(!recording)('Mac app windows', () => {
 				{ targets: [join(scratch, 'save.yaml')], on: ['window-small'], as: ['light'] },
 				{ config }
 			);
-			expect(manifest.cells.map((cell) => [cell.screen, cell.status, cell.error])).toEqual([
-				['save.menu', 'ok', undefined],
-				['save.exported', 'ok', undefined]
+			expect(manifest.cells.map((cell) => [cell.screen, cell.status, cell.error]).sort()).toEqual([
+				['save.exported', 'ok', undefined],
+				['save.menu', 'ok', undefined]
 			]);
+			// FACETSHOT_KEEP_SHOT=<file> keeps the screenshot with the menu open, to look at.
+			if (process.env.FACETSHOT_KEEP_SHOT) {
+				const menu = manifest.cells.find((cell) => cell.screen === 'save.menu')!;
+				writeFileSync(
+					process.env.FACETSHOT_KEEP_SHOT,
+					readFileSync(join(manifest.out, menu.image!))
+				);
+			}
 			const logs = readFileSync(join(manifest.out, manifest.logs!.text), 'utf8');
 			expect(logs).toContain('Saved Grace');
 			// From os.Logger, through the system log.
@@ -145,11 +153,14 @@ describe.skipIf(!recording)('Mac app windows', () => {
 				const pressed = said(
 					await client.callTool({
 						name: 'act',
-						arguments: { session: id, steps: [`click:${ref}`] }
+						arguments: { session: id, steps: [`click:${ref}`], tree: true }
 					})
 				);
 				expect(pressed).toContain('Saved Ada');
+				// From os.Logger, through the system log.
+				expect(pressed).toContain('Saved a note for Ada');
 				expect(pressed).toContain('text "Saved."');
+				expect(pressed).toContain('textbox "Name"');
 				const closed = said(
 					await client.callTool({ name: 'close', arguments: { session: id, saveAs: 'saved.yaml' } })
 				);

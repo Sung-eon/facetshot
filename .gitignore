@@ -6,6 +6,9 @@ examples/*/src-tauri/target
 examples/*/src-tauri/gen
 examples/*/.build
 examples/*/.swiftpm
+# Flutter's own tool and build output.
+examples/*/.dart_tool
+examples/*/build
 # SwiftPM, for FacetshotKit built from this folder.
 .build/
 .swiftpm/

@@ -205,6 +205,16 @@ export async function waitReady(
 				async ({ visible, gone, when }) => {
 					if (document.readyState !== 'complete') return 'the page to finish loading';
 					if (document.fonts && document.fonts.status !== 'loaded') return 'fonts to load';
+					// Flutter draws into a canvas. Its accessibility tree (what checks and sessions read) appears only once
+					// asked for, through the hidden "enable accessibility" button; it's there once a frame is drawn.
+					const flutter = document.querySelector('flutter-view, flt-glass-pane');
+					if ((window as { _flutter?: unknown })._flutter && !flutter) return 'Flutter to start';
+					if (flutter) {
+						document
+							.querySelector('flt-semantics-placeholder')
+							?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+						if (!document.querySelector('flt-semantics')) return 'Flutter to draw its first frame';
+					}
 					const isShown = (element: Element) => {
 						const box = element.getBoundingClientRect();
 						const style = getComputedStyle(element);

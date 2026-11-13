@@ -19,6 +19,10 @@ import XCTest
 ///     wait <label> <seconds>        until the element exists
 ///     gone <label> <seconds>        until it no longer exists
 ///     swipe up|down|left|right      one swipe on the app
+///     tree                          what's on screen, into `<n>.data`: one JSON line per element, depth first
+///     press <x> <y>                 a tap at a point on the app, in points from its top left
+///     longpress <x> <y>             a press held for a second (a context menu)
+///     drag <x1> <y1> <x2> <y2>      press, hold, and move to the second point
 ///     quit                          end the test
 ///
 /// The app is launched from here (`launch`), not with `simctl`: an app XCUITest launched itself always has its
@@ -51,7 +55,9 @@ final class FacetshotRunner: XCTestCase {
             }
             let answer: String
             do {
-                try run(words, on: app)
+                if let data = try run(words, on: app) {
+                    try Data(data.utf8).write(to: folder.appending(path: "\(next).data"))
+                }
                 answer = "ok"
             } catch {
                 answer = "error\t\(error)"
@@ -66,11 +72,78 @@ final class FacetshotRunner: XCTestCase {
         let description: String
     }
 
+    /// A point on the app, in points from its top left.
     @MainActor
-    private func run(_ words: [String], on app: XCUIApplication) throws {
+    private func point(_ words: [String], _ at: Int, in app: XCUIApplication) throws -> XCUICoordinate {
+        guard words.count > at + 1, let x = Double(words[at]), let y = Double(words[at + 1]) else {
+            throw Failure(description: "\(words.first ?? "") needs a point: x y")
+        }
+        return app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y))
+    }
+
+    /// Element types as the web names their roles, so `role=button[name="Save"]` means the same thing everywhere.
+    private func role(_ type: XCUIElement.ElementType) -> String {
+        switch type {
+        case .button: return "button"
+        case .link: return "link"
+        case .textField, .secureTextField, .textView: return "textbox"
+        case .searchField: return "searchbox"
+        case .switch, .toggle: return "switch"
+        case .slider: return "slider"
+        case .staticText: return "text"
+        case .image: return "img"
+        case .cell: return "cell"
+        case .menuItem: return "menuitem"
+        case .menu: return "menu"
+        case .tab: return "tab"
+        case .tabBar: return "tablist"
+        case .navigationBar: return "navigation"
+        case .segmentedControl: return "radiogroup"
+        case .picker, .pickerWheel: return "combobox"
+        case .alert: return "alertdialog"
+        case .sheet: return "dialog"
+        case .window: return "window"
+        case .application: return "application"
+        default: return "generic"
+        }
+    }
+
+    /// Returns data for `<n>.data`, when the command has some.
+    @MainActor
+    private func run(_ words: [String], on app: XCUIApplication) throws -> String? {
         let verb = words.first ?? ""
         let argument = words.dropFirst().first ?? ""
         switch verb {
+        case "tree":
+            let snapshot = try app.snapshot()
+            let origin = snapshot.frame.origin
+            var lines: [String] = []
+            func walk(_ node: XCUIElementSnapshot, _ path: String, _ depth: Int) {
+                guard lines.count < 3000 else { return }
+                var line: [String: Any] = [
+                    "path": path, "depth": depth, "role": role(node.elementType),
+                    "name": node.label.isEmpty ? node.identifier : node.label,
+                    "x": node.frame.minX - origin.x, "y": node.frame.minY - origin.y,
+                    "width": node.frame.width, "height": node.frame.height
+                ]
+                if let value = node.value as? String, !value.isEmpty { line["value"] = String(value.prefix(200)) }
+                if let value = node.value as? NSNumber { line["value"] = value.stringValue }
+                if !node.isEnabled { line["disabled"] = true }
+                if node.isSelected { line["selected"] = true }
+                if node.hasFocus { line["focused"] = true }
+                if let data = try? JSONSerialization.data(withJSONObject: line, options: [.sortedKeys]) {
+                    lines.append(String(decoding: data, as: UTF8.self))
+                }
+                for (index, child) in node.children.enumerated() { walk(child, "\(path).\(index)", depth + 1) }
+            }
+            walk(snapshot, "0", 0)
+            return lines.joined(separator: "\n") + "\n"
+        case "press":
+            try point(words, 1, in: app).tap()
+        case "longpress":
+            try point(words, 1, in: app).press(forDuration: 1.0)
+        case "drag":
+            try point(words, 1, in: app).press(forDuration: 0.5, thenDragTo: try point(words, 3, in: app))
         case "launch":
             struct Launch: Decodable {
                 var env: [String: String]
@@ -114,6 +187,7 @@ final class FacetshotRunner: XCTestCase {
         default:
             throw Failure(description: "unknown command \(verb)")
         }
+        return nil
     }
 
     @MainActor

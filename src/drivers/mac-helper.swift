@@ -89,6 +89,8 @@ func name(_ element: AXUIElement, role: String) -> String {
         if let text = string(attribute(element, key)) { return text }
     }
     if role == kAXStaticTextRole as String, let text = string(attribute(element, kAXValueAttribute)) { return text }
+    // A field named only by the hint inside it (SwiftUI's TextField("Name", …)).
+    if let hint = string(attribute(element, kAXPlaceholderValueAttribute)) { return hint }
     // A control without a title of its own is often named by the text beside it.
     if let titled = attribute(element, kAXTitleUIElementAttribute), CFGetTypeID(titled) == AXUIElementGetTypeID() {
         if let text = string(attribute(titled as! AXUIElement, kAXValueAttribute)) ?? string(attribute(titled as! AXUIElement, kAXTitleAttribute)) { return text }

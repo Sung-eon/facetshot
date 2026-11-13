@@ -15,8 +15,9 @@ import type {
 	Variant,
 	WebConfig
 } from '../types.ts';
+import { serveStatic } from '../engine/static.ts';
 import { ensureBuilt } from '../engine/build.ts';
-import { ensureService, within, type Running } from '../engine/procs.ts';
+import { ensureService, healthy, within, type Running } from '../engine/procs.ts';
 import type { Engine } from '../engine/runtime.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
 import { loadFlow, playInPage, shotNames } from '../flows.ts';
@@ -402,6 +403,18 @@ export class WebDriver implements Driver {
 		browser.catch(() => {});
 		if (web?.baseURL) {
 			this.baseURL = fill(web.baseURL, ctx.values);
+		} else if (relative && web?.build?.output && !web.serve) {
+			// A static build (a single-page app, Flutter's build/web): served by facetshot itself, with index.html for
+			// the app's own routes. The server serves the folder as it is on disk, so a rebuild needs no restart.
+			const built = await ensureBuilt('web', web.build, { ...ctx, heavyLock: ctx.locks.build });
+			const folder = built.output ?? join(ctx.root, web.build.output);
+			this.baseURL = (
+				await ctx.runtime.service(
+					`${ctx.root}\u0000web-static`,
+					() => serveStatic('web', folder, { fallback: 'index.html' }),
+					{ health: (each) => healthy(each.url) }
+				)
+			).url;
 		} else if (relative) {
 			if (!web?.serve) {
 				const path = cells.find((cell) => cell.target.value.startsWith('/'))?.target.value ?? '/';
@@ -409,7 +422,7 @@ export class WebDriver implements Driver {
 				throw new UsageError(
 					`"${path}" is a path, and facetshot doesn't know which app it belongs to.`,
 					configured
-						? 'Set web.baseURL (an app you run, staging or production) or web.build + web.serve (facetshot builds and starts it) in your facetshot config, or give a full URL.'
+						? 'Set web.baseURL (an app you run, staging or production), web.build + web.serve (facetshot builds and starts it), or web.build with an output folder (facetshot serves it), or give a full URL.'
 						: `There's no facetshot config in ${ctx.root}. Run facetshot init in your project's folder (or facetshot init --url <address> for an app that's already running), or give a full URL: facetshot https://example.com${path}`
 				);
 			}
