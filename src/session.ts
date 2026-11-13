@@ -4,13 +4,13 @@
  * one screen on one device in one variant (a page, an Electron or Tauri window, or a Mac app's window), with the
  * project's servers, sign-in and test data, like a run's.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { stringify } from 'yaml';
 import type { Cell, Config, Finding } from './types.ts';
 import { plan } from './plan.ts';
-import type { Step } from './flows.ts';
+import { loadFlow, type Step } from './flows.ts';
 import { newContext, startServices, stateDir } from './run.ts';
 import { prepareFixtures } from './fixtures.ts';
 import { within } from './engine/procs.ts';
@@ -269,7 +269,7 @@ export class Session {
 		return {
 			id: this.id,
 			root: this.root,
-			url: this.surface?.url() ?? '',
+			url: redact(this.surface?.url() ?? ''),
 			device: this.surface?.device.name ?? '',
 			variant: this.surface?.variant.name ?? '',
 			steps: this.steps.length,
@@ -279,14 +279,34 @@ export class Session {
 
 	/** The steps that worked, as a flow file that `facetshot <file>` plays again. */
 	saveFlow(file: string): string {
+		if (!/\.(ya?ml|json)$/.test(file))
+			throw new UsageError(
+				`"${file}" isn't a flow file name.`,
+				'Give a .yaml, .yml or .json path, e.g. flows/edit-settings.yaml.'
+			);
 		const path = resolve(this.root, file);
-		// A flow belongs to the project: a name that climbs out of it (../, an absolute path elsewhere) is refused.
-		const inside = relative(this.root, path);
+		// A flow belongs to the project: a name that climbs out of it (../, an absolute path elsewhere, or a folder
+		// that links elsewhere) is refused.
+		const root = realpathSync(this.root);
+		let folder = dirname(path);
+		while (!existsSync(folder)) folder = dirname(folder);
+		const inside = relative(root, join(realpathSync(folder), relative(folder, path)));
 		if (!inside || inside.startsWith('..') || isAbsolute(inside)) {
 			throw new UsageError(
 				`A flow is saved inside the project (${this.root}); "${file}" is outside it.`,
 				'Give a path in the project, e.g. flows/edit-settings.yaml.'
 			);
+		}
+		// Another flow may be replaced; any other file in the project may not.
+		if (existsSync(path)) {
+			try {
+				loadFlow(path, this.root);
+			} catch {
+				throw new UsageError(
+					`${file} already exists and isn't a flow, so it was left alone.`,
+					'Choose another name, e.g. flows/edit-settings.yaml.'
+				);
+			}
 		}
 		mkdirSync(dirname(path), { recursive: true });
 		writeFileSync(path, stringify({ start: this.start, steps: [...this.steps, { shot: 'end' }] }));

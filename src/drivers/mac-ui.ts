@@ -252,7 +252,13 @@ export class MacUi {
 		const at = /^@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(target.trim());
 		if (at) {
 			const window = await this.window();
-			return [window.x + Number(at[1]), window.y + Number(at[2])];
+			const [x, y] = [Number(at[1]), Number(at[2])];
+			// Real input lands on whatever is at that point of the screen: only points on the app's own window.
+			if (x < 0 || y < 0 || x > window.width || y > window.height)
+				throw new Error(
+					`@${x},${y} is outside the window (${window.width}×${window.height} points), so it would reach something else on the screen.`
+				);
+			return [window.x + x, window.y + y];
 		}
 		return this.middle((await this.find(target)).node);
 	}

@@ -6,7 +6,7 @@
  *   check    what is wrong on the screens, as text (cheapest)
  *   compare  what changed since the last run or a baseline
  *   inspect  one screenshot at full size, or a part of it, with what its page logged
- *   list     devices, variants, profiles, scenes and recent runs
+ *   list     devices, variants, profiles, flows, checks, recent runs and open sessions
  *   open     a page kept open to work step by step (a session)
  *   act      steps in a session — click, type, right-click, scroll — then the screenshot, logs and what's clickable
  *   close    ends a session, optionally keeping its steps as a flow
@@ -289,7 +289,16 @@ export function createServer(): McpServer {
 					const file = join(stateDir(loaded.config), 'last-request.json');
 					if (!existsSync(file))
 						throw new Error('Nothing to repeat yet: capture something first, or give targets.');
-					request = JSON.parse(readFileSync(file, 'utf8')) as RunRequest;
+					const last = JSON.parse(readFileSync(file, 'utf8')) as RunRequest;
+					// The last request again, narrowed or widened by what this call names; never into a folder of its own.
+					request = {
+						...last,
+						out: undefined,
+						clean: undefined,
+						on: args.devices ?? last.on,
+						as: args.variants ?? last.as,
+						browsers: args.browsers ?? last.browsers
+					};
 				}
 				const manifest = await execute(
 					{ ...request, checkOnly: false, diff: args.against ?? 'previous' },
@@ -498,7 +507,7 @@ export function createServer(): McpServer {
 		{
 			title: 'Open a screen',
 			description:
-				"Opens a screen and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data: a web page, or an Electron or Tauri app's window. Answers with the session id, a screenshot (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
+				"Opens a screen and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data: a web page, an Electron or Tauri app's window, or a native Mac app's window. Answers with the session id, a screenshot (CSS pixels for pages, points for Mac windows), what the app and servers logged, and what on screen can be acted on, with refs. Then use act; always close when done.",
 			inputSchema: {
 				target: z
 					.string()

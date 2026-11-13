@@ -1,7 +1,7 @@
 {
 	"name": "facetshot",
 	"version": "0.1.0",
-	"description": "See your app the way your users do: every screen, on every device, in every mode, in one command. Built for AI coding agents (CLI, MCP, Agent Skill).",
+	"description": "Screenshots of your app's screens on several devices and display settings at once, with a list of what looks broken and what the app logged. For people and AI coding agents (command line, MCP server, Agent Skill).",
 	"license": "MIT",
 	"type": "module",
 	"bin": {

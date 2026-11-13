@@ -1,5 +1,6 @@
 import { afterAll, expect, test } from 'bun:test';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '../src/config.ts';
 import { run } from '../src/run.ts';
@@ -35,3 +36,28 @@ test('a persona signs in once through its login flow, and its pages are signed i
 		await runtime.close();
 	}
 }, 120_000);
+
+test('a session saves its steps only as a flow file inside the project, never over another file', () => {
+	const root = mkdtempSync(join(tmpdir(), 'facetshot-save-'));
+	try {
+		writeFileSync(join(root, 'package.json'), '{}');
+		const session = new Session(
+			's-test',
+			root,
+			{ stateDir: join(root, '.facetshot') } as never,
+			root
+		);
+		session.steps.push({ click: 'role=button[name="Save"]' });
+		expect(() => session.saveFlow('notes.txt')).toThrow(/isn't a flow file name/);
+		expect(() => session.saveFlow('package.json')).toThrow(/isn't a flow, so it was left alone/);
+		writeFileSync(join(root, 'notes.yaml'), 'title: not a flow\n');
+		expect(() => session.saveFlow('notes.yaml')).toThrow(/isn't a flow/);
+		expect(() => session.saveFlow('../outside.yaml')).toThrow(/inside the project/);
+		const saved = session.saveFlow('flows/save.yaml');
+		expect(readFileSync(saved, 'utf8')).toContain('click: role=button[name="Save"]');
+		// A flow may be saved over a flow.
+		expect(session.saveFlow('flows/save.yaml')).toBe(saved);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});

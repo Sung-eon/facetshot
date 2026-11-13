@@ -199,9 +199,21 @@ case "menubar":
     }
 
 default:
-    // Real input: the app has to be in front for the events to reach it.
-    NSRunningApplication(processIdentifier: pid)?.activate()
-    usleep(150_000)
+    // Real input goes to whatever is in front, so the app has to be: brought there, and checked, never assumed.
+    if command != "type" && command != "key" {
+        NSRunningApplication(processIdentifier: pid)?.activate()
+        var waited = 0
+        while NSWorkspace.shared.frontmostApplication?.processIdentifier != pid && waited < 20 {
+            usleep(50_000)
+            waited += 1
+        }
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else {
+            fail("The app didn't come to the front, so this real \(command) wasn't sent (it would reach another app).")
+        }
+    } else {
+        NSRunningApplication(processIdentifier: pid)?.activate()
+        usleep(150_000)
+    }
     let number = { (index: Int) -> CGFloat in
         guard index < arguments.count, let value = Double(arguments[index]) else { fail("\(command) needs a number at argument \(index)", 2) }
         return CGFloat(value)

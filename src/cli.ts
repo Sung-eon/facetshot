@@ -121,7 +121,7 @@ const list = (value: string | true | undefined) =>
 				.filter(Boolean)
 		: undefined;
 
-const HELP = `facetshot ${VERSION} — every screen, on every device, in every mode, in one command.
+const HELP = `facetshot ${VERSION}: screenshots of your app's screens on several devices and display settings at once.
 
 Usage
   facetshot <targets…> [--on devices] [--as variants]   take screenshots
@@ -132,7 +132,7 @@ Usage
   facetshot doctor                                      check this machine and say how to fix what's missing
   facetshot mcp                                         run as an MCP server over stdio (for AI agents)
   facetshot baseline save|list|rm <name>                keep a run to compare against later
-  facetshot daemon status|stop                          the background helper that keeps things warm
+  facetshot daemon status|stop                          the background helper that keeps browsers and servers running
   facetshot clean                                       remove runs, test data, and anything left running
 
 Sessions (a page kept open to work step by step)

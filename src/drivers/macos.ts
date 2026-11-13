@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import type { BuildStep, Cell, CellResult, Config, Device, Variant } from '../types.ts';
-import { homeFolder } from '../config.ts';
+import { homeFolder, ownEnvironment } from '../config.ts';
 import { withLock } from '../engine/lock.ts';
 import { exec, sleep, spawnGroup, stopGroup, waitUntil } from '../engine/procs.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
@@ -182,7 +182,7 @@ export function macLauncher(
 	mkdirSync(home, { recursive: true });
 	const dark = variant.appearance === 'dark';
 	const env: Record<string, string> = {
-		...(process.env as Record<string, string>),
+		...ownEnvironment(),
 		...appEnv(settings.env, ctx.config.apple, variant, ctx.values),
 		// Settings and saved state of this run's own, never the person's.
 		CFFIXED_USER_HOME: home,

@@ -651,7 +651,11 @@ export class IosSimulatorDriver implements Driver {
 		const point = async (target: string): Promise<string[]> => {
 			const at = /^@\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)$/.exec(target.trim());
 			if (at) return [at[1], at[2]];
-			const match = matcher(target);
+			// role=… is matched as everywhere; anything else (a label, #id, text=…) the way the runner finds a label.
+			const label = selectorLabel(target);
+			const match = /^role=/.test(target.trim())
+				? matcher(target)
+				: (node: { name: string; value?: string }) => node.name === label || node.value === label;
 			const deadline = Date.now() + 10_000;
 			for (;;) {
 				const node = parseNodes((await runner.send(['tree'])) ?? '').find(match);

@@ -15,6 +15,7 @@
  * - locale: Chromium's `--lang` switch; time zone: the `TZ` environment variable; offline: the context goes offline.
  * - density: Chromium's `--force-device-scale-factor` switch.
  */
+import { ownEnvironment } from '../config.ts';
 import type { LogLevel } from '../logs.ts';
 import { existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -236,7 +237,7 @@ export async function launchApp(
 	const web = ctx.config.web;
 	const { _electron } = await import('playwright');
 	const env: Record<string, string> = {
-		...(process.env as Record<string, string>),
+		...ownEnvironment(),
 		FACETSHOT: '1'
 	};
 	for (const [key, value] of Object.entries(desktop.env ?? {})) env[key] = fill(value, ctx.values);

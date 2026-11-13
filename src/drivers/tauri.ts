@@ -22,6 +22,7 @@
  * - Linux: WebKitGTK is driven over WebDriver by `tauri-driver` (cargo install tauri-driver), which wraps
  *   `WebKitWebDriver`; screenshots come from WebDriver's screenshot command, checks from scripts run through it.
  */
+import { ownEnvironment } from '../config.ts';
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { Cell, CellResult, Config, DesktopConfig, Device, Variant } from '../types.ts';
@@ -314,10 +315,11 @@ export async function launchTauri(
 ): Promise<TauriWindow> {
 	const desktop = ctx.config.desktop!;
 	const executable = bundleExecutable(app);
-	const readyFile = join(ctx.stateDir, 'tauri-ready', `${process.pid}.ready`);
+	// One file per launch: a session and a run can have the app open at once, each its own copy.
+	const readyFile = join(ctx.stateDir, 'tauri-ready', `${process.pid}-${Date.now()}.ready`);
 	mkdirSync(dirname(readyFile), { recursive: true });
 	const env: Record<string, string> = {
-		...(process.env as Record<string, string>),
+		...ownEnvironment(),
 		...variantEnv(device, variant)
 	};
 	for (const [key, value] of Object.entries(desktop.env ?? {})) env[key] = fill(value, ctx.values);

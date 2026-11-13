@@ -8,7 +8,15 @@
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { connect } from 'node:net';
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync
+} from 'node:fs';
 import { join } from 'node:path';
 import { homeFolder, loadConfig } from '../config.ts';
 import { Runtime } from '../engine/runtime.ts';
@@ -92,7 +100,9 @@ export function answers(socket: string): Promise<boolean> {
 
 export async function serve(): Promise<void> {
 	const folder = homeFolder();
-	mkdirSync(folder, { recursive: true });
+	// Whoever can reach the socket can run commands as this user and gets every client's environment: the user only.
+	mkdirSync(folder, { recursive: true, mode: 0o700 });
+	chmodSync(folder, 0o700);
 	const socket = SOCKET();
 	// Never take the socket from a daemon that is alive: it would go on running, unreachable, holding servers and
 	// test data. Only a socket nothing answers on (left by a daemon that died) is removed.
@@ -424,6 +434,7 @@ export async function serve(): Promise<void> {
 		process.exit(error.code === 'EADDRINUSE' ? 0 : 1);
 	});
 	server.listen(socket, () => {
+		chmodSync(socket, 0o600);
 		mine = statSync(socket).ino;
 		writeFileSync(PID_FILE(), String(process.pid));
 		process.stderr.write(`facetshot daemon ${process.pid} listening on ${socket}\n`);

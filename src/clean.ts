@@ -56,6 +56,8 @@ export async function clean(options: { configFile?: string; all?: boolean }): Pr
 		// Saved sign-ins: personas sign in again on the next run.
 		'auth',
 		'sessions',
+		// Steps given inline (--do, MCP steps) are kept as flow files here; they may hold typed text.
+		'flows',
 		...(options.all ? ['baselines'] : [])
 	]) {
 		rmSync(join(state, folder), { recursive: true, force: true });
