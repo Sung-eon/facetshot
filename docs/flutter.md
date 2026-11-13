@@ -2,8 +2,9 @@
 
 A Flutter app draws everything itself, into a canvas on the web and into its own view on macOS and iOS. There are no
 HTML elements or native controls to read. What Flutter does publish is its **semantics tree**: the description of the
-screen it gives screen readers. facetshot reads that tree, so checks, steps and session refs work on a Flutter app
-the same way they work elsewhere, with no Flutter-specific setup in your app.
+screen it gives screen readers. facetshot reads that tree, so checks, steps and session refs are meant to work on a
+Flutter app the same way they work elsewhere, with no Flutter-specific setup in your app. So far this has been tried
+on the web; see [Status](status.md) for macOS and iOS.
 
 Each platform goes through the path facetshot already has for it:
 
@@ -71,8 +72,7 @@ Steps and sessions use macOS's Accessibility interface, which Flutter's macOS em
 tree. They need the Accessibility permission ([Permissions](desktop.md#permissions)). What the app prints with
 `print` or `debugPrint` is in the [logs](logs.md#apps-outside-the-browser).
 
-Flutter 3.24's build tool fails `flutter build macos` with recent Xcode versions: it misreads the output of Xcode's
-`lipo` and reports that the Flutter framework lacks an architecture it has. Use a newer Flutter for the macOS build.
+Some Flutter versions can't build for macOS with a recent Xcode; see [Status](status.md).
 
 ## On iOS
 

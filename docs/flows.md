@@ -66,7 +66,12 @@ The second column is how a step is written in a flow file; the third is the same
 | screenshot               | `shot: <name>`                          | `shot:<name>`               | waits for the screen to be ready, then takes a screenshot        |
 
 A flow with no `shot` step takes one screenshot at the end. Steps that act on an element wait up to 10 seconds for
-it.
+it. Inline, `fill:` and `select:` take the text after the last `=`, so the text itself can't contain `=`; use a flow
+file for such text.
+
+Steps are played as written: they aren't filled with placeholders or environment variables. A sign-in flow (a
+persona's `login`) therefore holds its credentials as written. Use a test account, keep the flow out of git, or give
+the persona a `storageState` file instead ([Personas](auth-and-data.md#personas)).
 
 ## Naming an element
 
@@ -74,7 +79,7 @@ Wherever a step takes `<element>`, you can write any of these:
 
 | Write                           | Means                                                                                     |
 | ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `role=button[name='Save']`      | an element by its accessible role and name. This is the sturdiest choice                  |
+| `role=button[name='Save']`      | an element by its accessible role and name. It survives most layout and style changes     |
 | `text=Forgot password?`         | an element by its visible text                                                            |
 | `label=Email`                   | the field with that label                                                                 |
 | `placeholder=Search`            | the field with that placeholder                                                           |
@@ -125,13 +130,16 @@ The contact sheet then shows how far the flow got on each device.
 
 ## Flows on apps
 
-The same flow file works outside the browser, with a few differences:
+The same flow file works outside the browser. This table is the one place that says which steps work where:
 
-| Where                                | Steps                                                                                                    | Elements named by                                        |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Electron, Tauri's UI in WebKit       | every step, as in a browser; `menu:` in Electron                                                         | everything above                                         |
-| Native Mac apps, Tauri's real window | every step but `longpress`, `back`, `forward` and `reload` ([details](desktop.md#steps-in-a-mac-window)) | `role=`, `text=`, `label=`, a point, a session's ref     |
-| iOS simulator                        | taps, long presses, drags, typing, waits and swipes ([details](ios.md#flows))                            | `role=`, `text=`, `#id`, an accessibility label, a point |
+| Where                                | Steps that work                                                                                                                                                               | Elements named by                                                                         |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Electron, Tauri's UI in WebKit       | every step, as in a browser; `menu:` in Electron                                                                                                                              | everything above                                                                          |
+| Native Mac apps, Tauri's real window | every step but `longpress`, `back`, `forward` and `reload` ([how each is done](desktop.md#steps-in-a-mac-window))                                                             | `role=`, `text=`, `label=`, `title=` (the whole name, any case), a point, a session's ref |
+| iOS simulator                        | `click`/`tap`, `longpress` (and `rightclick`, which becomes a long press), `drag`, `fill`, `type`, `wait`, `gone`, `scroll` by pixels (a swipe), `goto` ([how](ios.md#flows)) | `role=`, `text=`, `#id`, an accessibility label, a point                                  |
+
+On the iOS simulator, `dblclick`, `hover`, `focus`, `press`, `select`, `scroll` to an element, `menu`, `back`,
+`forward` and `reload` aren't available. CSS selectors work only in pages (browsers, Electron, Tauri's UI in WebKit).
 
 On apps, a point is in points from the top left of the window (Mac) or the screen (iOS). A flow for an app starts
 with `start: app:/path`. A plain `start: /path` also runs in the desktop app's window when the config has a

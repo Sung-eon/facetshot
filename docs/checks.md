@@ -55,5 +55,6 @@ On the contact sheet, a screenshot with problems carries a small badge with the 
 ## Findings are hints
 
 A finding means "look here", not "this is wrong". A horizontal carousel overflows on purpose, and a decorative icon
-button can be small. If a finding is expected on a page, mask the element (`web.mask`) or leave that check out with
-`--checks`. Findings never change the exit code.
+button can be small. If a finding is expected on a page, leave that check out with `--checks`. There is no way to
+ignore one element yet; `web.mask` only paints over the screenshot, and the checks still see what's under it.
+Findings never change the exit code.

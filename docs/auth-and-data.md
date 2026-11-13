@@ -23,22 +23,24 @@ services: {
 }
 ```
 
+- `port` is a number, or `auto` for a free one. Leaving it out means `auto`.
 - `health` is a path (or full URL) that answers with a 2xx status once the service is ready. facetshot waits up to
   `startTimeout` milliseconds for it (two minutes by default).
-- `reuse`: if this URL already answers, facetshot uses it and starts nothing.
+- `reuse`: if this URL already answers with a 2xx status, facetshot uses it and starts nothing. The URL itself is
+  asked, not `health`, so give one that answers 2xx (for example `http://localhost:4000/health`).
 - If the port is taken by something that doesn't answer `health`, the run stops and the message shows how to find
   that process.
 - Services start one after another, in the order you list them, so a later service can use an earlier one's
   `{services.<name>.url}`.
 
-A command facetshot starts gets the background helper's own environment variables plus the ones you give it in
-`env`. It does not get the environment of the terminal or agent that asked for the run. The config file itself, on
-the other hand, is evaluated with the caller's environment, so `process.env` in the config is yours. To pass one of
-your variables to a service, read it in the config and put it in `env`:
+A service doesn't get the environment of the terminal or agent that asked for the run
+([why](configuration.md#settings-that-differ-per-checkout-or-per-person)). To pass one of your variables to it, read
+it in the config and put it in `env`:
 
+<!-- prettier-ignore -->
 ```ts
-env: {
-	DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://localhost/app_dev';
+services: {
+	api: { cmd: 'bun run api', env: { DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://localhost/app_dev' } }
 }
 ```
 
@@ -82,18 +84,18 @@ variants: {
 facetshot /billing --as light,as-viewer
 ```
 
-A persona can use any of these fields:
+The fields are listed in the [configuration reference](configuration.md#webpersonas). A few things to know:
 
-| Field          | What it does                                                                                                                                                                                                                                        |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cookies`      | `[{ name, value, domain?, path? }]`, set before the page loads. `domain` defaults to the app's host name, so an API on another host doesn't get the cookie; `path` defaults to `/`. Cookies need a known app address (`web.baseURL` or `web.serve`) |
-| `headers`      | request headers sent with every request the page makes, including requests to other sites                                                                                                                                                           |
-| `storage`      | `localStorage` entries set before any page script runs                                                                                                                                                                                              |
-| `storageState` | a Playwright storage state file (cookies and storage) you saved yourself, relative to the config                                                                                                                                                    |
-| `login`        | a [flow](flows.md) that signs in. It runs once in a fresh browser context, and the signed-in state is saved to `.facetshot/auth/<persona>.json` and reused until it is older than `ttl`                                                             |
-| `ttl`          | minutes a `login` result is reused (default 720). If the flow fails, the run says that signing in failed and which step stopped                                                                                                                     |
-
-If a persona has both `storageState` and `login`, the file is used.
+- `cookies` go to the app's own host name unless you give a `domain`, so an API on another host doesn't get them.
+  They need a known app address (`web.baseURL` or `web.serve`).
+- `headers` are sent with every request the page makes, including requests to other sites.
+- `login` is a [flow](flows.md) that signs in. It runs once in a fresh browser context, and the signed-in state is
+  saved to `.facetshot/auth/<persona>.json` and reused until it is older than `ttl` minutes. If the flow fails, the
+  run says that signing in failed and which step stopped. Its steps hold any password as written, so use a test
+  account, and keep the flow out of git if the password matters.
+- If a persona has both `storageState` and `login`, the file is used.
+- Personas apply to web pages and Storybook. Electron windows don't get them yet ([Desktop
+  apps](desktop.md#electron)).
 
 ### Saving a storage state file
 

@@ -1,8 +1,8 @@
 # Logs
 
 A screenshot shows what a screen looks like; its log shows what happened while it was on screen. facetshot keeps
-both, side by side, for every screenshot of a web page, a Storybook story, an Electron window or a Tauri frontend,
-and for every [session](sessions.md).
+both, side by side, for every screenshot of a web page, a Storybook story, a desktop app or an iOS app, and for every
+[session](sessions.md).
 
 ## What's recorded
 
@@ -13,11 +13,14 @@ and for every [session](sessions.md).
 | `navigation`  | each address the page goes to                                                          |
 | `network`     | each request with its status and time; 4xx is a warning, 5xx and failures are errors   |
 | `dialog`      | alerts, confirms and prompts, with their text                                          |
-| `main`        | an Electron app's main process: its `console` output, from its first window on         |
+| `main`        | an Electron app's main process: its `console` output, standard output and error        |
+| `app`         | a Mac or Tauri app's standard output (`info`) and standard error (`warn`)              |
+| `os_log`      | an app's lines in the system log; `os_log:<category>` when they have a subsystem       |
 | `server:name` | new lines in the logs of the servers and builds facetshot started (`.facetshot/logs/`) |
 
 Requests for scripts, styles, images and fonts are kept at the `debug` level, so they don't crowd out the requests
-your app makes on purpose. A page keeps its last 5,000 entries, so a page left open for hours can't use more and more memory.
+your app makes on purpose. A page keeps its last 5,000 entries, so a page left open for hours can't use more and more
+memory.
 
 ## In a run
 
@@ -80,8 +83,9 @@ exactly what is and isn't masked.
 | iOS simulator                        | the app's lines in the system log (`Logger`, `os_log`, `NSLog`). Swift's `print` doesn't reach facetshot from a simulator.                                                                                   |
 
 From the system log, only lines sent by code in the app's own bundle, or under a subsystem that isn't Apple's, are
-kept: Apple's frameworks write a lot in an app's process, and little of it is about the app. Lines show as
-`os_log`, or `os_log:<category>` when they have a subsystem.
+kept: Apple's frameworks write a lot in an app's process, and little of it is about the app. Two limits come from
+the system log itself: `Logger.debug` lines aren't kept (facetshot reads the log at the `info` level), and values in
+a message show as `<private>` unless the app marks them `.public` (`\(name, privacy: .public)`).
 
 On a Mac, facetshot launches the app with `NSUnbufferedIO=YES` (as Xcode does), so Swift's `print` reaches the log as
 it happens rather than when the app quits.

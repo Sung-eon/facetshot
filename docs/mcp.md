@@ -3,9 +3,9 @@
 `facetshot mcp` runs an MCP server over standard input and output. [AI agents](agents.md) explains how to connect
 it. This page lists every tool and parameter.
 
-Runs go through the same [background helper](concepts.md#the-background-helper) as the command line. Each answer is
-text and images, plus the same result as structured data for clients that read it. Long runs report progress as they
-go, to clients that ask for it.
+Runs go through the same [background helper](concepts.md#the-background-helper) as the command line. Each response
+is text and images. `capture`, `check`, `compare`, `open` and `act` also give the same result as structured data, for
+clients that read it. Long runs report progress as they go, to clients that ask for it.
 
 ## Names compared with the command line
 
@@ -33,7 +33,7 @@ Takes screenshots and returns a summary and one contact sheet per screen.
 | `devices`  | string[]           | devices or groups. Default: the profile's                                                                                                                                                   |
 | `variants` | string[]           | variants or groups; `dark+large` combines. Default: the profile's                                                                                                                           |
 | `profile`  | string             | a profile from the config: its devices and variants, and its targets when none are given ([Profiles](concepts.md#profiles))                                                                 |
-| `browsers` | string[]           | other browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only                                                                    |
+| `browsers` | string[]           | the browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only; naming others replaces Chromium unless you include it               |
 | `steps`    | string[]           | [steps](flows.md#steps) played before each screenshot, written as on the command line                                                                                                       |
 | `images`   | `sheets` or `none` | `sheets` (the default): one sheet per screen, at most 4 (`FACETSHOT_MCP_MAX_IMAGES`). `none`: text and paths only                                                                           |
 
@@ -51,15 +51,17 @@ Reads screens for problems without taking screenshots, and returns the list as t
 ## `compare`
 
 Takes the same screenshots again and returns only the sheets that changed. With no `targets`, it repeats the last
-`capture` from this project.
+request from this project (a `capture` or a `check`, from an agent or the command line), with the `devices`,
+`variants` and `browsers` you give here instead of that request's. With `targets`, it takes only what you give here:
+the earlier request's `profile` and `steps` aren't used.
 
-| Parameter  | Type     | Meaning                                     |
-| ---------- | -------- | ------------------------------------------- |
-| `targets`  | string[] | what to compare instead of the last capture |
-| `devices`  | string[] | as for `capture`                            |
-| `variants` | string[] | as for `capture`                            |
-| `browsers` | string[] | as for `capture`                            |
-| `against`  | string   | `previous` (the default) or a baseline name |
+| Parameter  | Type     | Meaning                                                         |
+| ---------- | -------- | --------------------------------------------------------------- |
+| `targets`  | string[] | what to compare instead of the last capture                     |
+| `devices`  | string[] | as for `capture`                                                |
+| `variants` | string[] | as for `capture`                                                |
+| `browsers` | string[] | as for `capture`                                                |
+| `against`  | string   | `previous` (the default), a baseline name, a run id or a folder |
 
 ## `inspect`
 
@@ -89,8 +91,8 @@ so an agent can run a check that already exists instead of writing a new one.
 
 Opens a screen and keeps it open as a [session](sessions.md) on one device and variant, with the project's servers,
 sign-in and test data: a web page, or a desktop app's window ([what sessions open](sessions.md#what-sessions-open)).
-Answers with the session id, a screenshot, the log, and what on screen can be acted on, with refs. The view options
-below shape this first answer as they shape `act`'s.
+Responds with the session id, a screenshot, the log, and what on screen can be acted on, with refs. The view options
+below apply to this first response, as they do for `act`.
 
 | Parameter    | Type                               | Meaning                                                                                  |
 | ------------ | ---------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -99,15 +101,15 @@ below shape this first answer as they shape `act`'s.
 | `variant`    | string                             | one variant. Default: the profile's first                                                |
 | `browser`    | string                             | the browser, as for `browsers` above. Default Chromium                                   |
 | `elements`   | boolean                            | list what can be acted on, with refs. Default true                                       |
-| `screenshot` | boolean                            | return the screenshot. Default true; false answers in text only                          |
+| `screenshot` | boolean                            | return the screenshot. Default true; false responds in text only                         |
 | `tree`       | boolean                            | also return the page's accessibility tree as text                                        |
 | `full`       | boolean                            | take the whole page, not only the screen                                                 |
 | `logLevel`   | `debug`, `info`, `warn` or `error` | the least important log lines to return. Default `info`                                  |
 
 ## `act`
 
-Does steps in an open session, in order, stopping at the first that fails. Answers like `open`. With no steps, it
-looks again.
+Does steps in an open session, in order, stopping at the first that fails. Responds like `open`. With no steps, it
+looks again. `shot` steps are ignored.
 
 | Parameter                                            | Type             | Meaning                                                                            |
 | ---------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
@@ -117,18 +119,19 @@ looks again.
 
 ## `close`
 
-| Parameter | Type             | Meaning                                                                           |
-| --------- | ---------------- | --------------------------------------------------------------------------------- |
-| `session` | string, required | the session to close                                                              |
-| `saveAs`  | string           | a flow file to write the steps that worked to, inside the project: `flows/x.yaml` |
+| Parameter | Type             | Meaning                                                                                                                                                      |
+| --------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `session` | string, required | the session to close                                                                                                                                         |
+| `saveAs`  | string           | a flow file for the steps that worked: `flows/x.yaml` (`.yaml`, `.yml` or `.json`, inside the project, relative to the MCP server's folder, `FACETSHOT_CWD`) |
 
 ## Tool hints
 
 MCP clients use hints to decide which tools to run without asking. facetshot marks `inspect` and `list` as read-only.
 `capture`, `check` and `compare` are not read-only, because they build the app, start servers, make test data, and
 their `steps` can click anything. The tools that load pages (`capture`, `check`, `compare`, `open` and `act`) are
-marked open-world, since a page can reach any site. `act` is also marked destructive, because its steps can do
-anything a person could. See [Security](security.md).
+marked open-world, since a page can reach any site. Only `act` is marked destructive; but `steps` in `capture`,
+`check` and `compare` can do just as much, so a client set to run "non-destructive" tools without asking lets those
+steps run too. See [Security](security.md).
 
 Sessions the server opened are closed when it stops: when the agent closes its input, or when the server gets
 `SIGINT`, `SIGTERM` or `SIGHUP`.

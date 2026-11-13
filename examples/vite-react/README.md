@@ -2,11 +2,15 @@
 
 A three-screen React app ("Lantern") with a Storybook, and the facetshot config that takes screenshots of both.
 
+Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
+`bunx playwright install chromium`. In your own project the command is `bunx facetshot` instead of
+`bun --bun ../../src/cli.ts`.
+
 ```sh
 bun install
 bun --bun ../../src/cli.ts / /pricing /settings     # the app, built with `vite build` and served with `vite preview`
 bun --bun ../../src/cli.ts 'story:*'                 # every story, from a static Storybook build
-bun --bun ../../src/cli.ts story:Button/*  --on phone --as dark
+bun --bun ../../src/cli.ts 'story:Button/*' --on phone --as dark
 ```
 
 Two things are broken on purpose, for the [checks](../../docs/checks.md) to find (this config turns on `overflow`,
@@ -16,8 +20,9 @@ Two things are broken on purpose, for the [checks](../../docs/checks.md) to find
   the page is wider than the screen.
 - `/settings`: a one-line hint cut off by `overflow: hidden`. The `clipped` check reports it at every size.
 
-`/settings` also has something to try in a [session](../../docs/sessions.md): Save logs an info line and a
-warning, and right-clicking the settings opens a small menu.
+`/settings` also has something to try in a [session](../../docs/sessions.md): Save logs an info line and a warning,
+and right-clicking the settings opens a small menu. The config's `release` profile, with the two flows in `flows/`, is
+a [batch to run again](../../docs/flows.md#a-batch-to-run-again): `bun --bun ../../src/cli.ts -p release`.
 
 ```sh
 bun --bun ../../src/cli.ts open /settings --on desktop

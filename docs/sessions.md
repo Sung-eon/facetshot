@@ -1,10 +1,10 @@
 # Sessions
 
-Screenshots and flows answer "what does this look like?". Sometimes you need to find out first: what happens when I
+Screenshots and flows show what a screen looks like. Sometimes you need to find out first: what happens when I
 right-click this row, does the menu fit on a phone, what does the page log when I press Save. A **session** keeps one
 screen open (a web page, or a [desktop app's window](#what-sessions-open)) so you, or an agent, can use it one step
-at a time. After each step you get a screenshot, the log lines
-since the last step, and a list of what on screen can be clicked or typed into.
+at a time. After each step you get a screenshot, the log lines since the last step, and a list of what on screen can
+be clicked or typed into.
 
 ## From the command line
 
@@ -40,8 +40,8 @@ facetshot look s-42cb1d --full                             # the whole page, wit
 facetshot close s-42cb1d --save flows/edit-settings.yaml   # keep the steps that worked
 ```
 
-Each answer has the same shape as the one from `open`: the new screenshot, the log lines since the last answer (here,
-what the page logged when Save was pressed), and the list again:
+Each response has the same shape as the one from `open`: the new screenshot, the log lines since the last response
+(here, what the page logged when Save was pressed), and the list again:
 
 ```
 Logs (2):
@@ -49,12 +49,15 @@ Logs (2):
   +0.00s WARN  console The weekly summary setting is deprecated and will move to Notifications. (/assets/index-BQcy4Hsw.js:9)
 ```
 
-`--no-screenshot` leaves out the screenshot and `--no-elements` the list, when you don't need them. `--tree` adds
-the page's whole accessibility tree (all its text and structure) as text. `facetshot list sessions` lists what's open.
+`--no-screenshot` leaves out the screenshot and `--no-elements` the list, when you don't need them. The list has only
+what is on screen, at most 200 elements, so scroll to reach the rest. A response shows at most the last 40 log lines;
+`facetshot logs <id>` has them all. `--tree` adds the page's whole accessibility tree (all its text and structure) as
+text. `facetshot list sessions` lists what's open.
 Every option is in the [command reference](cli.md#sessions).
 
 A session closes by itself after 10 minutes without use (`FACETSHOT_SESSION_IDLE_MINUTES` changes this). At most 6
-sessions are open at once for your user account, because each one is a page with its own memory.
+sessions are open at once for your user account, because each one is a page with its own memory. Sessions belong to
+your user account, not to one project or agent: any terminal or agent of yours can list them and act on them by id.
 
 ## Naming what to touch
 
@@ -63,8 +66,8 @@ pixels, the same units as the screenshot), or by a selector. [Naming an element]
 every form.
 
 On a web page, refs come from Playwright's accessibility snapshot, the same snapshot Playwright MCP uses (in a Mac
-window, from macOS's Accessibility interface). They last
-until the page changes, so use the ones from the latest answer. When you save a session as a flow, each ref is
+window, from macOS's Accessibility interface). They last until the page changes, so use the ones from the latest
+response. When you save a session as a flow, each ref is
 written as a selector that finds the same element again (by its role and name where it has them), so the flow plays
 back in a later run, on every device:
 
@@ -79,16 +82,19 @@ steps:
 ```
 
 A point (`@120,120`) is saved as it is, so check that it still lands on the right element on other devices, or
-replace it with a selector. A flow can only be saved inside the project folder.
+replace it with a selector. A flow is saved as `.yaml`, `.yml` or `.json`, inside the project folder, and never over
+an existing file that isn't a flow. Text you typed is saved as you typed it, passwords included.
 
 ## Steps
 
-Every [step](flows.md#steps) works in a session. Steps run in order, and the first one that fails stops the rest.
+Every [step](flows.md#steps) works in a session except `shot`, which is ignored (each response has a screenshot
+anyway); which steps a desktop app takes is in [Flows on apps](flows.md#flows-on-apps). Steps run in order, and the
+first one that fails stops the rest.
 You still get the screenshot of where the page ended up, with which step failed and why, and `act` exits with 1.
 
 ## Logs as you go
 
-Each answer carries the log lines since the previous one: console messages, uncaught errors, navigations, requests
+Each response carries the log lines since the previous one: console messages, uncaught errors, navigations, requests
 (those for scripts, styles, images and fonts only at `--level debug`), and what the servers facetshot started wrote.
 To watch a session's log in another terminal while you or an agent use it:
 
@@ -102,7 +108,7 @@ See [Logs](logs.md) for what is recorded.
 
 ## From an agent
 
-The MCP server has three tools for sessions: `open`, `act` and `close` ([MCP tools](mcp.md)). Each answer is the
+The MCP server has three tools for sessions: `open`, `act` and `close` ([MCP tools](mcp.md)). Each response is the
 text above plus the screenshot as an image, so the agent sees the screen, reads the log and picks the next step in one
 turn. `act` with no steps looks again. Sessions an agent opened are closed when its MCP server stops, whether the
 agent closes its input or the server is ended by a signal.
@@ -113,7 +119,7 @@ A session acts as the signed-in persona, and its steps can do anything a person 
 ## What sessions open
 
 - Web pages: paths and full URLs, with the project's servers, sign-in, variants and test data, the same as a run.
-- Electron apps: `facetshot open app:/reports --on window` launches the app, and `close` quits it. The answers carry
+- Electron apps: `facetshot open app:/reports --on window` launches the app, and `close` quits it. The responses carry
   the main process's output with the window's, and a `menu:` step chooses from the app's menu bar.
 - Tauri frontends, with `desktop.frontend` set: the frontend in WebKit, with `invoke()` answered from your config. The
   Rust side doesn't run there.
@@ -121,8 +127,10 @@ A session acts as the signed-in persona, and its steps can do anything a person 
   list comes from macOS's Accessibility interface, the screenshot is the window's own, and points are in points
   rather than CSS pixels. This needs the Accessibility permission; see
   [Steps in a Mac window](desktop.md#steps-in-a-mac-window). A `goto` relaunches a native Mac app on that screen
-  (Tauri gets a deep link instead).
+  (Tauri gets a deep link instead). A Mac session takes the screen only while a step runs, so a run can use the screen
+  between your steps.
 
 Sessions on iOS simulators and Storybook stories are planned. Until then, use [flows](flows.md) for those.
 
+Test data a session made stays while the project's servers do, and goes with them, not when the session closes.
 Sessions are kept by the background helper, so they aren't available with `--no-daemon` or `FACETSHOT_NO_DAEMON`.

@@ -10,10 +10,9 @@ There are two ways to tell facetshot where your app runs.
 
 You run the app, and facetshot visits it. Set `baseURL`, and paths like `/settings` go there:
 
+<!-- prettier-ignore -->
 ```ts
-web: {
-	baseURL: 'http://localhost:3000';
-}
+web: { baseURL: 'http://localhost:3000' }
 ```
 
 Or facetshot builds and starts the app. Give it a build and a server:
@@ -162,15 +161,16 @@ network, `print` uses print media, and `locale` and `timezone` set the browser's
 Screenshots are taken in Playwright's Chromium unless you ask for other browsers, for one run:
 
 ```sh
-facetshot /pricing --browser webkit                # every web device in WebKit, Safari's engine
+facetshot /pricing --browser webkit                # every web device in WebKit (Safari's engine), not Chromium
 facetshot /pricing --browser chromium,webkit,chrome
 facetshot /pricing --on phone,phone@webkit         # or name the browser per device
 facetshot open /pricing --on phone --browser chrome
 ```
 
-Each browser gets rows of its own on the sheet (`phone`, `phone@webkit`, `phone@chrome`), so the differences are side
-by side. Agents pass `browsers` to `capture`, `check` and `compare`, and `browser` to `open`
-([MCP tools](mcp.md)). To make another browser the default for a project, set `web.browser` in the config.
+Naming browsers replaces Chromium; include `chromium` to keep it. Each browser gets rows of its own on the sheet
+(`phone`, `phone@webkit`, `phone@chrome`), so the differences are side by side. Agents pass `browsers` to `capture`,
+`check` and `compare`, and `browser` to `open` ([MCP tools](mcp.md)). To make another browser the default for a
+project, set `web.browser` in the config.
 
 | Name          | What it is                                               | Before first use                   |
 | ------------- | -------------------------------------------------------- | ---------------------------------- |

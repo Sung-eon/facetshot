@@ -7,10 +7,9 @@ on every device and variant, without any setup per story. Storybook 7 to 10 are 
 
 Tell facetshot where your Storybook is: one you run yourself, or a static build that facetshot makes and serves:
 
+<!-- prettier-ignore -->
 ```ts
-storybook: {
-	url: 'http://localhost:6006';
-}
+storybook: { url: 'http://localhost:6006' }
 ```
 
 ```ts
@@ -43,8 +42,8 @@ Docs pages are left out, and so are stories you've opted out of tests: tagged `!
 
 ## When a story counts as ready
 
-facetshot waits for Storybook to finish preparing, loading, rendering and running the story's `play` function, and
-for the story to have drawn something, and then applies the usual [readiness rules](web.md#when-a-page-counts-as-ready).
+facetshot waits for Storybook to finish preparing, loading, rendering and running the story's `play` function, and for
+the story to have drawn something, and then applies the usual [readiness rules](web.md#when-a-page-counts-as-ready).
 Rules for stories go under `storybook.ready`; keys under `routes` match story ids:
 
 ```ts

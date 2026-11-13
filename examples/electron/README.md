@@ -1,11 +1,17 @@
 # Electron
 
-A minimal Electron app ("Tally"): one window, two views switched by the URL hash (`#/` and `#/reports`).
+A minimal Electron app ("Tally"): one window, two views switched by the URL hash (`#/` and `#/reports`), and a menu
+bar whose View and File menus a flow can use.
+
+Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
+`bunx playwright install chromium`. In your own project the command is `bunx facetshot` instead of
+`bun --bun ../../src/cli.ts`.
 
 ```sh
 bun install
 bun --bun ../../src/cli.ts app:/ app:/reports                 # both screens, two window sizes, light and dark
 bun --bun ../../src/cli.ts open-reports.yaml --as dark+xxl    # a flow: click through to Reports, then a screenshot
+bun --bun ../../src/cli.ts menu-export.yaml                   # a flow through the menu bar; the log has the main process's output
 ```
 
 The first run downloads Electron's binary: this version of Electron fetches it the first time the `electron`

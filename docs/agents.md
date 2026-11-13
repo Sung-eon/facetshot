@@ -43,13 +43,16 @@ already running, add its address: `bunx facetshot init --url http://localhost:30
 `init` also prints one line to add to your `CLAUDE.md` or `AGENTS.md`. With `--yes`, it appends the line to whichever
 of those files already exists (`CLAUDE.md` first); it never creates one. The line is:
 
-> To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to
-> use a page step by step) or the `facetshot` command. Never write a screenshot script.
+> To see this app's screens or try what they do, use facetshot (the `facetshot` MCP tools, or the `facetshot`
+> command) instead of a one-off screenshot script, and look before answering from the code.
 
 Agents tend to write a one-off screenshot script each time they want to see a screen, and the fixed sleeps in those
-scripts make them flaky. The skill and this line tell them to use facetshot instead.
+scripts make them flaky. The skill and this line tell them to use facetshot instead. Tests you keep, such as
+Playwright's `toHaveScreenshot`, are a different job; edit the line if your agents should also write those.
 
-To check the connection, ask your agent "which facetshot tools do you have?" or "check /settings on a phone".
+Restart your agent after `init`: agents load MCP servers when they start, and Claude Code asks you to approve the
+`facetshot` server the first time. To check the connection, ask "which facetshot tools do you have?" or "check
+/settings on a phone".
 
 ### Setting it up by hand
 
@@ -64,24 +67,14 @@ project, the entry is:
 }
 ```
 
-When facetshot is used from a clone, `init` writes `"command": "bun", "args": ["--bun", "<path to facetshot>/src/cli.ts", "mcp"]`
-instead. The server looks for `facetshot.config.ts` from the folder it starts in; set `FACETSHOT_CONFIG` or
-`FACETSHOT_CWD` to point it elsewhere ([environment variables](cli.md#environment-variables)).
+When facetshot is used from a clone, `init` writes `"command": "bun", "args": ["--bun", "<path to
+facetshot>/src/cli.ts", "mcp"]` instead. The server looks for `facetshot.config.ts` from the folder it starts in; set
+`FACETSHOT_CONFIG` or `FACETSHOT_CWD` to point it elsewhere ([environment variables](cli.md#environment-variables)).
 
 ## The tools
 
-| Tool      | What it does                                                           |
-| --------- | ---------------------------------------------------------------------- |
-| `check`   | reads screens for problems without taking screenshots                  |
-| `capture` | takes screenshots and returns one contact sheet per screen             |
-| `compare` | repeats the last capture (or the targets given) and shows what changed |
-| `inspect` | screenshots at full size (a region of one, or the ones with problems)  |
-| `list`    | lists devices, variants, profiles, flows, checks, runs or sessions     |
-| `open`    | opens a page or app window and keeps it open: a [session](sessions.md) |
-| `act`     | does steps in a session and returns the new screenshot                 |
-| `close`   | ends a session, optionally saving its steps as a flow                  |
-
-[MCP tools](mcp.md) lists every parameter and what each tool returns.
+The README has [a one-line summary of each tool](../README.md#connecting-an-agent), and [MCP tools](mcp.md) lists
+every parameter and what each tool returns.
 
 ## Recommended workflow
 
@@ -93,6 +86,11 @@ The skill teaches agents this workflow, and it works well for people too:
 3. Capture the screens worth seeing, and read the sheets.
 4. Fix, then compare to see only what changed.
 5. Inspect a single screenshot when a detail is too small to read on the sheet.
+6. Close every session you opened.
+
+When the question is how the app looks or behaves ("what gets logged when I press Save?", "does the card overflow on
+a phone?"), the agent should look in the app before it answers from the code, and say what it saw. The skill asks
+for this, because agents otherwise often answer from the source alone.
 
 When the agent doesn't know the steps to a state yet (what's in this menu, what happens after Save), a session lets
 it look, decide and act one step at a time, and then save the steps as a flow that `capture` can play on every
@@ -122,10 +120,10 @@ Images take up most of an agent's context, so the tools return as few as they ca
 
 Every agent's MCP server and every terminal talks to the same background helper, so ten agents taking screenshots at
 once share one browser and the same limits instead of starting ten browsers. See
-[Speed and machine safety](performance.md#keeping-the-machine-usable).
+[Shared limits](architecture.md#shared-limits).
 
 ## What an agent can do
 
-The tools build your app, start its servers, make test data and sign in as your personas. Steps in `capture`,
-`check` and `act` can click anything a signed-in user could. Read [Security](security.md) before you let an agent
+The tools build your app, start its servers, make test data and sign in as your personas. Steps in `capture`, `check`,
+`compare` and `act` can click anything a signed-in user could. Read [Security](security.md) before you let an agent
 use facetshot against a live site or with real accounts.

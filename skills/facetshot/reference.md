@@ -25,15 +25,16 @@ facetshot makes for each run.
 
 ## Where each step works
 
-| Where                                                | Steps                                                                                                         | Elements                                             |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Web pages, Electron, Tauri's frontend                | all; `menu:` in Electron (its menu bar)                                                                       | any selector below, a point in CSS pixels, a ref     |
-| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward`, `reload`; `menu:` uses the menu bar                                   | `role=`, `text=`, `label=`, a point in points, a ref |
-| iOS simulator                                        | taps, `longpress` and `rightclick` (context menu), `drag`, `fill`, `type`, `wait`, `gone`, `scroll` by pixels | `role=`, `text=`, `#id`, a label, a point in points  |
+| Where                                                | Steps                                                                                                                                    | Elements                                                                              |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Web pages, Electron, Tauri's frontend                | all; `menu:` in Electron (its menu bar)                                                                                                  | any selector below, a point in CSS pixels, a ref                                      |
+| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward`, `reload`; `menu:` uses the menu bar                                                              | `role=`, `text=`, `label=`, `title=` (whole name, any case), a point in points, a ref |
+| iOS simulator                                        | `click`/`tap`, `longpress` and `rightclick` (context menu), `drag`, `fill`, `type`, `wait`, `gone`, `scroll` by pixels (a swipe), `goto` | `role=`, `text=`, `#id`, a label, a point in points                                   |
 
 Sessions open web pages, Electron and Tauri windows and native Mac apps. Steps and sessions in a Mac window need the
-Accessibility permission for the app facetshot runs in; screenshots need Screen Recording. If an answer says one is
-missing, tell the person. iOS simulators and Storybook stories take flows, not sessions.
+Accessibility permission for the app facetshot runs in; screenshots need Screen Recording. If a response says one is
+missing, tell the person. iOS simulators and Storybook stories take flows, not sessions. A session ignores `shot`
+steps, and its list holds at most 200 elements, those on screen: scroll to reach the rest.
 
 ## Flows
 
@@ -53,9 +54,11 @@ steps:
 Steps: `click`, `dblclick`, `rightclick`, `tap`, `longpress`, `hover`, `focus`, `drag` + `to`, `fill` + `with`,
 `type`, `press` (`Shift+Meta+K`), `select` + `option`, `scroll` (a selector, pixels, or a selector + `by` to scroll
 inside it), `wait` (until visible), `gone` (until hidden), `goto`, `back`, `forward`, `reload` (in a file:
-`back: true`), `menu` (`File>Export…`, a desktop app's menu bar), and `shot` (a named screenshot). With no `shot`, one screenshot is taken at the end. Each shot is its
-own screen in the results (`<flow>.<shot>`). On the command line and in MCP `steps`: `fill:e4=hello`,
-`drag:e2>e5`, `scroll:.list=400`, `back`.
+`back: true`), `menu` (`File>Export…`, a desktop app's menu bar), and `shot` (a named screenshot). With no `shot`,
+one screenshot is taken at the end. Each shot is its own screen in the results (`<flow>.<shot>`). On the command
+line and in MCP `steps`: `fill:e4=hello`, `drag:e2>e5`, `scroll:.list=400`, `back`. Inline, the text after the last
+`=` is the value, so it can't contain `=`; use a flow file for that. Steps aren't filled with placeholders, so a
+sign-in flow holds its password as written.
 
 An element can be a Playwright selector (CSS, `text=Delete`, `role=button[name='Save']`), a shortcut (`label=Email`,
 `placeholder=Search`, `alt=Logo`, `title=Close`, `testid=menu`), a point (`@x,y`, CSS pixels), or in a session a
@@ -67,9 +70,10 @@ turned into a selector that works in later runs.
 Every run writes `logs.txt` (for people, a section per screenshot) and `logs.ndjson` (one JSON object per line) next
 to its screenshots: console messages, uncaught errors, navigations, requests (assets only at debug level), and the
 output of the servers facetshot started. Desktop and iOS apps add what the app prints and writes to the system log
-(Electron's main process; standard output and `Logger`/`os_log`/`NSLog` on a Mac; the system log on iOS). `facetshot logs latest [--level warn] [--json]` prints them; MCP `inspect`
-returns one screenshot's lines; each session answer carries the lines since the previous one;
-`facetshot logs <session> --follow` streams a session's log.
+(Electron's main process; standard output and `Logger`/`os_log`/`NSLog` on a Mac; the system log on iOS).
+`facetshot logs latest [--level warn] [--json]` prints them; MCP `inspect` returns one screenshot's lines; each
+session response carries the lines since the previous one (the last 40); `facetshot logs <session> --follow` streams
+a session's log.
 
 ## When a screenshot looks unfinished
 

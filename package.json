@@ -3,7 +3,37 @@
 	"version": "0.1.0",
 	"description": "Screenshots of your app's screens on several devices and display settings at once, with a list of what looks broken and what the app logged. For people and AI coding agents (command line, MCP server, Agent Skill).",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Sung-eon/Facetshot.git"
+	},
+	"homepage": "https://github.com/Sung-eon/Facetshot#readme",
+	"bugs": {
+		"url": "https://github.com/Sung-eon/Facetshot/issues"
+	},
+	"keywords": [
+		"screenshots",
+		"visual testing",
+		"playwright",
+		"mcp",
+		"ai agents",
+		"agent skill",
+		"electron",
+		"tauri",
+		"ios simulator",
+		"swiftui",
+		"flutter",
+		"storybook"
+	],
 	"type": "module",
+	"files": [
+		"src",
+		"skills",
+		"schema",
+		"FacetshotRunner",
+		"README.md",
+		"LICENSE"
+	],
 	"bin": {
 		"facetshot": "./src/cli.ts",
 		"fshot": "./src/cli.ts"

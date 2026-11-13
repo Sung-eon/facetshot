@@ -9,19 +9,19 @@ work. It takes about ten minutes. Words such as _target_, _variant_ and _backgro
 facetshot runs on [Bun](https://bun.sh) 1.3 or newer. Your app can be built with anything; only facetshot itself
 needs Bun.
 
-facetshot isn't on npm yet, so install it from a clone. From the folder that holds your project:
+In your project's folder:
 
 ```sh
-git clone <repository URL> facetshot
-(cd facetshot && bun install)
-cd your-project
-bun add -d ../facetshot
+bun add -d facetshot
 bunx playwright install chromium
 ```
 
-The last line downloads Playwright's Chromium, the browser facetshot uses by default. If your project already uses
-Playwright, facetshot uses the browsers you have. Once facetshot is on npm, `bun add -d facetshot` will replace the
-first four lines.
+The last line downloads Playwright's Chromium (about 600 MB), the browser facetshot uses by default. facetshot uses
+Playwright 1.64; if your project uses the same version, the browsers are shared, otherwise this downloads facetshot's
+own copy.
+
+facetshot is tested on macOS. Web pages should work on Linux and Windows, but nobody has tried them there yet; see
+[Status and limits](status.md).
 
 Check that everything is in place:
 
@@ -46,10 +46,18 @@ The summary looks like this:
 
 Sheets:
   /your/project/.facetshot/runs/20261110-091502-3f1a/example.com.sheet.jpg
+
+Report: /your/project/.facetshot/runs/20261110-091502-3f1a/report.html
+Details: /your/project/.facetshot/runs/20261110-091502-3f1a/manifest.json
+Logs: /your/project/.facetshot/runs/20261110-091502-3f1a/logs.txt (12 lines)
 ```
 
-Open the sheet. Each row is a device (a desktop, a tablet in both orientations, a phone) and each column a variant
-(light and dark). The single screenshots are in a folder next to it.
+Open the sheet, or `report.html` for every screenshot on one page. Each row of the sheet is a device (a desktop, a
+tablet in both orientations, a phone) and each column a variant (light and dark). The single screenshots are in a
+folder next to it.
+
+The first run also starts the [background helper](concepts.md#the-background-helper), which keeps the browser open
+for 15 minutes so the next run is quick. `bunx facetshot daemon stop` stops it now.
 
 Choose devices and variants with `--on` and `--as`:
 
@@ -57,7 +65,15 @@ Choose devices and variants with `--on` and `--as`:
 bunx facetshot https://example.com --on phone --as light,dark,large
 ```
 
-Add `.facetshot/` to your `.gitignore`. Runs, logs and saved sign-ins are kept there.
+Runs, logs and saved sign-ins are kept in `.facetshot/`. Add this to your `.gitignore`:
+
+```
+.facetshot/*
+!.facetshot/baselines/
+```
+
+The second line lets you commit saved [baselines](comparing.md) later; without it, git can't include anything under
+`.facetshot/`.
 
 ## 3. Point it at your app
 
@@ -104,6 +120,9 @@ What each part means:
 - `profiles.default` is what you get when you don't pass `--on` or `--as`. `review` is a built-in group: desktop,
   tablet in landscape and portrait, and phone.
 
+SvelteKit: `vite preview` needs an adapter it can serve, such as `adapter-node`; see
+[SvelteKit](auth-and-data.md#sveltekit).
+
 If `init` finds nothing it can build or start, it writes nothing and says what it looked for. In that case, run it in
 your project's folder, or tell it where the app is already running (your own dev server, staging or production):
 
@@ -130,12 +149,31 @@ bunx facetshot init --agent claude     # or cursor, codex, all
 ```
 
 This registers facetshot's MCP server with your agent and installs a short skill that tells it when to look and how.
-Then ask your agent to "check the settings page on a phone in dark mode" and it calls facetshot itself. See
-[AI agents](agents.md) for what this writes and how to work with an agent.
+Restart your agent: it loads MCP servers when it starts, and Claude Code asks you to approve the `facetshot` server
+the first time. Then ask it "which facetshot tools do you have?", and after that something like "check the settings
+page on a phone in dark mode". See [AI agents](agents.md) for what this writes and how to work with an agent.
+
+## Updating and removing
+
+To update, run `bun update facetshot`. A newer facetshot may use a newer Playwright; if `facetshot doctor` says a
+browser is missing, run `bunx playwright install chromium` again.
+
+To work on facetshot itself, clone https://github.com/Sung-eon/Facetshot and see the Contributing section of its
+README.
+
+To remove facetshot from a project:
+
+1. `bunx facetshot clean --all` stops the background helper and removes what facetshot made.
+2. `bun remove facetshot`, and delete `.facetshot/` and `facetshot.config.ts`.
+3. Remove the `facetshot` entry from `.mcp.json`, `.cursor/mcp.json` or `.codex/config.toml`, and delete
+   `.claude/skills/facetshot/`, `.agents/skills/facetshot/` or `.cursor/rules/facetshot.mdc`, whichever `init` wrote.
+4. If no other project uses it, delete `~/.facetshot/`. Playwright's browsers are in `~/Library/Caches/ms-playwright`
+   (macOS) or `~/.cache/ms-playwright` (Linux), shared with any other Playwright project.
 
 ## What next
 
 - [How it works](concepts.md) explains targets, devices, variants and the background helper.
 - [Flows](flows.md) take screenshots of menus, dialogs and half-filled forms.
-- [Sessions](sessions.md) let you use a page step by step and see what each click does.
+- [Sessions](sessions.md) let you use a screen step by step and see what each click does.
 - [Comparing](comparing.md) shows only what changed since the last run.
+- [Troubleshooting](troubleshooting.md) helps when a screenshot shows a spinner or the sign-in page.

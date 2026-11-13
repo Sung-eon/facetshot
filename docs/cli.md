@@ -1,5 +1,8 @@
 # Command reference
 
+Commands are written `facetshot …`. With facetshot installed in your project, type `bunx facetshot …`, or add a
+`"facetshot": "facetshot"` script to `package.json`.
+
 | Command                                     | What it does                                                        |
 | ------------------------------------------- | ------------------------------------------------------------------- |
 | `facetshot <targets…> [options]`            | takes screenshots and prints a short summary                        |
@@ -28,23 +31,23 @@
 facetshot /settings /billing --on phone,desktop --as light,dark+large
 ```
 
-| Option                    | Meaning                                                                                                                                                                    |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                                                                 |
-| `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                                                                   |
-| `--browser <names>`       | take web pages in other browsers too: `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`; or per device, `--on phone@webkit` ([Other browsers](web.md#other-browsers)) |
-| `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                                                            |
-| `--diff`, `--diff=<name>` | compare with the previous run, or with a baseline name, a run id or a folder ([Comparing](comparing.md))                                                                   |
-| `--checks <names>`        | the checks to run, comma-separated, instead of the default ones; `all` for every check ([Checks](checks.md))                                                               |
-| `--do <step>`             | a step before the screenshot, repeatable: `--do "click:text=Save" --do shot:saved` ([Steps](flows.md#steps))                                                               |
-| `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                                                                |
-| `--clean`                 | delete the `--out` folder first                                                                                                                                            |
-| `--sheet-width <px>`      | contact sheet width (default 1600)                                                                                                                                         |
-| `--format text\|md\|json` | what to print: the short summary (default), Markdown with each sheet as an image (for a pull request or an issue), or the manifest                                         |
-| `--json`                  | the same as `--format json`                                                                                                                                                |
-| `--open`                  | open `report.html` when the run is done                                                                                                                                    |
-| `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                                                            |
-| `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from the current folder                                                                               |
+| Option                    | Meaning                                                                                                                                                                                                                    |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--on <devices>`          | devices or groups, comma-separated. Default: the profile's                                                                                                                                                                 |
+| `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                                                                                                                   |
+| `--browser <names>`       | take web pages in these browsers instead of Chromium (include `chromium` to keep it): `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`; or per device, `--on phone@webkit` ([Other browsers](web.md#other-browsers)) |
+| `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                                                                                                            |
+| `--diff`, `--diff=<name>` | compare with the previous run, or with a baseline name, a run id or a folder ([Comparing](comparing.md))                                                                                                                   |
+| `--checks <names>`        | the checks to run, comma-separated, instead of the default ones; `all` for every check ([Checks](checks.md))                                                                                                               |
+| `--do <step>`             | a step before the screenshot, repeatable: `--do "click:text=Save" --do shot:saved` ([Steps](flows.md#steps))                                                                                                               |
+| `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                                                                                                                |
+| `--clean`                 | delete the `--out` folder first                                                                                                                                                                                            |
+| `--sheet-width <px>`      | contact sheet width (default 1600)                                                                                                                                                                                         |
+| `--format text\|md\|json` | what to print: the short summary (default), Markdown with each sheet as an image, or the manifest. The Markdown's image links are file paths on this machine ([CI](ci.md#a-summary-for-the-pull-request))                  |
+| `--json`                  | the same as `--format json`                                                                                                                                                                                                |
+| `--open`                  | open `report.html` when the run is done                                                                                                                                                                                    |
+| `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                                                                                                            |
+| `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from the current folder                                                                                                                               |
 
 While it works, facetshot shows progress on one line in a terminal, and prints failures as they happen when its
 output isn't a terminal. When it's done it prints the summary: counts and timing, the sheets, what failed and why,
@@ -93,8 +96,10 @@ data). `stop` stops it after the runs in progress finish, closing everything it 
 ## `clean`
 
 Stops the background helper, removes test data that runs left behind, deletes runs, logs, build stamps and caches,
-and deletes facetshot's own simulators. Baselines are kept unless you pass `--all`. Saved sign-ins in
-`.facetshot/auth/` are kept; delete that folder yourself to sign in again.
+and deletes facetshot's own simulators. Saved sign-ins in `.facetshot/auth/` and the steps given inline
+(`.facetshot/flows/`) are deleted too, so personas sign in again on the next run. Baselines are kept unless you pass
+`--all`. The caches in `~/.facetshot/cache` are shared by every project on this machine, and `clean` empties them for
+all of them.
 
 ## Sessions
 
@@ -105,9 +110,9 @@ See [Sessions](sessions.md).
 | `open <target>`    | `--on <device>`, `--as <variant>`, `--browser <name>` (one each; `--browser` needs `--on`), and the same view options as `act`                                                     |
 | `act <id> <step…>` | `--no-elements`, `--no-screenshot` (leave out the list or the screenshot), `--tree` (the page's text and structure), `--full` (the whole page), `--level <level>` (logs), `--json` |
 | `look <id>`        | the same options as `act`                                                                                                                                                          |
-| `close <id>`       | `--save <file>`: write the steps that worked as a flow, inside the project folder                                                                                                  |
+| `close <id>`       | `--save <file>`: write the steps that worked as a flow (`.yaml`, `.yml` or `.json`, inside the project folder)                                                                     |
 
-`act` exits with 1 when a step didn't work; the rest of its answer shows where the screen ended up. `facetshot list
+`act` exits with 1 when a step didn't work; the rest of its output shows where the screen ended up. `facetshot list
 sessions` lists the open sessions (`--json` for programs).
 
 ## `logs`
@@ -123,15 +128,16 @@ Levels are `debug`, `info` (the default), `warn` and `error`. See [Logs](logs.md
 
 ## Exit codes
 
-| Code | Meaning                                                                                                                                                      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0    | every screenshot was taken                                                                                                                                   |
-| 1    | some screenshots failed, or something went wrong around them (the summary says what); for `act`, a step didn't work                                          |
-| 2    | the command or the config is wrong                                                                                                                           |
-| 3    | something this machine needs is missing or busy (a browser, Xcode, a port, a permission)                                                                     |
-| 4    | an unexpected error: often a bug in facetshot, but also a browser or tool failing in a way facetshot doesn't recognise, or a second Ctrl-C. Please report it |
+| Code | Meaning                                                                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0    | every screenshot was taken                                                                                                                 |
+| 1    | some screenshots failed, or something went wrong around them (the summary says what); for `act`, a step didn't work                        |
+| 2    | the command or the config is wrong                                                                                                         |
+| 3    | something this machine needs is missing or busy (a browser, Xcode, a port, a permission)                                                   |
+| 4    | an unexpected error: often a bug in facetshot, but also a browser or tool failing in a way facetshot doesn't recognise, or a second Ctrl-C |
 
-Problems found by checks don't change the exit code. To fail a CI job on them, read `manifest.json`
+Exit code 4 that isn't from a second Ctrl-C is worth reporting as a bug. Problems found by checks don't change the
+exit code. To fail a CI job on them, read `manifest.json`
 ([Continuous integration](ci.md)).
 
 ## Environment variables
@@ -144,4 +150,4 @@ Problems found by checks don't change the exit code. To fail a CI job on them, r
 | `FACETSHOT_SESSION_IDLE_MINUTES` | how long an unused session stays open (default 10)                                                                |
 | `FACETSHOT_CONFIG`               | the config the MCP server uses                                                                                    |
 | `FACETSHOT_CWD`                  | the folder the MCP server looks for a config from                                                                 |
-| `FACETSHOT_MCP_MAX_IMAGES`       | sheets per MCP answer (default 4)                                                                                 |
+| `FACETSHOT_MCP_MAX_IMAGES`       | sheets per MCP response (default 4)                                                                               |

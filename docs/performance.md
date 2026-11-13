@@ -21,12 +21,11 @@ result. Since several agents may start runs at the same time, it also limits how
 
 ## Example timings
 
-These were measured once, on one 10-core Apple-silicon Mac, on the same day and against the same screens. The
-"Earlier scripts" column is the author's own scripts from before facetshot (a dev server or a fresh app launch per
-screenshot, a fixed wait, one screenshot at a time). Other work was running on the machine at the time (load averages
-between 5 and 240), so treat these as rough examples, not a benchmark.
+Measured once on a 10-core Apple-silicon Mac that was busy with other work at the time, so treat these as rough
+examples, not a benchmark. "One-off scripts" means a dev server or a fresh app launch per screenshot, a fixed wait,
+and one screenshot at a time.
 
-| Job                                                                                                     | Earlier scripts | facetshot, first run                            | facetshot, next runs |
+| Job                                                                                                     | One-off scripts | facetshot, first run                            | facetshot, next runs |
 | ------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------- | -------------------- |
 | A large web app: 10 screens × 4 devices × 3 variants = 120 screenshots                                  | 323 s           | 155 s (incl. a 27 s build and starting the API) | 131 s                |
 | The same app on iOS: 10 screens × 3 devices × 3 variants = 90 screenshots, simulators booted, app built | about 1,250 s   | 390 s (incl. booting)                           | 317 s                |
@@ -37,31 +36,19 @@ Most of the remaining time in the iOS row is the iPad's large screenshots, taken
 
 ## Keeping the machine usable
 
-facetshot is meant to be run often, by several agents at the same time, on the same laptop people work on.
-[Architecture](architecture.md) explains the parts named here.
+facetshot is meant to be run often, by several agents at the same time, on the same laptop people work on. Every
+run by the same user account goes through one background helper, which keeps one browser and one set of limits
+however many terminals or agents are asking:
 
-- Every run by the same user account goes through one background helper, which keeps one browser and the limits
-  below however many terminals or agents are asking. Its state lives in `~/.facetshot` (or `FACETSHOT_HOME`).
-- At most 4 browser pages are being worked on at once, 2 simulators are booted, and 1 heavy build runs. The page
-  limit counts pages that are taking screenshots or doing steps; open sessions keep their page between steps, and
-  up to 6 sessions can be open. A project's [`limits`](configuration.md#limits) can lower the page and simulator
-  limits for itself, never raise them. A Mac window run takes the Mac window lock, since those runs share the screen.
-- When the 1-minute load average is above 3 times the core count (someone else is compiling, say), work goes one at
-  a time until it drops. Runs get slower instead of making the machine unresponsive. Windows has no load average, so
-  there this brake is off.
-- facetshot asks the system how much memory pressure there is (macOS's memory pressure level, Linux's available
-  memory). Under pressure, work goes one at a time; when memory is critical, nothing new starts until it eases. The
-  background helper restarts its browsers every 25 runs, and if the helper itself grows past 1.5 GB, it stops once
-  it is idle and the next run starts a fresh one.
+- At most 4 browser pages are being worked on at once, 2 simulators are booted, and 1 heavy build runs. When the
+  machine is busy or short of memory, work goes one at a time. The exact rules are in
+  [Shared limits](architecture.md#shared-limits).
 - Heavy builds (Xcode, Rust, big bundles) take a lock that other checkouts, other agents and your own scripts can
-  share, so two heavy builds never run at once.
-- Servers, browsers, simulators and test data are stopped when the background helper has been idle for 15 minutes,
-  when you run `facetshot daemon stop`, or, with `--no-daemon`, when the run ends, even after Ctrl-C (press it twice
-  to stop at once). A project nobody has used for 15 minutes lets go of its servers and browsers even while other
-  projects keep the helper busy.
-- Stopping has a deadline. Each step gets 10 seconds, servers are stopped before browsers so a stuck browser can't
-  keep a server alive, and the helper exits within a minute; anything it started that is still running is killed as
-  it exits.
+  share, so two heavy builds never run at once. A Mac window run takes the Mac window lock, since those runs share
+  the screen.
+- Servers, browsers, simulators and test data are stopped when the background helper has been idle for a while, when
+  you run `facetshot daemon stop`, or, with `--no-daemon`, when the run ends, even after Ctrl-C (press it twice to
+  stop at once). When and how is in [Lifecycle](architecture.md#lifecycle).
 - facetshot makes its own simulators, named `facetshot-<model>`, and never boots, changes or erases any others.
 
 ## Making it faster

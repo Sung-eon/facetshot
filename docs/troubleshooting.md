@@ -66,11 +66,25 @@ Fix the clock (`web.clock`), mask what is random or live (`web.mask`), and block
 Turn on Screen Recording for the app that runs facetshot (your terminal, editor or agent) in System Settings →
 Privacy & Security → Screen & System Audio Recording, then restart that app.
 
+The permission that counts is that of the app that started the background helper. If `facetshot doctor` says the
+permission is there but runs still fail, another app started the helper: run `facetshot daemon stop`, then run again
+from the app that has the permission.
+
 ## Steps in a Mac window say facetshot "may not use Accessibility"
 
 Pressing, typing and menus in a Mac app's window go through macOS's Accessibility interface. Turn on Accessibility
 for the app that runs facetshot in System Settings → Privacy & Security → Accessibility. Screenshots alone don't
-need it. `facetshot doctor` shows both permissions.
+need it. `facetshot doctor` shows both permissions; as above, what counts is the app that started the background
+helper.
+
+A step that fails because the app didn't come to the front, or that says a point is outside the window, needs the
+app's window visible: don't cover it, and don't work at the Mac while the steps run.
+
+## A Mac app's window isn't the size asked for
+
+If the app doesn't size its own window from `FACETSHOT_WINDOW_SIZE`, facetshot asks System Events to resize it. That
+needs Accessibility, and macOS asks once for Automation (control of System Events) for the app that runs facetshot.
+Allow it, or have the app read `FACETSHOT_WINDOW_SIZE` itself ([Desktop apps](desktop.md#what-the-app-is-told)).
 
 ## Something is still running
 
@@ -89,9 +103,17 @@ left alone; `facetshot doctor` shows it, and how to remove it if you're sure not
 
 ## "The background helper is busy with older code"
 
-You updated facetshot while the background helper was still running a job with the old version. The new run happens
-in your own process instead, outside the shared limits, and the helper is replaced once it's free. Sessions can't be
-opened until then. See [Lifecycle](architecture.md#lifecycle).
+The background helper runs a different version of facetshot's code than yours (you updated or edited facetshot, or
+another checkout of facetshot started it) and is still busy with a job. The new run happens in your own process
+instead, outside the shared limits, and the helper is replaced once it's free. Sessions can't be opened until then.
+See [Lifecycle](architecture.md#lifecycle).
+
+## A command works in your terminal but not in a run
+
+Builds, servers and apps get the background helper's environment, which is that of whatever started it first (your
+terminal, or an agent's MCP server), not of the command you just typed. Pass what a command needs in its `env`
+([Configuration](configuration.md#settings-that-differ-per-checkout-or-per-person)), or `facetshot daemon stop` and
+run again.
 
 ## Reporting a problem
 

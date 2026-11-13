@@ -13,12 +13,12 @@ SwiftUI scenes need a Mac with Xcode.
 ## Setup
 
 1. Add FacetshotKit to your package's (or project's) test target. Its `Package.swift` is at the root of the facetshot
-   repository, so point at your clone:
+   repository:
 
    ```swift
    // Package.swift
    dependencies: [
-       .package(path: "../facetshot")    // or .package(url: "<repository URL>", from: "0.1.0")
+       .package(url: "https://github.com/Sung-eon/Facetshot.git", branch: "main")
    ],
    targets: [
        .testTarget(

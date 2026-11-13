@@ -3,6 +3,11 @@
 A minimal Tauri 2 app ("Pebble") with a Vite frontend: two screens (`/` and `/about`), a Rust `greet` command, and
 the deep-link plugin registering the `pebble://` scheme.
 
+Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
+`bunx playwright install chromium`. In your own project the command is `bunx facetshot` instead of
+`bun --bun ../../src/cli.ts`. The `webkit` way below also needs
+`bunx playwright install webkit`.
+
 ```sh
 bun install
 bun --bun ../../src/cli.ts app:/ app:/about
@@ -15,12 +20,12 @@ On macOS a Tauri window is a WKWebView, which nothing outside the app can automa
   with readiness, checks, flows and masks. There's no Rust in a browser, so `invoke('greet')` is answered from
   `desktop.invoke` in the config; any other command rejects with an error naming it. Playwright's WebKit is a recent
   WebKit build, not the exact one in your macOS.
-- **`window`** (`desktop.engine: 'window'`, macOS): the real app, built with `tauri build --bundles app` (needs Rust:
-  `rustup`), launched, sent to each screen with `open pebble://about`, and its window captured. The app can't be
-  resized or re-themed from outside, so facetshot passes `FACETSHOT_WIDTH`, `FACETSHOT_HEIGHT` and
-  `FACETSHOT_APPEARANCE` in its environment; `src-tauri/src/lib.rs` shows the dozen lines that honour them. Run
-  `bun tauri icon <a 1024×1024 png>` once first: a bundle needs icons. This path hasn't been run yet
-  ([Status and limits](../../docs/status.md)).
+- **`window`** (`desktop.engine: 'window'`, macOS): the real app, built with `tauri build --bundles app` (needs
+  Rust), launched, sent to each screen with `open pebble://about`, and its window captured. Flows take every step a
+  Mac window takes, and what `greet` prints (`println!`) is in the logs. The app can't be resized or re-themed from
+  outside, so facetshot tells it what it wants in its environment
+  ([the variables](../../docs/desktop.md#what-the-app-is-told)); `src-tauri/src/lib.rs` shows the dozen lines that
+  honour the size and theme. See [Status and limits](../../docs/status.md) for how far this path has been tried.
 
 Windows (WebView2 over the DevTools protocol) and Linux (WebKitGTK through `tauri-driver`) aren't supported yet;
 facetshot says so when asked, and the `webkit` engine works on every system.

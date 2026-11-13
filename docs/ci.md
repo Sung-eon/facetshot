@@ -1,7 +1,9 @@
 # Continuous integration
 
 facetshot is made for looking at screens while you work, but it also runs in CI, for example to attach screenshots
-to every pull request. Web pages work on Linux runners; iOS, Mac and SwiftUI targets need a macOS runner with Xcode.
+to every pull request. Web pages should work on Linux runners (not yet tried; see [Status](status.md)). iOS and
+SwiftUI targets need a macOS runner with Xcode. Mac window screenshots need the Screen Recording permission, and steps
+in them need Accessibility, which hosted runners usually can't grant.
 
 ## A job, step by step
 
@@ -18,25 +20,22 @@ to every pull request. Web pages work on Linux runners; iOS, Mac and SwiftUI tar
    bunx facetshot / /settings /billing --no-daemon --format md > screenshots.md
    ```
 
-   `--format md` prints a Markdown summary with the sheets as images, which you can post as a pull request comment.
    `FACETSHOT_NO_DAEMON=1` does the same as `--no-daemon` for every command.
 
 4. Upload the run folder as a build artifact, so the screenshots and `report.html` can be downloaded:
    `.facetshot/runs/*` (or the folder you gave with `--out`).
 
-## Exit codes
+## A summary for the pull request
 
-| Code | In CI                                                           |
-| ---- | --------------------------------------------------------------- |
-| 0    | every screenshot was taken                                      |
-| 1    | some screenshots failed; the summary says why                   |
-| 2    | the command or the config is wrong                              |
-| 3    | the runner is missing something (a browser, Xcode, a free port) |
-| 4    | an unexpected error                                             |
+`--format md` prints a Markdown summary with each sheet as an image. Its image links are file paths on the runner, so
+posted as they are, a comment shows broken images. Upload the sheets somewhere the comment can reach (the artifact
+from step 4, or any image host), and rewrite the links to point there before you post it.
 
-Findings from [checks](checks.md) and changes found by comparing don't change the exit code. To fail a job on them,
-read `manifest.json` (described by [`schema/manifest.v1.json`](../schema/manifest.v1.json)). For example, to fail
-when any check found an error:
+## Failing a job
+
+The exit codes are in the [command reference](cli.md#exit-codes). Findings from [checks](checks.md) and changes found
+by comparing don't change the exit code. To fail a job on them, read `manifest.json` (described by
+[`schema/manifest.v1.json`](../schema/manifest.v1.json)). For example, to fail when any check found an error:
 
 ```sh
 bunx facetshot check / /settings --no-daemon --json > manifest.json

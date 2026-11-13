@@ -118,10 +118,11 @@ export function createServer(): McpServer {
 		{
 			instructions:
 				'Use facetshot to see the app the way users do, after changing UI code and before saying it looks right. ' +
-				'Start with `check` (text only, cheap) to find broken screens, `capture` the ones worth seeing, fix, then `compare`. ' +
-				'To find out what a click, right-click or typing does, open a session (open, then act step by step, then close). ' +
-				'Read the logs in each answer before guessing why a screen looks wrong. ' +
-				'Never write your own screenshot script. Targets: "/path" for web pages, "app:/path" for app screens, ' +
+				'When asked how a screen looks or what it does, look in the app before answering from the code. ' +
+				'Start with `list` to find flows and profiles the project already has, then `check` (text only, cheap) to find broken screens, `capture` the ones worth seeing, fix, then `compare`. ' +
+				'To find out what a click, right-click or typing does, open a session (open, then act step by step), and always close it. ' +
+				'Read the logs in each response before guessing why a screen looks wrong. ' +
+				'Use these tools rather than a one-off screenshot script. Targets: "/path" for web pages, "app:/path" for app and desktop screens, ' +
 				'"story:id" for Storybook, "preview:Name" for SwiftUI scenes, a flow file for clicks and typing.'
 		}
 	);

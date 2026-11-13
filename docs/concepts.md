@@ -134,8 +134,9 @@ facetshot daemon status
 facetshot daemon stop
 ```
 
-`--no-daemon` does everything in the current process instead. Nothing stays running afterwards, so the next run is
-slower. [Architecture](architecture.md) describes the helper in detail.
+It is the "daemon" in `facetshot daemon`, `--no-daemon` and `FACETSHOT_NO_DAEMON`. `--no-daemon` does everything in
+the current process instead. Nothing stays running afterwards, so the next run is
+slower. [Architecture](architecture.md#lifecycle) describes when it starts, restarts and stops.
 
 ## Glossary
 
@@ -148,12 +149,17 @@ slower. [Architecture](architecture.md) describes the helper in detail.
 | cell                         | one target on one device in one variant: one square on a contact sheet                                                                                                    |
 | CI                           | continuous integration: a server that builds and tests every change ([Continuous integration](ci.md))                                                                     |
 | contact sheet                | one image per screen with every device and variant side by side                                                                                                           |
+| deep link                    | an address such as `myapp://settings` that opens an app on a given screen                                                                                                 |
 | device                       | a screen size and type: a browser viewport, a simulator, or a window size                                                                                                 |
+| fixture, test data           | records your config's `fixtures.setup` makes before a run (a project, a user) and removes afterwards ([Test data](auth-and-data.md#test-data))                            |
 | flow                         | a file of steps (click, type, wait) that reaches a state no address leads to, with screenshots along the way ([Flows](flows.md))                                          |
 | MCP                          | the Model Context Protocol, the standard way AI agents call outside tools. `facetshot mcp` is an MCP server ([MCP tools](mcp.md))                                         |
 | persona                      | a signed-in user, defined in your config and chosen by a variant ([Personas](auth-and-data.md#personas))                                                                  |
-| profile                      | a named choice of devices and variants                                                                                                                                    |
+| Playwright                   | the browser-automation library facetshot uses to drive Chromium, WebKit, Firefox and Electron                                                                             |
+| profile                      | a named choice of devices and variants, and optionally of targets ([Profiles](#profiles))                                                                                 |
 | ref                          | a short name such as `e14` for an element in a session's latest list, usable in the next step                                                                             |
+| selector                     | a way to name an element in a step: `role=button[name="Save"]`, `text=Save`, CSS such as `#save` ([Naming an element](flows.md#naming-an-element))                        |
 | session                      | a page or app window kept open to use step by step ([Sessions](sessions.md))                                                                                              |
+| simulator                    | Xcode's iPhone and iPad simulator, which runs iOS apps on a Mac ([iOS simulators](ios.md))                                                                                |
 | target                       | what to take a screenshot of: a path, an app screen, a story, a SwiftUI scene or a flow                                                                                   |
 | variant                      | a display setting such as dark mode or large text, or a persona; one column of a contact sheet                                                                            |

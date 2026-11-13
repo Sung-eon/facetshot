@@ -44,7 +44,7 @@ facetshot app:/inbox app:/settings --on iphone,ipad-portrait,ipad-landscape --as
 1. The first time it needs them, facetshot makes simulators of its own, such as `facetshot-iphone-17-pro-max`. It
    never boots, changes or erases a simulator it didn't make.
 2. It boots them (at most two at a time), installs the app if it changed, sets the status bar to 9:41 with full
-   bars, and launches the app once per simulator.
+   signal bars, and launches the app once per simulator.
 3. For each variant it changes the simulator's appearance, text size and contrast while the app runs. For each
    screen it opens the deep link and waits until the screen is ready.
 4. It takes the simulator's screenshot.
@@ -103,15 +103,16 @@ facetshot builds once). Start the flow with `start: app:/…`.
 | `wait`, `gone`            | until the element is there, or gone                              |
 | `scroll` by pixels        | one swipe up or down                                             |
 
-An element is named by its accessibility label or identifier (`text=Save`, `#save`,
-`role=button[name="Save"]`), or by a point on the screen in points (`@120,300`). A role is matched against the
-element's type, named the way the web names roles (`button`, `textbox`, `switch`, `cell`, `text`…). `hover`,
-`dblclick`, `menu`, `back`, `forward` and `reload` have no meaning on a phone and are refused.
+An element is named by its accessibility label or identifier (`text=Save`, `#save`, or the label alone),
+`role=button[name="Save"]`, or by a point on the screen in points (`@120,300`). A role is matched against the
+element's type, named the way the web names roles (`button`, `textbox`, `switch`, `cell`, `text`…). Which steps
+aren't available on the simulator is in [Flows on apps](flows.md#flows-on-apps). Finding elements by role or point,
+long presses, drags and the log below are new and not yet run on a simulator ([Status](status.md)).
 
 ## Logs
 
 Each screenshot carries the lines the app wrote to the system log while it was on screen (`Logger`, `os_log`,
-`NSLog`). See [Logs](logs.md#apps-outside-the-browser).
+`NSLog`), with the limits in [Logs](logs.md#apps-outside-the-browser).
 
 ## Each screen starts where the last one left off
 

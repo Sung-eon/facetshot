@@ -30,7 +30,8 @@ facetshot /settings /billing -p full --diff=before-redesign
 ```
 
 `facetshot baseline list` shows what you've saved, and `facetshot baseline rm <name>` removes one. Baselines are kept
-in `.facetshot/baselines/`; commit them if your team wants to share them.
+in `.facetshot/baselines/`. To commit them so your team can share them, ignore `.facetshot/*` rather than
+`.facetshot/`, and add `!.facetshot/baselines/` to `.gitignore`.
 
 ## What you get
 

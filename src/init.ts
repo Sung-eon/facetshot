@@ -181,7 +181,7 @@ function installSkill(root: string, target: string): void {
 	else cpSync(SKILL, destination, { recursive: true });
 }
 const AGENT_LINE =
-	'To see screens, use facetshot: the `facetshot` MCP tools (check, capture, compare, inspect; open, act and close to use a page step by step) or the `facetshot` command. Never write a screenshot script.';
+	"To see this app's screens or try what they do, use facetshot (the `facetshot` MCP tools, or the `facetshot` command) instead of a one-off screenshot script, and look before answering from the code.";
 
 export async function init(options: {
 	agent?: string;
