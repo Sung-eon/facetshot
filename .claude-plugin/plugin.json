@@ -1,0 +1,18 @@
+{
+	"name": "facetshot",
+	"version": "0.1.0",
+	"description": "Screenshots of your app on several devices and display settings, with what looks broken and what it logged. Adds the facetshot skill and MCP server; facetshot itself runs on Bun.",
+	"author": {
+		"name": "Sung-eon Park",
+		"url": "https://github.com/Sung-eon"
+	},
+	"homepage": "https://github.com/Sung-eon/Facetshot",
+	"repository": "https://github.com/Sung-eon/Facetshot",
+	"license": "MIT",
+	"mcpServers": {
+		"facetshot": {
+			"command": "bunx",
+			"args": ["facetshot", "mcp"]
+		}
+	}
+}

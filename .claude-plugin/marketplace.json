@@ -1,0 +1,12 @@
+{
+	"name": "facetshot",
+	"description": "facetshot for Claude Code: the Agent Skill and the MCP server",
+	"owner": { "name": "Sung-eon Park" },
+	"plugins": [
+		{
+			"name": "facetshot",
+			"source": "./",
+			"description": "Screenshots of your app on several devices and display settings, with what looks broken and what it logged"
+		}
+	]
+}

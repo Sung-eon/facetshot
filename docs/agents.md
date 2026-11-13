@@ -15,7 +15,17 @@ bunx facetshot init --agent codex      # Codex
 bunx facetshot init --agent all
 ```
 
-What each one writes:
+In Claude Code there is also a plugin with the same skill and MCP server, installed once for all your projects
+instead of written into each one:
+
+```
+/plugin install facetshot --marketplace Sung-eon/Facetshot
+```
+
+The plugin's MCP server runs `bunx facetshot mcp`, so a project still needs facetshot installed (`bun add -d
+facetshot`) and, for short paths such as `/settings`, a `facetshot.config.ts` (`bunx facetshot init`).
+
+What `init --agent` writes:
 
 | Agent       | File                          | What it is                                                                                                                                                     |
 | ----------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |

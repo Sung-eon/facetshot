@@ -100,6 +100,12 @@ usable. See [Speed and machine safety](docs/performance.md).
 Commit these files and everyone on the team gets the same setup. [AI agents](docs/agents.md) says what each file
 contains and how to set it up by hand.
 
+In Claude Code you can install the skill and the MCP server as a plugin instead, for every project at once:
+
+```
+/plugin install facetshot --marketplace Sung-eon/Facetshot
+```
+
 | MCP tool  | What it does                                                         |
 | --------- | -------------------------------------------------------------------- |
 | `check`   | reads screens for problems, without screenshots (the cheapest call)  |
