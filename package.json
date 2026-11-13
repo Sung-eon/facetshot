@@ -5,11 +5,11 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Sung-eon/Facetshot.git"
+		"url": "git+https://github.com/Sung-eon/facetshot.git"
 	},
-	"homepage": "https://github.com/Sung-eon/Facetshot#readme",
+	"homepage": "https://github.com/Sung-eon/facetshot#readme",
 	"bugs": {
-		"url": "https://github.com/Sung-eon/Facetshot/issues"
+		"url": "https://github.com/Sung-eon/facetshot/issues"
 	},
 	"keywords": [
 		"screenshots",
