@@ -1,0 +1,459 @@
+/*
+ * facetshot's site in the style of Sung-eon Space: warm paper, ink, one violet accent, and a dark "mat" that photos
+ * and contact sheets sit on. Starlight's own properties are mapped to those colours, and the landing page has its own layout.
+ */
+:root {
+	--sl-font: 'Noto Sans', system-ui, sans-serif;
+	--sl-font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+	/* Dark: the mat. */
+	--sl-color-white: #e9e5dc; /* headings */
+	--sl-color-gray-1: #d2cdc2; /* body */
+	--sl-color-gray-2: #c4bfb3;
+	--sl-color-gray-3: #aba598; /* labels */
+	--sl-color-gray-4: #6f6a60;
+	--sl-color-gray-5: #36342f; /* lifted surfaces */
+	--sl-color-gray-6: #262523; /* the mat */
+	--sl-color-black: #1d1c1a; /* the deep mat */
+	--sl-color-accent-low: #2f2747;
+	--sl-color-accent: #8f82d8;
+	--sl-color-accent-high: #c9c0f2;
+	--sl-color-hairline: rgba(255, 255, 255, 0.1);
+	--sl-color-hairline-light: rgba(255, 255, 255, 0.06);
+	--sl-color-hairline-shade: rgba(0, 0, 0, 0.3);
+	--sl-color-bg-nav: #262523;
+	--sl-color-bg-sidebar: #262523;
+	--sl-color-bg-inline-code: #36342f;
+
+	--sl-color-blue-low: #2f2747;
+	--sl-color-blue: #8f82d8;
+	--sl-color-blue-high: #d6cff6;
+	--facetshot-mat: #262523;
+	--facetshot-mat-deep: #1d1c1a;
+}
+
+:root[data-theme='light'] {
+	/* Light: paper and ink. */
+	--sl-color-white: #1e1d1b; /* headings: ink */
+	--sl-color-gray-1: #2b2926;
+	--sl-color-gray-2: #4a4741; /* body: soft ink */
+	--sl-color-gray-3: #67635b; /* muted, 5.6:1 on paper */
+	--sl-color-gray-4: #8a857b;
+	--sl-color-gray-5: #e2ded6; /* lines */
+	--sl-color-gray-6: #f1efea; /* sunken: code blocks */
+	--sl-color-gray-7: #f5f3ee;
+	--sl-color-black: #faf8f4; /* the page */
+	--sl-color-accent-low: #ebe5fb;
+	--sl-color-accent: #5b2fd6;
+	--sl-color-accent-high: #3d1d9e;
+	--sl-color-hairline: #ebe8e1;
+	--sl-color-hairline-light: #f0ede7;
+	--sl-color-hairline-shade: #e2ded6;
+	--sl-color-bg-nav: #faf8f4;
+	--sl-color-bg-sidebar: #faf8f4;
+	--sl-color-bg-inline-code: #f1efea;
+	--sl-color-text: #1e1d1b;
+	--sl-color-text-accent: #5b2fd6;
+	--sl-color-blue-low: #efebfb;
+	--sl-color-blue: #5b2fd6;
+	--sl-color-blue-high: #3d1d9e;
+}
+
+body {
+	letter-spacing: 0.005em;
+}
+
+/* Section headings carry weight; the page title is large and light, as on Sung-eon Space. */
+.sl-markdown-content :is(h2, h3) {
+	font-weight: 700;
+	letter-spacing: -0.012em;
+}
+
+/* The page title: large and light; section headings smaller and bold, so the levels never look alike. */
+h1#_top {
+	font-weight: 200;
+	font-size: clamp(2.25rem, 4.5vw, 3.25rem);
+	letter-spacing: -0.025em;
+	line-height: 1.1;
+}
+
+.sl-markdown-content h2 {
+	font-size: clamp(1.375rem, 2.2vw, 1.625rem);
+}
+
+.sl-markdown-content h3 {
+	font-size: 1.1875rem;
+}
+
+/* Sidebar: small grey group titles; the current page a soft violet row with a bar, not a solid block. */
+.sidebar-content details > summary .group-label > span,
+.sidebar-content .group-label {
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--sl-color-gray-2);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+	background-color: var(--sl-color-accent-low);
+	color: var(--sl-color-accent-high);
+	font-weight: 600;
+	box-shadow: inset 2px 0 0 var(--sl-color-accent);
+}
+
+/* Inline code in a sunken band keeps its chip: paper on the sunken grey. */
+:root[data-theme='light'] .band-sunken :not(pre) > code {
+	background: var(--sl-color-black);
+	box-shadow: inset 0 0 0 1px var(--sl-color-gray-5);
+}
+
+/* Code blocks: a flat frame, no drop shadow. On a sunken band in light mode, a block is paper so it stands apart. */
+.expressive-code {
+	--ec-frm-frameBoxShdCssVal: none;
+}
+
+:root[data-theme='light'] .band-sunken .expressive-code {
+	--ec-codeBg: var(--sl-color-black);
+}
+
+/* The landing page: the hero and the bands share one column and one left edge. */
+.landing-hero,
+.band {
+	max-width: 60rem;
+	margin-inline: auto;
+}
+
+.landing-hero {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1.25rem;
+	padding-top: clamp(1rem, 4vw, 3rem);
+}
+
+.landing-hero h1#_top {
+	font-weight: 200;
+	font-size: clamp(2.75rem, 7vw, 4rem);
+	letter-spacing: -0.03em;
+	line-height: 1.05;
+	color: var(--sl-color-white);
+}
+
+.landing-hero .tagline {
+	color: var(--sl-color-gray-2);
+	font-size: clamp(1.0625rem, 2vw, 1.25rem);
+	line-height: 1.55;
+	max-width: 38rem;
+}
+
+.landing-hero .actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem 2rem;
+	align-items: center;
+	margin-top: 0.25rem;
+}
+
+/* The one quiet line under the buttons: version, licence, privacy and where it's tested. */
+.hero-meta {
+	font-family: var(--sl-font-mono);
+	font-size: 0.75rem;
+	line-height: 1.6;
+	color: var(--sl-color-gray-3);
+}
+
+.hero-meta a {
+	color: inherit;
+	text-decoration-color: var(--sl-color-gray-4);
+	text-underline-offset: 0.2em;
+}
+
+/* The contact sheet lies on the mat at the column's full width, as photographs do on Sung-eon Space. */
+.hero-sheet {
+	width: 100%;
+	margin: 1.5rem 0 0;
+}
+
+.hero-sheet img {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--facetshot-mat-deep);
+	padding: clamp(0.5rem, 2vw, 1.25rem);
+	border-radius: 6px;
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+}
+
+:root:not([data-theme='light']) .hero-sheet img {
+	background: radial-gradient(ellipse at 50% 40%, #2c2a27, #121110);
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.08),
+		0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.hero-sheet figcaption {
+	margin-top: 0.75rem;
+	font-family: var(--sl-font-mono);
+	font-size: 0.75rem;
+	line-height: 1.6;
+	color: var(--sl-color-gray-3);
+}
+
+.hero-sheet figcaption a {
+	color: inherit;
+}
+
+/* Long prose lines read better a little narrower than the column. */
+.sl-markdown-content > :is(p, ul, ol),
+.band > :is(p, ul, ol) {
+	max-width: 46rem;
+}
+
+/* Landing sections: full-width bands (paper, sunken, the dark mat), each its own area, with the text in the column. */
+.band {
+	position: relative;
+	padding-block: clamp(2.5rem, 6vw, 4rem);
+	margin-block: 0 !important;
+}
+
+.sl-markdown-content > .band:first-child {
+	padding-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+/* A hairline only between two paper bands; a coloured band is its own divider. */
+.band:not(.band-sunken, .band-mat) + .band:not(.band-sunken, .band-mat) {
+	border-top: 1px solid var(--sl-color-hairline);
+}
+
+.band-sunken,
+.band-mat {
+	/* The band's colour reaches the window's edges while its text stays in the column. */
+	box-shadow: 0 0 0 100vmax var(--band);
+	clip-path: inset(0 -100vmax);
+	background: var(--band);
+}
+
+.band-sunken {
+	--band: var(--sl-color-gray-6);
+}
+
+:root:not([data-theme='light']) .band-sunken {
+	--band: #2c2a27;
+}
+
+.band-mat {
+	--band: var(--facetshot-mat);
+	color: #d2cdc2;
+}
+
+/* In dark mode the mat sits below the page, so it never looks like a sunken band. */
+:root:not([data-theme='light']) .band-mat {
+	--band: #141312;
+}
+
+.band-mat :is(h2, h3, strong) {
+	color: #e9e5dc;
+}
+
+.band-mat a {
+	color: #b6abf0;
+}
+
+.band-mat code {
+	background: rgba(255, 255, 255, 0.08);
+	color: #e9e5dc;
+}
+
+.sl-markdown-content .band > :first-child {
+	margin-top: 0;
+}
+
+.sl-markdown-content .band h2 {
+	font-size: clamp(1.375rem, 2.6vw, 1.875rem);
+}
+
+/* The session transcript lies on the deep mat, as a contact sheet does. */
+.sl-markdown-content .transcript {
+	background: var(--facetshot-mat-deep);
+	color: #d2cdc2;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 6px;
+	padding: 1rem 1.25rem;
+	font-family: var(--sl-font-mono);
+	font-size: 0.8125rem;
+	line-height: 1.65;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 40rem) {
+	.sl-markdown-content .transcript {
+		font-size: 0.6875rem;
+		padding: 0.75rem;
+	}
+}
+
+/* Landing tables span the column; the first column and file paths never break. */
+.table-wrap {
+	overflow-x: auto;
+}
+
+.sl-markdown-content .table-wrap table {
+	display: table;
+	width: 100%;
+}
+
+.sl-markdown-content .table-wrap :is(td, th):first-child,
+.sl-markdown-content .table-wrap code {
+	white-space: nowrap;
+}
+
+/* On a phone each row stacks: the first cell above the others, so nothing scrolls sideways. */
+@media (max-width: 40rem) {
+	.sl-markdown-content .table-wrap :is(table, tbody, tr, td) {
+		display: block;
+	}
+
+	.sl-markdown-content .table-wrap thead {
+		display: none;
+	}
+
+	.sl-markdown-content .table-wrap tr {
+		padding-block: 0.6rem;
+		border-bottom: 1px solid var(--sl-color-hairline-shade);
+	}
+
+	.sl-markdown-content .table-wrap :is(tr, td) {
+		margin-top: 0;
+	}
+
+	.sl-markdown-content .table-wrap td {
+		padding: 0.15rem 0;
+		border: 0;
+	}
+
+	.sl-markdown-content .table-wrap code {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.sl-markdown-content .table-wrap td:first-child {
+		white-space: normal;
+		font-weight: 600;
+		color: var(--sl-color-white);
+	}
+}
+
+/* What it works with: four to a row, two on a phone, each a link to its guide. */
+.platforms {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 0.75rem;
+}
+
+@media (max-width: 50rem) {
+	.platforms {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.sl-markdown-content .platform {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin: 0;
+	padding: 0.9rem 1rem;
+	border: 1px solid var(--sl-color-hairline-shade);
+	border-radius: 6px;
+	text-decoration: none;
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-sm);
+	line-height: 1.5;
+}
+
+.sl-markdown-content .platform strong {
+	color: var(--sl-color-white);
+	font-size: var(--sl-text-base);
+}
+
+.sl-markdown-content .platform .needs {
+	margin-top: auto;
+	padding-top: 0.25rem;
+	font-family: var(--sl-font-mono);
+	font-style: normal;
+	font-size: 0.6875rem;
+	color: var(--sl-color-gray-3);
+}
+
+.sl-markdown-content .platform:hover {
+	border-color: var(--sl-color-accent);
+}
+
+/* Where to go next. */
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+	gap: 0.75rem;
+}
+
+.cards > * {
+	margin: 0 !important;
+}
+
+.sl-markdown-content .more {
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-gray-3);
+}
+
+/* One line at the foot of every page: a full-width hairline, then the source, issues, releases, licence and version. */
+.site-footer {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.6rem;
+	margin-top: 3rem;
+	padding-block: 1.25rem 0.5rem;
+	font-family: var(--sl-font-mono);
+	font-size: 0.75rem;
+	color: var(--sl-color-gray-3);
+}
+
+.site-footer::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto;
+	height: 1px;
+	background: var(--sl-color-hairline-shade);
+}
+
+html:not([data-has-sidebar]) .site-footer::before {
+	box-shadow: 0 0 0 100vmax var(--sl-color-hairline-shade);
+	clip-path: inset(0 -100vmax);
+}
+
+html:not([data-has-sidebar]) .site-footer {
+	max-width: 60rem;
+	margin-inline: auto;
+	margin-top: 0;
+}
+
+.site-footer a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.site-footer a:hover {
+	color: var(--sl-color-accent);
+}
+
+/* Doc tables span the text column where there is room; on a phone they keep Starlight's sideways scroll. */
+@media (min-width: 50rem) {
+	.sl-markdown-content table {
+		display: table;
+		width: 100%;
+	}
+}

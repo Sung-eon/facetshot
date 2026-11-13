@@ -1,0 +1,80 @@
+<!doctype html>
+<!-- The link-preview image, rendered to public/og.png by scripts/og.ts (1200×630). The picture is a real contact
+     sheet facetshot took of the example app's Settings screen with its right-click menu open. -->
+<meta charset="utf-8" />
+<link
+	rel="stylesheet"
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400&family=JetBrains+Mono:wght@400&display=block"
+/>
+<style>
+	body {
+		margin: 0;
+		width: 1200px;
+		height: 630px;
+		overflow: hidden;
+		position: relative;
+		background: radial-gradient(120% 140% at 0% 0%, #2c2a27 0%, #1d1c1a 60%);
+		font-family: 'Noto Sans', sans-serif;
+	}
+	.text {
+		position: absolute;
+		left: 80px;
+		top: 92px;
+		width: 470px;
+	}
+	h1 {
+		margin: 0;
+		font-weight: 300;
+		font-size: 96px;
+		letter-spacing: -3px;
+		line-height: 1;
+		color: #f1ede4;
+	}
+	p {
+		margin: 30px 0 0;
+		font-size: 30px;
+		line-height: 1.35;
+		color: #c4bfb3;
+	}
+	code {
+		position: absolute;
+		left: 80px;
+		bottom: 84px;
+		font:
+			400 22px 'JetBrains Mono',
+			monospace;
+		color: #c9c0f2;
+	}
+	code::before {
+		content: '$ ';
+		color: #6f6a60;
+	}
+	.foot {
+		position: absolute;
+		left: 80px;
+		bottom: 44px;
+		font:
+			400 18px 'JetBrains Mono',
+			monospace;
+		color: #8a857b;
+	}
+	.sheet {
+		position: absolute;
+		left: 600px;
+		top: 70px;
+		width: 900px;
+		border-radius: 10px;
+		box-shadow:
+			0 30px 80px rgba(0, 0, 0, 0.55),
+			0 0 0 1px rgba(255, 255, 255, 0.08);
+		transform: perspective(1600px) rotateY(-16deg) rotateX(4deg);
+		transform-origin: left center;
+	}
+</style>
+<div class="text">
+	<h1>facetshot</h1>
+	<p>Every screen of your app, on every device and display setting, in one image.</p>
+</div>
+<code>bunx facetshot</code>
+<div class="foot">Open source · MIT</div>
+<img class="sheet" src="settings-menu.sheet.jpg" alt="" />

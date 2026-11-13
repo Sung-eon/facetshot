@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+# Generated from ../docs and ../README.md by scripts/sync-docs.ts before every build.
+src/content/docs/
+src/sidebar.json
+public/images/

@@ -7,3 +7,10 @@ examples/*/src-tauri/target
 examples/flutter/ios
 examples/flutter/macos
 examples/flutter/web
+# The docs site: generated content and build output.
+site/dist
+site/.astro
+site/src/content/docs
+site/public/images
+site/src/sidebar.json
+site/bun.lock

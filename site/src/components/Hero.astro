@@ -1,0 +1,30 @@
+---
+/*
+ * The landing page's hero, stacked: the title, tagline and buttons on the page's left edge, then whatever HTML the page
+ * gives as its hero image (a quiet line and the contact sheet) at the full width beneath. Starlight's own Hero puts
+ * the image beside the text, where a contact sheet is too small to read.
+ */
+import { LinkButton } from '@astrojs/starlight/components';
+
+const { data } = Astro.locals.starlightRoute.entry;
+const { title = data.title, tagline, image, actions = [] } = data.hero || {};
+const html = image && 'html' in image ? image.html : undefined;
+---
+
+<div class="landing-hero">
+	<h1 id="_top" data-page-title set:html={title} />
+	{tagline && <p class="tagline" set:html={tagline} />}
+	{
+		actions.length > 0 && (
+			<div class="actions">
+				{actions.map(({ attrs: { class: className, ...attrs } = {}, icon, link: href, text, variant }) => (
+					<LinkButton {href} {variant} icon={icon?.name} class:list={[className]} {...attrs}>
+						{text}
+						{icon?.html && <Fragment set:html={icon.html} />}
+					</LinkButton>
+				))}
+			</div>
+		)
+	}
+	{html && <Fragment set:html={html} />}
+</div>

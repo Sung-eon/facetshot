@@ -19,3 +19,8 @@ node_modules/
 .facetshot/
 .out/
 .DS_Store
+
+# The docs site's dependencies, build output and generated content (site/.gitignore lists the rest).
+site/node_modules/
+site/dist/
+site/.astro/

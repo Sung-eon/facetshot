@@ -1,0 +1,32 @@
+---
+/*
+ * Starlight's footer (edit link, previous and next), then one line on every page, the landing page included: where
+ * the source, issues, releases and licence are, and the version this site describes (read from package.json).
+ */
+import Default from '@astrojs/starlight/components/Footer.astro';
+import pkg from '../../../package.json';
+
+const github = 'https://github.com/Sung-eon/facetshot';
+const links: [string, string][] = [
+	['Source', github],
+	['Issues', `${github}/issues`],
+	['Releases', `${github}/releases`],
+	[`License (${pkg.license})`, `${github}/blob/main/LICENSE`]
+];
+// The landing page has no edit link or previous and next, so Starlight's part of the footer would be empty space.
+const isLanding = Astro.locals.starlightRoute.entry.data.template === 'splash';
+---
+
+{!isLanding && <Default />}
+<div class="site-footer">
+	{
+		links.map(([text, href], index) => (
+			<>
+				{index > 0 && <span aria-hidden="true">·</span>}
+				<a {href}>{text}</a>
+			</>
+		))
+	}
+	<span aria-hidden="true">·</span>
+	<span>{pkg.version}</span>
+</div>
