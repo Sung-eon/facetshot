@@ -145,6 +145,18 @@ function mergeMcp(file: string, server: { command: string; args: string[] }): bo
 const SKILL = fileURLToPath(new URL('../skills/facetshot', import.meta.url));
 
 /**
+ * The skill as one Cursor rule: a rule is a single file, so the reference the skill links to follows its body, and
+ * the link becomes a pointer to the section below.
+ */
+function cursorRule(): string {
+	const body = readFileSync(join(SKILL, 'SKILL.md'), 'utf8')
+		.replace(/^---[\s\S]*?---\n/, '')
+		.replace(/\[reference\.md\]\(reference\.md\)/g, 'the reference below');
+	const reference = readFileSync(join(SKILL, 'reference.md'), 'utf8');
+	return `---\ndescription: Seeing the app's screens with facetshot\nalwaysApply: false\n---\n${body.trimEnd()}\n\n${reference}`;
+}
+
+/**
  * Puts the skill where an agent reads skills. Inside the same project (facetshot vendored or in a monorepo) it is a
  * link, so the skill is never a second copy that drifts; installed from npm, it is a copy.
  */
@@ -246,10 +258,7 @@ export async function init(options: {
 			case 'cursor':
 				mergeMcp(join(root, '.cursor', 'mcp.json'), server);
 				mkdirSync(join(root, '.cursor', 'rules'), { recursive: true });
-				writeFileSync(
-					join(root, '.cursor', 'rules', 'facetshot.mdc'),
-					`---\ndescription: Seeing the app's screens with facetshot\nalwaysApply: false\n---\n${readFileSync(join(SKILL, 'SKILL.md'), 'utf8').replace(/^---[\s\S]*?---\n/, '')}`
-				);
+				writeFileSync(join(root, '.cursor', 'rules', 'facetshot.mdc'), cursorRule());
 				say(
 					'Cursor: registered the MCP server in .cursor/mcp.json and added a rule in .cursor/rules/facetshot.mdc.'
 				);

@@ -23,11 +23,15 @@ flowchart LR
    web app's server, booted simulators, and test data. A runtime is replaced when the config file or the caller's
    environment changes.
 4. Drivers (`src/drivers/`, one file per platform) do the work through Playwright for browsers and Electron, `simctl`
-   and a small UI-test runner for iOS simulators, `xcodebuild` and `swift test` for SwiftUI scenes, and the system's
-   window capture for Mac apps.
+   and a small UI-test runner for iOS simulators, `xcodebuild` and `swift test` for SwiftUI scenes, and for Mac app
+   windows (native apps and Tauri's real window) a small Swift helper (`mac-helper.swift`, compiled once into
+   `~/.facetshot/bin`) that lists and captures a process's windows and reads and acts on them through macOS's
+   Accessibility interface. `mac-ui.ts` turns steps into its commands, and `playOnMac` in `macos.ts` plays a flow in
+   any Mac window, whoever launched the app.
 5. The results are written by `src/output/`: contact sheets, comparisons, `report.html`, `summary.md` and the
-   manifest. The checks that read each page are in `src/checks/`, sessions in `src/session.ts`, logs in
-   `src/logs.ts`.
+   manifest. The checks that read each page are in `src/checks/`, logs in `src/logs.ts`. A session
+   (`src/session.ts`) keeps the order of steps, the logs and the steps that worked; what it works is a surface
+   (`src/surface.ts`): a page (web, Electron, Tauri's frontend) or a Mac window.
 
 With `--no-daemon` (or `FACETSHOT_NO_DAEMON`), the client runs the request in its own process with a runtime of its
 own, and closes everything when the run ends. Sessions need the background helper, so they aren't available then.

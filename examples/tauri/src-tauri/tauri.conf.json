@@ -13,7 +13,7 @@
 		"windows": [{ "label": "main", "title": "Pebble", "width": 1024, "height": 720 }],
 		"security": { "csp": null }
 	},
-	"bundle": { "active": true, "targets": ["app"], "icon": [] },
+	"bundle": { "active": true, "targets": ["app"], "icon": ["icons/icon.png"] },
 	"plugins": {
 		"deep-link": { "desktop": { "schemes": ["pebble"] } }
 	}

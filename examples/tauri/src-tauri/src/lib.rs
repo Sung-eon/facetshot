@@ -2,6 +2,8 @@ use tauri::{LogicalSize, Manager, Theme};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
+    // The Rust side's output: facetshot puts it in the logs next to each screenshot of the real window.
+    println!("greet called for {name}");
     format!("Hello, {name}! You have 3 things saved.")
 }
 

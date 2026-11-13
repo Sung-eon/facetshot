@@ -16,6 +16,7 @@ Step-by-step pages for a task.
 - [iOS simulators](ios.md)
 - [SwiftUI scenes](swiftui.md): SwiftUI views rendered inside a test, without launching the app
 - [Desktop apps](desktop.md): Electron, Tauri and native Mac apps
+- [Flutter](flutter.md): Flutter apps on the web, macOS and iOS
 - [Storybook](storybook.md)
 - [AI agents](agents.md): connecting Claude Code, Cursor or Codex, and a workflow that suits them
 - [Continuous integration](ci.md)

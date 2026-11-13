@@ -71,7 +71,17 @@ Tokens, keys, passwords and similar values in log lines are masked before they a
 `logs.ndjson`. The raw server logs in `.facetshot/logs/` are not masked. [Security](security.md#what-is-masked) lists
 exactly what is and isn't masked.
 
-## Not yet recorded
+## Apps outside the browser
 
-Logs from iOS simulator apps and native Mac apps aren't recorded yet. The output of the servers facetshot started is
-still recorded for runs on those platforms.
+| App                                  | What is recorded                                                                                                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Electron                             | the window as a web page, plus the main process: its `console` messages with their level, and what it writes to standard output (`info`) and standard error (`warn`). A line that reaches both is kept once. |
+| Native Mac apps, Tauri's real window | what the app writes to standard output (`info`) and standard error (`warn`), and its lines in the system log (`Logger`, `os_log`, `NSLog`)                                                                   |
+| iOS simulator                        | the app's lines in the system log (`Logger`, `os_log`, `NSLog`). Swift's `print` doesn't reach facetshot from a simulator.                                                                                   |
+
+From the system log, only lines sent by code in the app's own bundle, or under a subsystem that isn't Apple's, are
+kept: Apple's frameworks write a lot in an app's process, and little of it is about the app. Lines show as
+`os_log`, or `os_log:<category>` when they have a subsystem.
+
+On a Mac, facetshot launches the app with `NSUnbufferedIO=YES` (as Xcode does), so Swift's `print` reaches the log as
+it happens rather than when the app quits.

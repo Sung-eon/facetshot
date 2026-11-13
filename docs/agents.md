@@ -75,9 +75,9 @@ instead. The server looks for `facetshot.config.ts` from the folder it starts in
 | `check`   | reads screens for problems without taking screenshots                  |
 | `capture` | takes screenshots and returns one contact sheet per screen             |
 | `compare` | repeats the last capture (or the targets given) and shows what changed |
-| `inspect` | returns one screenshot at full size, or a region of it, with its log   |
-| `list`    | lists devices, variants, profiles, checks or recent runs               |
-| `open`    | opens a page and keeps it open: a [session](sessions.md)               |
+| `inspect` | screenshots at full size (a region of one, or the ones with problems)  |
+| `list`    | lists devices, variants, profiles, flows, checks, runs or sessions     |
+| `open`    | opens a page or app window and keeps it open: a [session](sessions.md) |
 | `act`     | does steps in a session and returns the new screenshot                 |
 | `close`   | ends a session, optionally saving its steps as a flow                  |
 
@@ -87,14 +87,17 @@ instead. The server looks for `facetshot.config.ts` from the folder it starts in
 
 The skill teaches agents this workflow, and it works well for people too:
 
-1. Check the screens you touched. Most problems show up here, as text.
-2. Capture the screens worth seeing, and read the sheets.
-3. Fix, then compare to see only what changed.
-4. Inspect a single screenshot when a detail is too small to read on the sheet.
+1. Look for what the project already has: `list` with `flows` and `profiles`. A profile with targets is a whole
+   check someone has already written down.
+2. Check the screens you touched. Most problems show up here, as text.
+3. Capture the screens worth seeing, and read the sheets.
+4. Fix, then compare to see only what changed.
+5. Inspect a single screenshot when a detail is too small to read on the sheet.
 
 When the agent doesn't know the steps to a state yet (what's in this menu, what happens after Save), a session lets
 it look, decide and act one step at a time, and then save the steps as a flow that `capture` can play on every
-device.
+device. Adding that flow to a profile's targets ([A batch to run again](flows.md#a-batch-to-run-again)) makes it part
+of the check the next person or agent runs.
 
 Two tips:
 
@@ -111,8 +114,9 @@ Images take up most of an agent's context, so the tools return as few as they ca
 - `capture` returns at most 4 sheets per call (`FACETSHOT_MCP_MAX_IMAGES`) and lists the rest by name. Each sheet
   shows every device and variant of one screen, about 1600 pixels wide.
 - `compare` returns only the sheets that changed.
-- `inspect` returns one screenshot scaled to fit 1568 pixels, or only the region asked for. Use it to read small text
-  instead of capturing at a larger size.
+- `inspect` returns one screenshot scaled to fit 1568 pixels, or only the region asked for. Without a device and
+  variant, it returns the screen's screenshots that failed, have problems or changed, at most 4. Use it to read small
+  text instead of capturing at a larger size.
 
 ## Several agents at once
 

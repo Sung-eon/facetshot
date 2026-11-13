@@ -121,22 +121,22 @@ variants: {
 
 ## `web`
 
-| Key                   |                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `baseURL`             | where your app runs, if you start it yourself                                                           |
-| `build`               | `{ cmd, inputs, output?, cwd?, env?, heavy? }`: a build that runs when `inputs` change                  |
-| `serve`               | `{ cmd, port?, health?, reuse?, cwd?, env?, startTimeout? }`: the server for the app                    |
-| `browser`             | the default browser: `chromium` (default), `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`       |
-| `personas`, `persona` | who is signed in (below)                                                                                |
-| `storage`             | `localStorage` entries set before the page loads                                                        |
-| `ready`               | `{ idle?, visible?, gone?, when?, timeout?, routes? }` ([Web apps](web.md#when-a-page-counts-as-ready)) |
-| `block`               | URL globs to abort                                                                                      |
-| `rewrite`             | `[{ from, to }]`: URL prefixes to send elsewhere                                                        |
-| `mask`                | selectors painted over in screenshots                                                                   |
-| `css`                 | CSS added to every page                                                                                 |
-| `textSizes`           | root font sizes for `large`, `xlarge`, `xxl` (default 125%, 150%, 200%)                                 |
-| `clock`               | freeze the page's clock at this time (ISO 8601)                                                         |
-| `fullPage`            | take the whole page instead of the screen (default false)                                               |
+| Key                   |                                                                                                                                                                                                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseURL`             | where your app runs, if you start it yourself                                                                                                                                                                                                                     |
+| `build`               | `{ cmd, inputs, output?, cwd?, env?, heavy? }`: a build that runs when `inputs` change                                                                                                                                                                            |
+| `serve`               | `{ cmd, port?, health?, reuse?, cwd?, env?, startTimeout? }`: the server for the app. Leave it out when `build.output` is a folder of static files (a single-page app, Flutter's `build/web`): facetshot serves it, with `index.html` for paths that aren't files |
+| `browser`             | the default browser: `chromium` (default), `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`                                                                                                                                                                 |
+| `personas`, `persona` | who is signed in (below)                                                                                                                                                                                                                                          |
+| `storage`             | `localStorage` entries set before the page loads                                                                                                                                                                                                                  |
+| `ready`               | `{ idle?, visible?, gone?, when?, timeout?, routes? }` ([Web apps](web.md#when-a-page-counts-as-ready))                                                                                                                                                           |
+| `block`               | URL globs to abort                                                                                                                                                                                                                                                |
+| `rewrite`             | `[{ from, to }]`: URL prefixes to send elsewhere                                                                                                                                                                                                                  |
+| `mask`                | selectors painted over in screenshots                                                                                                                                                                                                                             |
+| `css`                 | CSS added to every page                                                                                                                                                                                                                                           |
+| `textSizes`           | root font sizes for `large`, `xlarge`, `xxl` (default 125%, 150%, 200%)                                                                                                                                                                                           |
+| `clock`               | freeze the page's clock at this time (ISO 8601)                                                                                                                                                                                                                   |
+| `fullPage`            | take the whole page instead of the screen (default false)                                                                                                                                                                                                         |
 
 ### `web.personas`
 

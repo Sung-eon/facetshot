@@ -91,9 +91,27 @@ that the app drew itself at that width.
 
 ## Flows
 
-On the simulator, flows support `goto` and `shot` through deep links, and `tap`, `click`, `fill`, `type`, `wait`,
-`gone` and `scroll` through the runner, which finds elements by accessibility label or identifier. Start the flow
-with `start: app:/…`.
+On the simulator, `goto` and `shot` work through deep links, and the other steps through the runner (a small UI test
+facetshot builds once). Start the flow with `start: app:/…`.
+
+| Step                      | On the simulator                                                 |
+| ------------------------- | ---------------------------------------------------------------- |
+| `click`, `tap`            | a tap                                                            |
+| `longpress`, `rightclick` | a press held for a second, which opens an element's context menu |
+| `drag`                    | press, hold, and move to the second element or point             |
+| `fill`, `type`            | a tap on the field, then typing                                  |
+| `wait`, `gone`            | until the element is there, or gone                              |
+| `scroll` by pixels        | one swipe up or down                                             |
+
+An element is named by its accessibility label or identifier (`text=Save`, `#save`,
+`role=button[name="Save"]`), or by a point on the screen in points (`@120,300`). A role is matched against the
+element's type, named the way the web names roles (`button`, `textbox`, `switch`, `cell`, `text`…). `hover`,
+`dblclick`, `menu`, `back`, `forward` and `reload` have no meaning on a phone and are refused.
+
+## Logs
+
+Each screenshot carries the lines the app wrote to the system log while it was on screen (`Logger`, `os_log`,
+`NSLog`). See [Logs](logs.md#apps-outside-the-browser).
 
 ## Each screen starts where the last one left off
 

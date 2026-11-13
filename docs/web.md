@@ -36,6 +36,9 @@ The commands are your app's own; use whatever your project builds and serves its
 - The server starts once and stays up between runs. After a rebuild it restarts, so you never look at old code.
 - `port: 'auto'` picks a free port. Use a fixed number when something else needs to know it, such as an API that only
   accepts requests from a known origin ([complete example](auth-and-data.md#a-complete-example-web-app-and-api)).
+- If the build writes plain static files (a single-page app, or [Flutter](flutter.md)'s `build/web`), leave `serve`
+  out. facetshot serves the `output` folder itself, answering paths that aren't files with `index.html`, so the
+  app's own routes work.
 
 ### Why a build and not your dev server
 

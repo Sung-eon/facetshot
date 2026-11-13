@@ -27,15 +27,15 @@ Some parameters have different names from the command-line options they match:
 
 Takes screenshots and returns a summary and one contact sheet per screen.
 
-| Parameter  | Type               | Meaning                                                                                                                      |
-| ---------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `targets`  | string[], required | what to look at: `/settings`, `app:/inbox`, `story:button--primary`, `preview:Settings/Account`, `flows/x.yaml`, or an alias |
-| `devices`  | string[]           | devices or groups. Default: the profile's                                                                                    |
-| `variants` | string[]           | variants or groups; `dark+large` combines. Default: the profile's                                                            |
-| `profile`  | string             | a profile from the config                                                                                                    |
-| `browsers` | string[]           | other browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only     |
-| `steps`    | string[]           | [steps](flows.md#steps) played before each screenshot, written as on the command line                                        |
-| `images`   | `sheets` or `none` | `sheets` (the default): one sheet per screen, at most 4 (`FACETSHOT_MCP_MAX_IMAGES`). `none`: text and paths only            |
+| Parameter  | Type               | Meaning                                                                                                                                                                                     |
+| ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `targets`  | string[]           | what to look at: `/settings`, `app:/inbox`, `story:button--primary`, `preview:Settings/Account`, `flows/x.yaml` or `flows/*.yaml`, or an alias. Leave out to take the profile's own targets |
+| `devices`  | string[]           | devices or groups. Default: the profile's                                                                                                                                                   |
+| `variants` | string[]           | variants or groups; `dark+large` combines. Default: the profile's                                                                                                                           |
+| `profile`  | string             | a profile from the config: its devices and variants, and its targets when none are given ([Profiles](concepts.md#profiles))                                                                 |
+| `browsers` | string[]           | other browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only                                                                    |
+| `steps`    | string[]           | [steps](flows.md#steps) played before each screenshot, written as on the command line                                                                                                       |
+| `images`   | `sheets` or `none` | `sheets` (the default): one sheet per screen, at most 4 (`FACETSHOT_MCP_MAX_IMAGES`). `none`: text and paths only                                                                           |
 
 To compare with an earlier run, use `compare`. To read a detail a sheet is too small to show, use `inspect`.
 
@@ -87,21 +87,22 @@ so an agent can run a check that already exists instead of writing a new one.
 
 ## `open`
 
-Opens a web page and keeps it open as a [session](sessions.md) on one device and variant, with the project's
-servers, sign-in and test data. Answers with the session id, a screenshot, the log, and what on screen can be acted
-on, with refs.
+Opens a screen and keeps it open as a [session](sessions.md) on one device and variant, with the project's servers,
+sign-in and test data: a web page, or a desktop app's window ([what sessions open](sessions.md#what-sessions-open)).
+Answers with the session id, a screenshot, the log, and what on screen can be acted on, with refs. The view options
+below shape this first answer as they shape `act`'s.
 
-| Parameter    | Type                               | Meaning                                                                           |
-| ------------ | ---------------------------------- | --------------------------------------------------------------------------------- |
-| `target`     | string, required                   | a path (`/settings`) or a full URL                                                |
-| `device`     | string                             | one device. Default: the profile's first (`desktop` when only `browser` is given) |
-| `variant`    | string                             | one variant. Default: the profile's first                                         |
-| `browser`    | string                             | the browser, as for `browsers` above. Default Chromium                            |
-| `elements`   | boolean                            | list what can be acted on, with refs. Default true                                |
-| `screenshot` | boolean                            | return the screenshot. Default true; false answers in text only                   |
-| `tree`       | boolean                            | also return the page's accessibility tree as text                                 |
-| `full`       | boolean                            | take the whole page, not only the screen                                          |
-| `logLevel`   | `debug`, `info`, `warn` or `error` | the least important log lines to return. Default `info`                           |
+| Parameter    | Type                               | Meaning                                                                                  |
+| ------------ | ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| `target`     | string, required                   | a path (`/settings`) or a full URL; `app:/path` for a desktop app (with a window device) |
+| `device`     | string                             | one device. Default: the profile's first (`desktop` when only `browser` is given)        |
+| `variant`    | string                             | one variant. Default: the profile's first                                                |
+| `browser`    | string                             | the browser, as for `browsers` above. Default Chromium                                   |
+| `elements`   | boolean                            | list what can be acted on, with refs. Default true                                       |
+| `screenshot` | boolean                            | return the screenshot. Default true; false answers in text only                          |
+| `tree`       | boolean                            | also return the page's accessibility tree as text                                        |
+| `full`       | boolean                            | take the whole page, not only the screen                                                 |
+| `logLevel`   | `debug`, `info`, `warn` or `error` | the least important log lines to return. Default `info`                                  |
 
 ## `act`
 

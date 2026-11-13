@@ -3,16 +3,17 @@
 | Command                                     | What it does                                                        |
 | ------------------------------------------- | ------------------------------------------------------------------- |
 | `facetshot <targets…> [options]`            | takes screenshots and prints a short summary                        |
+| `facetshot -p <profile>`                    | takes the profile's own targets (a batch you run again and again)   |
 | `facetshot check <targets…> [options]`      | reads screens for problems, without screenshots                     |
 | `facetshot diff [against]`                  | repeats the last command and shows what changed                     |
-| `facetshot list [what]`                     | devices, variants, profiles, checks or runs                         |
+| `facetshot list [what]`                     | devices, variants, profiles, flows, checks, runs or sessions        |
 | `facetshot init [--url …] [--agent …]`      | writes a starter config and connects an agent                       |
 | `facetshot doctor`                          | checks this machine and project, and says how to fix what's missing |
 | `facetshot mcp`                             | runs the MCP server over standard input and output                  |
 | `facetshot baseline save\|list\|rm <name>`  | keeps a run to compare with later                                   |
 | `facetshot daemon status\|stop`             | shows or stops the background helper                                |
 | `facetshot clean [--all]`                   | removes runs, test data and simulators, and stops everything        |
-| `facetshot open <target> [--on d] [--as v]` | opens a page to use step by step (a session)                        |
+| `facetshot open <target> [--on d] [--as v]` | opens a page or app window to use step by step (a session)          |
 | `facetshot act <id> <step…>`                | does steps in a session, then shows it again                        |
 | `facetshot look <id>`                       | shows a session again                                               |
 | `facetshot close <id> [--save file]`        | closes a session, optionally keeping its steps as a flow            |
@@ -101,13 +102,13 @@ See [Sessions](sessions.md).
 
 | Command            | Options                                                                                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `open <target>`    | `--on <device>`, `--as <variant>`, `--browser <name>` (one each; `--browser` needs `--on`), `--json`                                                                               |
+| `open <target>`    | `--on <device>`, `--as <variant>`, `--browser <name>` (one each; `--browser` needs `--on`), and the same view options as `act`                                                     |
 | `act <id> <step…>` | `--no-elements`, `--no-screenshot` (leave out the list or the screenshot), `--tree` (the page's text and structure), `--full` (the whole page), `--level <level>` (logs), `--json` |
 | `look <id>`        | the same options as `act`                                                                                                                                                          |
 | `close <id>`       | `--save <file>`: write the steps that worked as a flow, inside the project folder                                                                                                  |
-| `sessions`         | `--json`                                                                                                                                                                           |
 
-`act` exits with 1 when a step didn't work; the rest of its answer shows where the page ended up.
+`act` exits with 1 when a step didn't work; the rest of its answer shows where the screen ended up. `facetshot list
+sessions` lists the open sessions (`--json` for programs).
 
 ## `logs`
 

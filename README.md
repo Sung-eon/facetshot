@@ -8,8 +8,9 @@ facetshot takes screenshots of your app's screens on several devices and in seve
 dark, large text and more), and puts them on one contact sheet per screen. It also reads each screen for common
 problems, such as horizontal scrolling or text cut off by its box, and keeps what the page and its servers logged.
 
-It works with web pages, Storybook stories, Electron and Tauri windows, iOS simulators, native Mac apps and SwiftUI
-views. It is made to be used by AI coding agents as well as by people: it has a command line, an
+It works with web pages, Storybook stories, Electron and Tauri windows, iOS simulators, native Mac apps, Flutter
+apps and SwiftUI views. Beyond screenshots, it can click, type and open menus in them, step by step or from a saved
+list of steps. It is made to be used by AI coding agents as well as by people: it has a command line, an
 [MCP](docs/concepts.md#glossary) server and an [Agent Skill](docs/concepts.md#glossary).
 
 > **Status: early (0.1).** facetshot isn't on npm yet, and the config format may change before 1.0. See
@@ -111,7 +112,7 @@ file contains and how to set it up by hand.
 | `compare` | repeats the last capture and returns only what changed               |
 | `inspect` | screenshots at full size, or part of one, with their log lines       |
 | `list`    | devices, variants, profiles, flows, checks, runs and open sessions   |
-| `open`    | opens a page and keeps it open (a session)                           |
+| `open`    | opens a page or app window and keeps it open (a session)             |
 | `act`     | does steps in a session and returns the new screenshot and log lines |
 | `close`   | closes a session, optionally saving its steps as a flow              |
 
@@ -134,7 +135,7 @@ Every command and option is in the [command reference](docs/cli.md).
 
 ## Sessions
 
-A session keeps one page open so you or an agent can use it step by step. After each step you get a screenshot, the
+A session keeps one screen open so you or an agent can use it step by step. After each step you get a screenshot, the
 log lines since the last step, and a list of what on screen can be clicked or typed into:
 
 ```sh
@@ -143,7 +144,8 @@ facetshot act s-42cb1d "fill:e14=Grace" click:e18
 facetshot close s-42cb1d --save flows/edit-settings.yaml
 ```
 
-Sessions open web pages, Electron windows and Tauri frontends. See [Sessions](docs/sessions.md).
+Sessions open web pages and desktop app windows (Electron, Tauri, native Mac apps). iOS simulators take
+[flows](docs/flows.md) for now. See [Sessions](docs/sessions.md).
 
 ## Other browsers
 
@@ -166,7 +168,7 @@ tablet and a phone they run off the screen:
 
 Each folder in [`examples/`](examples) is a small app with a working config, and a few bugs left in on purpose for
 the checks to find: [`vite-react`](examples/vite-react) (with Storybook), [`electron`](examples/electron),
-[`tauri`](examples/tauri) and [`swiftui`](examples/swiftui).
+[`tauri`](examples/tauri), [`flutter`](examples/flutter) and [`swiftui`](examples/swiftui).
 
 ## Documentation
 

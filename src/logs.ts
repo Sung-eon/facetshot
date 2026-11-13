@@ -303,7 +303,10 @@ export function formatEntry(entry: LogEntry, origin?: number | null): string {
 			? ' '.repeat(9)
 			: origin === undefined
 				? new Date(entry.at).toISOString().slice(11, 23)
-				: `+${((entry.at - origin) / 1000).toFixed(3)}s`.padStart(9);
+				: // A line from just before the screenshot began (the app starting) is shown as before it: -1.007s.
+					`${entry.at < origin ? '-' : '+'}${(Math.abs(entry.at - origin) / 1000).toFixed(3)}s`.padStart(
+						9
+					);
 	return `${time}  ${entry.level.toUpperCase().padEnd(5)}  ${entry.source.padEnd(12)}  ${entry.text}`;
 }
 

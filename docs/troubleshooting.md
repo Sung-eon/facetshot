@@ -66,6 +66,12 @@ Fix the clock (`web.clock`), mask what is random or live (`web.mask`), and block
 Turn on Screen Recording for the app that runs facetshot (your terminal, editor or agent) in System Settings →
 Privacy & Security → Screen & System Audio Recording, then restart that app.
 
+## Steps in a Mac window say facetshot "may not use Accessibility"
+
+Pressing, typing and menus in a Mac app's window go through macOS's Accessibility interface. Turn on Accessibility
+for the app that runs facetshot in System Settings → Privacy & Security → Accessibility. Screenshots alone don't
+need it. `facetshot doctor` shows both permissions.
+
 ## Something is still running
 
 `facetshot daemon status` shows what the background helper holds. `facetshot daemon stop` closes it all, and

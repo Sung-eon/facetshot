@@ -62,7 +62,7 @@ The second column is how a step is written in a flow file; the third is the same
 | wait until gone          | `gone: <element>`                       | `gone:<element>`            | waits until it is hidden (up to 15 s)                            |
 | go to                    | `goto: <path>`                          | `goto:<path>`               | opens another address                                            |
 | back, forward, reload    | `back` or `back: true`                  | `back`                      | the browser's buttons                                            |
-| menu                     | `menu: File>Export…`                    | `menu:File>Export…`         | chooses an item from a desktop app's menu bar (Electron)         |
+| menu                     | `menu: File>Export…`                    | `menu:File>Export…`         | chooses an item from a desktop app's menu bar                    |
 | screenshot               | `shot: <name>`                          | `shot:<name>`               | waits for the screen to be ready, then takes a screenshot        |
 
 A flow with no `shot` step takes one screenshot at the end. Steps that act on an element wait up to 10 seconds for
@@ -125,7 +125,14 @@ The contact sheet then shows how far the flow got on each device.
 
 ## Flows on apps
 
-On iOS simulators and desktop windows, `goto` and `shot` work through deep links. Steps that touch the screen
-(`click`, `tap`, `fill`, `type`) need the app's UI-test runner; see [iOS simulators](ios.md#flows) and
-[Desktop apps](desktop.md) for what each platform supports. Electron windows support every step, since they are
-driven like a browser.
+The same flow file works outside the browser, with a few differences:
+
+| Where                                | Steps                                                                                                    | Elements named by                                        |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Electron, Tauri's UI in WebKit       | every step, as in a browser; `menu:` in Electron                                                         | everything above                                         |
+| Native Mac apps, Tauri's real window | every step but `longpress`, `back`, `forward` and `reload` ([details](desktop.md#steps-in-a-mac-window)) | `role=`, `text=`, `label=`, a point, a session's ref     |
+| iOS simulator                        | taps, long presses, drags, typing, waits and swipes ([details](ios.md#flows))                            | `role=`, `text=`, `#id`, an accessibility label, a point |
+
+On apps, a point is in points from the top left of the window (Mac) or the screen (iOS). A flow for an app starts
+with `start: app:/path`. A plain `start: /path` also runs in the desktop app's window when the config has a
+`desktop` section, and only there when it has no `web` section.

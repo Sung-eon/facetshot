@@ -139,21 +139,21 @@ slower. [Architecture](architecture.md) describes the helper in detail.
 
 ## Glossary
 
-| Term                         | Meaning                                                                                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| accessibility tree, snapshot | the page as assistive technology sees it: roles, names and states. Playwright's snapshot of it gives sessions their element list and refs |
-| Agent Skill                  | a folder with a `SKILL.md` file that tells an AI agent when and how to use a tool. facetshot's is in `skills/facetshot/`                  |
-| background helper            | the long-running process that keeps browsers, servers and simulators ready between runs. `facetshot daemon` controls it                   |
-| baseline                     | a run saved under a name, to compare later runs with ([Comparing](comparing.md))                                                          |
-| cell                         | one target on one device in one variant: one square on a contact sheet                                                                    |
-| CI                           | continuous integration: a server that builds and tests every change ([Continuous integration](ci.md))                                     |
-| contact sheet                | one image per screen with every device and variant side by side                                                                           |
-| device                       | a screen size and type: a browser viewport, a simulator, or a window size                                                                 |
-| flow                         | a file of steps (click, type, wait) that reaches a state no address leads to, with screenshots along the way ([Flows](flows.md))          |
-| MCP                          | the Model Context Protocol, the standard way AI agents call outside tools. `facetshot mcp` is an MCP server ([MCP tools](mcp.md))         |
-| persona                      | a signed-in user, defined in your config and chosen by a variant ([Personas](auth-and-data.md#personas))                                  |
-| profile                      | a named choice of devices and variants                                                                                                    |
-| ref                          | a short name such as `e14` for an element in a session's latest list, usable in the next step                                             |
-| session                      | a page kept open to use step by step ([Sessions](sessions.md))                                                                            |
-| target                       | what to take a screenshot of: a path, an app screen, a story, a SwiftUI scene or a flow                                                   |
-| variant                      | a display setting such as dark mode or large text, or a persona; one column of a contact sheet                                            |
+| Term                         | Meaning                                                                                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| accessibility tree, snapshot | the screen as assistive technology sees it: roles, names and states. Playwright's snapshot (or macOS's Accessibility on a Mac) gives sessions their element list and refs |
+| Agent Skill                  | a folder with a `SKILL.md` file that tells an AI agent when and how to use a tool. facetshot's is in `skills/facetshot/`                                                  |
+| background helper            | the long-running process that keeps browsers, servers and simulators ready between runs. `facetshot daemon` controls it                                                   |
+| baseline                     | a run saved under a name, to compare later runs with ([Comparing](comparing.md))                                                                                          |
+| cell                         | one target on one device in one variant: one square on a contact sheet                                                                                                    |
+| CI                           | continuous integration: a server that builds and tests every change ([Continuous integration](ci.md))                                                                     |
+| contact sheet                | one image per screen with every device and variant side by side                                                                                                           |
+| device                       | a screen size and type: a browser viewport, a simulator, or a window size                                                                                                 |
+| flow                         | a file of steps (click, type, wait) that reaches a state no address leads to, with screenshots along the way ([Flows](flows.md))                                          |
+| MCP                          | the Model Context Protocol, the standard way AI agents call outside tools. `facetshot mcp` is an MCP server ([MCP tools](mcp.md))                                         |
+| persona                      | a signed-in user, defined in your config and chosen by a variant ([Personas](auth-and-data.md#personas))                                                                  |
+| profile                      | a named choice of devices and variants                                                                                                                                    |
+| ref                          | a short name such as `e14` for an element in a session's latest list, usable in the next step                                                                             |
+| session                      | a page or app window kept open to use step by step ([Sessions](sessions.md))                                                                                              |
+| target                       | what to take a screenshot of: a path, an app screen, a story, a SwiftUI scene or a flow                                                                                   |
+| variant                      | a display setting such as dark mode or large text, or a persona; one column of a contact sheet                                                                            |

@@ -2,7 +2,8 @@
 
 Screenshots and flows answer "what does this look like?". Sometimes you need to find out first: what happens when I
 right-click this row, does the menu fit on a phone, what does the page log when I press Save. A **session** keeps one
-page open so you, or an agent, can use it one step at a time. After each step you get a screenshot, the log lines
+screen open (a web page, or a [desktop app's window](#what-sessions-open)) so you, or an agent, can use it one step
+at a time. After each step you get a screenshot, the log lines
 since the last step, and a list of what on screen can be clicked or typed into.
 
 ## From the command line
@@ -61,7 +62,8 @@ A step that touches an element can name it by its ref (`e14`), by a point on the
 pixels, the same units as the screenshot), or by a selector. [Naming an element](flows.md#naming-an-element) lists
 every form.
 
-Refs come from Playwright's accessibility snapshot of the page, the same snapshot Playwright MCP uses. They last
+On a web page, refs come from Playwright's accessibility snapshot, the same snapshot Playwright MCP uses (in a Mac
+window, from macOS's Accessibility interface). They last
 until the page changes, so use the ones from the latest answer. When you save a session as a flow, each ref is
 written as a selector that finds the same element again (by its role and name where it has them), so the flow plays
 back in a later run, on every device:
@@ -115,8 +117,12 @@ A session acts as the signed-in persona, and its steps can do anything a person 
   the main process's output with the window's, and a `menu:` step chooses from the app's menu bar.
 - Tauri frontends, with `desktop.frontend` set: the frontend in WebKit, with `invoke()` answered from your config. The
   Rust side doesn't run there.
+- Mac app windows: native Mac apps (Flutter's included) and Tauri's real window, `facetshot open app:/ --on mac`. The
+  list comes from macOS's Accessibility interface, the screenshot is the window's own, and points are in points
+  rather than CSS pixels. This needs the Accessibility permission; see
+  [Steps in a Mac window](desktop.md#steps-in-a-mac-window). A `goto` relaunches a native Mac app on that screen
+  (Tauri gets a deep link instead).
 
-Sessions on iOS simulators, native Mac windows (Tauri's real window included) and Storybook stories are planned.
-Until then, use [flows](flows.md) for those.
+Sessions on iOS simulators and Storybook stories are planned. Until then, use [flows](flows.md) for those.
 
 Sessions are kept by the background helper, so they aren't available with `--no-daemon` or `FACETSHOT_NO_DAEMON`.

@@ -12,6 +12,10 @@ An agent connected over MCP can do everything the command line can:
 - Click, type and submit forms as the signed-in persona, through `steps` in `capture` and `check`, and through `act`
   in a session. On a live site, that includes deleting or buying things.
 - Save a session's steps as a flow file, but only inside the project folder.
+- In a Mac app's window, press, type and choose menu items through macOS's Accessibility interface, once you have
+  given the app that runs facetshot that permission. Steps on a point, drags and typing are real input: they bring
+  the app to the front and move the pointer, so don't work at the same Mac while they run. The permission covers
+  every app, but facetshot only acts on the app it launched.
 
 For live sites, use test accounts, never a real person's, and keep personas for production away from agents you
 don't supervise. MCP clients that ask before calling non-read-only tools will ask for every tool except `inspect`

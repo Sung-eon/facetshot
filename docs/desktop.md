@@ -1,7 +1,7 @@
 # Desktop apps
 
-facetshot takes screenshots of desktop app windows at the sizes you choose: Electron apps, Tauri apps and native Mac
-apps. Desktop targets are written `app:/path`. The devices are window sizes: `window` (1280×800), `window-small`
+facetshot takes screenshots of desktop app windows at the sizes you choose, and plays [flows](flows.md) and opens
+[sessions](sessions.md) in them: Electron apps, Tauri apps and native Mac apps (Flutter's included). Desktop targets are written `app:/path`. The devices are window sizes: `window` (1280×800), `window-small`
 (960×640), `mac` and `mac-narrow` (1280×800 and 1040×640), or your own:
 
 ```ts
@@ -76,20 +76,22 @@ desktop: {
 }
 ```
 
-This needs the [deep-link plugin](https://v2.tauri.app/plugin/deep-linking/) registered for your scheme, and the
-[Screen Recording permission](#screen-recording-permission). facetshot passes `FACETSHOT_WIDTH`, `FACETSHOT_HEIGHT`
-and `FACETSHOT_APPEARANCE` to the app so it can size its window and choose a theme at startup. This path hasn't been
-run yet; see [Status and limits](status.md).
+This needs the [deep-link plugin](https://v2.tauri.app/plugin/deep-linking/) registered for your scheme (for any
+screen but `/`), and the [permissions](#permissions) below. facetshot passes `FACETSHOT_WIDTH`, `FACETSHOT_HEIGHT` and
+`FACETSHOT_APPEARANCE` to the app so it can size its window and choose a theme at startup.
+
+Here the Rust side runs for real. Flows take every step a Mac window takes ([below](#steps-in-a-mac-window)), what
+the Rust side prints (`println!`, or the `log` crate writing to the terminal) is in the logs, and
+[sessions](sessions.md) open the real window too.
 
 ## Native Mac apps
 
-For a Mac app built with AppKit, SwiftUI or Catalyst:
+For a Mac app built with AppKit, SwiftUI, Catalyst or Flutter:
 
 ```ts
 desktop: {
 	kind: 'macos',
-	app: 'build/Debug/MyApp.app',
-	navigate: 'myapp'
+	app: 'build/Debug/MyApp.app'
 }
 ```
 
@@ -102,13 +104,13 @@ to a running SwiftUI app opens a second window instead of navigating the first, 
 It tells the app what it wants through environment variables, which a few lines in your app's debug build can
 follow:
 
-| Variable                | Means                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `FACETSHOT_ROUTE`       | the deep link (`myapp:///settings`) to open at launch                         |
-| `FACETSHOT_WINDOW_SIZE` | `1280x800`: size the main window's content to this                            |
-| `FACETSHOT_APPEARANCE`  | `light` or `dark`                                                             |
-| `FACETSHOT_TEXT`        | `default`, `large`, `xlarge` or `xxl`                                         |
-| `FACETSHOT_READY_FILE`  | write this file when the screen has finished loading (with `readyFile: true`) |
+| Variable                | Means                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `FACETSHOT_ROUTE`       | the screen to open at launch: `/settings`, or the deep link `myapp:///settings` when `navigate` names a scheme |
+| `FACETSHOT_WINDOW_SIZE` | `1280x800`: size the main window's content to this                                                             |
+| `FACETSHOT_APPEARANCE`  | `light` or `dark`                                                                                              |
+| `FACETSHOT_TEXT`        | `default`, `large`, `xlarge` or `xxl`                                                                          |
+| `FACETSHOT_READY_FILE`  | write this file when the screen has finished loading (with `readyFile: true`)                                  |
 
 Without a ready file, facetshot waits until two captures in a row are identical. If the app doesn't size its own
 window, facetshot asks System Events to resize it, which needs the Accessibility permission. Screenshots are taken at
@@ -117,8 +119,32 @@ included.
 
 Only one Mac app run happens at a time on a machine, since they share the screen.
 
-### Screen Recording permission
+What the app prints and writes to the system log is kept with each screenshot; see
+[Logs](logs.md#apps-outside-the-browser).
 
-Capturing a window needs the Screen Recording permission for whatever runs facetshot: your terminal, your editor or
-your agent's app. macOS asks the first time. If it doesn't, or you said no, turn it on in System Settings → Privacy &
-Security → Screen & System Audio Recording, then restart that app. `facetshot doctor` reminds you.
+## Steps in a Mac window
+
+Native Mac apps and Tauri's real window take the same [steps](flows.md#steps) as a web page, in flows and in
+[sessions](sessions.md), through macOS's Accessibility interface:
+
+- A step on an element (`click: role=button[name="Save"]`, or a ref such as `e12` in a session) uses the element's
+  own action, the one a screen reader would use. The pointer isn't moved and the app doesn't need to be in front. If
+  the element offers no such action, or it fails (SwiftUI's context menus do), facetshot clicks it for real instead.
+- A point (`@120,80`, in points from the window's top left), a drag, a hover, and typing are real input: the app is
+  brought to the front, and the pointer moves.
+- `fill` focuses the field, selects its text, and types, so the app sees the same key presses a person makes.
+- `menu: File>Export…` chooses from the app's menu bar.
+
+An element is named by a ref, `role=<role>[name="…"]`, `text=…`, `label=…` or a point. Roles use the web's names
+(`button`, `textbox`, `checkbox`, `menuitem`…). CSS selectors don't work in a Mac window, and `longpress`, `back`,
+`forward` and `reload` are refused.
+
+## Permissions
+
+Both are given to whatever runs facetshot (your terminal, your editor or your agent's app), in System Settings →
+Privacy & Security. `facetshot doctor` says which are missing.
+
+| Permission                      | Needed for                                                             |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| Screen & System Audio Recording | screenshots of a Mac window (restart the app after allowing it)        |
+| Accessibility                   | steps and sessions in a Mac window, and resizing a window from outside |
