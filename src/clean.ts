@@ -18,7 +18,7 @@ export async function clean(options: { configFile?: string; all?: boolean }): Pr
 		await daemonCommand('stop');
 	}
 
-	const { config, root } = await loadConfig({ file: options.configFile });
+	const { config } = await loadConfig({ file: options.configFile });
 	const state = stateDir(config);
 
 	// Test data a crashed run left: removing it may need the project's services (an API), so start them for this.

@@ -79,7 +79,7 @@ export class NetworkWatch {
 	readonly log = new LogBook();
 
 	constructor(
-		private page: Page,
+		page: Page,
 		private blocked: (url: string) => boolean
 	) {
 		recordPage(page, this.log, blocked);

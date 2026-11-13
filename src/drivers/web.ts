@@ -30,6 +30,7 @@ import {
 	failRest,
 	fillAddress,
 	groupBy,
+	keepLog,
 	result,
 	stopped,
 	type Driver,
@@ -237,19 +238,7 @@ export async function pictureOf(
 				]
 	});
 	if (untaken) (out.notes ??= []).push(untaken);
-	const entries = session.watch.log.take();
-	if (entries.length) {
-		ctx.logs.push({
-			label: `${screen} · ${cell.device.name} · ${cell.variant.name}`,
-			started,
-			entries
-		});
-		out.log = {
-			count: entries.length,
-			errors: entries.filter((entry) => entry.level === 'error').length,
-			warnings: entries.filter((entry) => entry.level === 'warn').length
-		};
-	}
+	keepLog(ctx, out, session.watch.log, started);
 	if (ctx.images) {
 		const { file, rel } = imagePath(ctx.runDir, screen, cell.device.name, cell.variant.name);
 		const size = await takePicture(session.page, file, {

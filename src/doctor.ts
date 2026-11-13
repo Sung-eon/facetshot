@@ -6,7 +6,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expandHome, homeFolder, loadConfig } from './config.ts';
 import { EXIT, explain } from './errors.ts';
-import { portBusy } from './engine/procs.ts';
+import { exec, portBusy } from './engine/procs.ts';
+import { helper } from './drivers/macos.ts';
 import { VERSION } from './version.ts';
 
 interface Line {
@@ -150,11 +151,26 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 					}
 		);
 		if (config?.desktop?.kind === 'macos' || config?.desktop?.kind === 'tauri' || config?.apple) {
-			lines.push({
-				ok: 'warn',
-				what: 'Mac window screenshots need Screen Recording permission for the app running facetshot.',
-				fix: 'System Settings → Privacy & Security → Screen & System Audio Recording → allow your terminal or agent app'
-			});
+			// Both are granted to the app facetshot runs in (the terminal, or the agent's app), and asked of the helper.
+			const finder = await helper().catch(() => undefined);
+			const asks = async (command: string) =>
+				finder ? (await exec(finder, [command]).catch(() => ({ stdout: '' }))).stdout.trim() : '';
+			lines.push(
+				(await asks('check')) === 'granted'
+					? { ok: true, what: 'Screen Recording is allowed (screenshots of Mac windows)' }
+					: {
+							ok: 'warn',
+							what: 'Screenshots of Mac windows need Screen Recording for the app running facetshot.',
+							fix: 'System Settings → Privacy & Security → Screen & System Audio Recording → allow your terminal or agent app, then restart it'
+						},
+				(await asks('trusted')) === 'granted'
+					? { ok: true, what: 'Accessibility is allowed (steps and sessions in Mac windows)' }
+					: {
+							ok: 'warn',
+							what: "Steps and sessions in Mac windows (pressing, typing, menus) need Accessibility for the app running facetshot. Screenshots alone don't.",
+							fix: "System Settings → Privacy & Security → Accessibility → allow your terminal or agent app (restart it if facetshot still can't)"
+						}
+			);
 		}
 	}
 	if (config?.desktop?.kind === 'electron') {

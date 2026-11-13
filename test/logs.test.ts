@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LogBook, redact, writeLogs } from '../src/logs.ts';
 import { parseStep } from '../src/flows.ts';
-import { onScreen, refOf, selectorOf } from '../src/session.ts';
+import { onScreen, refOf, selectorOf } from '../src/surface.ts';
 
 test('a log book keeps only its last entries, and reads on from a position', () => {
 	const book = new LogBook(3);

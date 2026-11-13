@@ -2,7 +2,7 @@
  * What every driver (web, Storybook, iOS simulator, desktop window, Swift snapshots) implements, and the long-lived
  * runtime they share. A new platform is a new Driver; nothing else in facetshot needs to change.
  */
-import type { LogGroup } from '../logs.ts';
+import type { LogBook, LogGroup } from '../logs.ts';
 import type { Cell, CellResult, Config, Variant } from '../types.ts';
 import { firstLine, UsageError } from '../errors.ts';
 import { fill, unfilled } from '../plan.ts';
@@ -172,4 +172,24 @@ export function notApplied(
 		);
 	});
 	return ignored.length ? [`Not applied ${where}: ${ignored.join(', ')}.`] : [];
+}
+
+/**
+ * Moves what a book logged since the last screenshot into the run's logs, under this screenshot's name, and counts it
+ * on the result.
+ */
+export function keepLog(
+	ctx: Pick<RunContext, 'logs'>,
+	out: CellResult,
+	book: LogBook,
+	started: number
+): void {
+	const entries = book.take();
+	if (!entries.length) return;
+	ctx.logs.push({ label: `${out.screen} · ${out.device} · ${out.variant}`, started, entries });
+	out.log = {
+		count: entries.length,
+		errors: entries.filter((entry) => entry.level === 'error').length,
+		warnings: entries.filter((entry) => entry.level === 'warn').length
+	};
 }

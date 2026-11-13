@@ -10,7 +10,7 @@
  *   macOS) won't show.
  * - `window`: the built `.app`, launched for real, sent to each screen by deep link (`open <scheme>://<path>`; the
  *   app registers the scheme with Tauri's deep-link plugin), and its window captured with the Mac's window capture
- *   (`captureMacWindow` in `./macos.ts`). Dark is the system's own `-AppleInterfaceStyle Dark` launch argument, which
+ *   (`shootMacWindow` in `./macos.ts`). Dark is the system's own `-AppleInterfaceStyle Dark` launch argument, which
  *   AppKit and the web view follow; what the system can't switch from outside is passed to the app as
  *   environment variables (`FACETSHOT_APPEARANCE`, `FACETSHOT_TEXT`, `FACETSHOT_LOCALE`, `FACETSHOT_WIDTH`,
  *   `FACETSHOT_HEIGHT`) for it to honour, e.g. with `window.setTheme()` and `window.setSize()` in its setup hook.
@@ -23,25 +23,27 @@
  *   `WebKitWebDriver`; screenshots come from WebDriver's screenshot command, checks from scripts run through it.
  */
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import type { Cell, CellResult, Config, DesktopConfig, Device, Variant } from '../types.ts';
 import { ensureBuilt } from '../engine/build.ts';
 import { exec, healthy, sleep, spawnGroup, stopGroup, waitUntil } from '../engine/procs.ts';
-import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
+import { EnvironmentError, UsageError } from '../errors.ts';
 import { fill } from '../plan.ts';
 import { bundleExecutable } from './apple.ts';
 import {
 	byDeviceAndVariant,
-	failed,
 	groupBy,
+	keepLog,
 	reporter,
 	result,
 	notApplied,
 	type Driver,
 	type RunContext
 } from './driver.ts';
-import { captureMacWindow } from './macos.ts';
-import { imagePath } from './page.ts';
+import { helper, playOnMac, shootMacWindow, type Launched } from './macos.ts';
+import { MacUi } from './mac-ui.ts';
+import { LogBook, recordOutput, recordSystemLog } from '../logs.ts';
+import { imagePath, pngSize } from './page.ts';
 import {
 	builtServer,
 	newSession,
@@ -112,6 +114,11 @@ export class TauriDriver implements Driver {
 	readonly name = 'tauri';
 	private baseURL = '';
 
+	/** The built app, once `prepare` has found it (window engine). */
+	get appPath(): string {
+		return this.app;
+	}
+
 	/** Where the frontend is served, once `prepare` has started it (WebKit engine). */
 	get frontendURL(): string {
 		return this.baseURL;
@@ -139,12 +146,6 @@ export class TauriDriver implements Driver {
 			throw new EnvironmentError(
 				`Tauri's real window isn't supported on ${process.platform} yet.`,
 				'Shoot the frontend instead (desktop.frontend). Planned: drive WebKitGTK through tauri-driver (WebDriver).'
-			);
-		}
-		if (cells.some((cell) => cell.target.kind === 'flow')) {
-			throw new UsageError(
-				"Flows need a page to click in, which Tauri's real window doesn't give.",
-				'Use desktop.engine: "webkit" with desktop.frontend for flows.'
 			);
 		}
 		if (!desktop.navigate && cells.some((cell) => cell.target.value !== '/')) {
@@ -243,70 +244,133 @@ export class TauriDriver implements Driver {
 		ctx: RunContext,
 		report: (result: CellResult) => void
 	): Promise<void> {
-		const desktop = ctx.config.desktop!;
-		const executable = bundleExecutable(this.app);
-		const readyFile = join(ctx.stateDir, 'tauri-ready', `${process.pid}.ready`);
-		mkdirSync(dirname(readyFile), { recursive: true });
+		const finder = await helper(ctx.log);
 		for (const group of groupBy(cells, byDeviceAndVariant)) {
 			const { device, variant } = group[0];
-			const env: Record<string, string> = {
-				...(process.env as Record<string, string>),
-				...variantEnv(device, variant)
-			};
-			for (const [key, value] of Object.entries(desktop.env ?? {}))
-				env[key] = fill(value, ctx.values);
-			if (desktop.readyFile) env.FACETSHOT_READY_FILE = readyFile;
-			const ready = (timeout: number) => waitUntil(() => existsSync(readyFile), timeout);
 			const tell = reporter(report);
-			let pid: number | undefined;
+			let window: TauriWindow | undefined;
 			try {
-				// `-AppleInterfaceStyle Dark` sets the app's defaults for this launch only: AppKit, and so the WKWebView's
-				// prefers-color-scheme, follow it without the app doing anything.
-				const appearance = variant.appearance === 'dark' ? ['-AppleInterfaceStyle', 'Dark'] : [];
-				pid = spawnGroup(executable, [...(desktop.args ?? []), ...appearance], { env }).pid;
-				if (!pid)
-					throw new EnvironmentError(
-						`${executable} didn't start.`,
-						`Try it yourself: open ${JSON.stringify(this.app)}`
-					);
-				// The first screen is up once the app writes its ready file; without one, give it a moment to open its window.
-				if (desktop.readyFile) await ready(30_000);
-				else await sleep(2000);
+				window = await launchTauri(this.app!, device, variant, ctx);
+				const notes = [
+					"The app's real window: no page checks (they need the web engine).",
+					...notApplied(
+						variant,
+						['appearance', 'text', 'locale', 'timezone', 'motion'],
+						"in the app's window"
+					)
+				];
 				for (const cell of group) {
 					const started = Date.now();
-					try {
-						rmSync(readyFile, { force: true });
-						if (cell.target.value !== '/' || desktop.navigate)
-							await exec('open', [deepLink(desktop.navigate ?? '', cell.target.value)]);
-						// Without a ready file the app can't say it has settled; give it a moment to route and paint.
-						const settled = desktop.readyFile ? await ready(15_000) : (await sleep(1500), true);
-						const out = result(cell, {
-							ms: Date.now() - started,
-							readyTimedOut: settled ? undefined : true,
-							notes: [
-								"The app's real window: no page checks (they need the web engine).",
-								...notApplied(
-									variant,
-									['appearance', 'text', 'locale', 'timezone', 'motion'],
-									"in the app's window"
-								)
-							]
-						});
+					const picture = async (screen: string) => {
+						const out = result(cell, { screen, notes: [...notes] });
 						if (ctx.images) {
-							const { file, rel } = imagePath(ctx.runDir, cell.screen, device.name, variant.name);
-							const size = await captureMacWindow(pid, file);
-							Object.assign(out, { image: rel, ...size, ms: Date.now() - started });
+							const { file, rel } = imagePath(ctx.runDir, screen, device.name, variant.name);
+							const shot = await shootMacWindow(finder, window!.launched, file, ctx.signal);
+							out.notes!.push(...shot.notes);
+							Object.assign(out, {
+								image: rel,
+								...pngSize(file),
+								readyTimedOut: shot.timedOut ? true : undefined
+							});
 						}
+						out.ms = Date.now() - started;
+						keepLog(ctx, out, window!.launched.log, started);
 						tell.report(cell, out);
-					} catch (error) {
-						tell.report(cell, failed(cell, firstLine(error), Date.now() - started));
-					}
+					};
+					await playOnMac(
+						cell,
+						ctx.root,
+						{
+							open: (address) => window!.open(fill(address, ctx.values)),
+							act: async (step) => (await MacUi.of(window!.launched.pid, ctx.log)).step(step),
+							picture
+						},
+						started,
+						(out) => tell.report(cell, out)
+					);
 				}
 			} catch (error) {
 				tell.failRest(group, error);
 			} finally {
-				await stopGroup(pid);
+				await window?.launched.stop();
 			}
 		}
 	}
+}
+
+/** Tauri's real window: the running app, and how to show a screen in it (a deep link to the app that is running). */
+export interface TauriWindow {
+	launched: Launched;
+	open: (address: string) => Promise<void>;
+}
+
+/** Launches the built app for one device and variant, with a log of what it prints and writes to the system log. */
+export async function launchTauri(
+	app: string,
+	device: Device,
+	variant: Variant,
+	ctx: RunContext,
+	log = new LogBook()
+): Promise<TauriWindow> {
+	const desktop = ctx.config.desktop!;
+	const executable = bundleExecutable(app);
+	const readyFile = join(ctx.stateDir, 'tauri-ready', `${process.pid}.ready`);
+	mkdirSync(dirname(readyFile), { recursive: true });
+	const env: Record<string, string> = {
+		...(process.env as Record<string, string>),
+		...variantEnv(device, variant)
+	};
+	for (const [key, value] of Object.entries(desktop.env ?? {})) env[key] = fill(value, ctx.values);
+	if (desktop.readyFile) env.FACETSHOT_READY_FILE = readyFile;
+	const ready = (timeout: number) => waitUntil(() => existsSync(readyFile), timeout);
+	let pid: number | undefined;
+	const stopSystemLog = recordSystemLog(basename(executable), basename(app), log, {
+		pid: () => pid
+	});
+	// `-AppleInterfaceStyle Dark` sets the app's defaults for this launch only: AppKit, and so the WKWebView's
+	// prefers-color-scheme, follow it without the app doing anything.
+	const appearance = variant.appearance === 'dark' ? ['-AppleInterfaceStyle', 'Dark'] : [];
+	const child = spawnGroup(executable, [...(desktop.args ?? []), ...appearance], {
+		env,
+		stdio: ['ignore', 'pipe', 'pipe']
+	});
+	pid = child.pid;
+	if (!pid) {
+		stopSystemLog();
+		throw new EnvironmentError(
+			`${executable} didn't start.`,
+			`Try it yourself: open ${JSON.stringify(app)}`
+		);
+	}
+	// What the Rust side prints (println!, the log crate's terminal target) is the app's own log.
+	recordOutput(child, log);
+	const running = pid;
+	const launched: Launched = {
+		pid: running,
+		ready: undefined,
+		log,
+		stop: async () => {
+			await stopGroup(running);
+			stopSystemLog();
+		}
+	};
+	try {
+		// The first screen is up once the app writes its ready file; without one, give it a moment to open its window.
+		if (desktop.readyFile) await ready(30_000);
+		else await sleep(2000);
+	} catch (error) {
+		await launched.stop();
+		throw error;
+	}
+	return {
+		launched,
+		open: async (address) => {
+			rmSync(readyFile, { force: true });
+			const path = address.replace(/^app:/, '');
+			if (path !== '/' || desktop.navigate)
+				await exec('open', [deepLink(desktop.navigate ?? '', path)]);
+			// Without a ready file the app can't say it has settled; give it a moment to route and paint.
+			launched.ready = desktop.readyFile ? await ready(15_000) : (await sleep(1500), undefined);
+		}
+	};
 }

@@ -1,7 +1,8 @@
 /**
  * Sessions: a screen kept open so an agent (or a person) can work it step by step — click, scroll, open a context
- * menu, type — and see the screenshot, the page's logs and what's clickable after each step. The daemon holds them; each
- * is one page on one device in one variant, with the project's servers, sign-in and test data, like a run's.
+ * menu, type — and see the screenshot, the logs and what's clickable after each step. The daemon holds them; each is
+ * one screen on one device in one variant (a page, an Electron or Tauri window, or a Mac app's window), with the
+ * project's servers, sign-in and test data, like a run's.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -9,33 +10,15 @@ import { randomBytes } from 'node:crypto';
 import { stringify } from 'yaml';
 import type { Cell, Config, Finding } from './types.ts';
 import { plan } from './plan.ts';
-import { doStep, type Step, type StepHost } from './flows.ts';
+import type { Step } from './flows.ts';
 import { newContext, startServices, stateDir } from './run.ts';
 import { prepareFixtures } from './fixtures.ts';
 import { within } from './engine/procs.ts';
 import type { Runtime } from './engine/runtime.ts';
 import { UsageError } from './errors.ts';
-import { fillAddress, type RunContext } from './drivers/driver.ts';
-import { engineOf, navigate, newSession, WebDriver, type PageSession } from './drivers/web.ts';
-import {
-	chooseMenu,
-	ElectronDriver,
-	launchApp,
-	openInApp,
-	sizeWindow
-} from './drivers/electron.ts';
-import { TauriDriver, tauriEngine, tauriMockScript } from './drivers/tauri.ts';
-import { readPage, readyRuleFor, waitReady } from './drivers/page.ts';
+import type { RunContext } from './drivers/driver.ts';
 import { atLeast, LogBook, LogTail, redact, type LogEntry, type LogLevel } from './logs.ts';
-
-/** What a session can open a cell in: a web page, an Electron window, or a Tauri frontend in WebKit. */
-function sessionKind(cell: Cell, config: Config): 'web' | 'electron' | 'tauri' | undefined {
-	if (cell.device.platform === 'web' && cell.target.kind === 'web') return 'web';
-	if (cell.device.platform !== 'window' || cell.target.kind !== 'app') return undefined;
-	if (config.desktop?.kind === 'electron') return 'electron';
-	if (config.desktop?.kind === 'tauri' && tauriEngine(config.desktop) === 'webkit') return 'tauri';
-	return undefined;
-}
+import { openSurface, sessionKind, type Surface } from './surface.ts';
 
 /** Sessions open at once on the machine: each is a page with its own memory. */
 export const MAX_SESSIONS = 6;
@@ -86,8 +69,10 @@ export interface View {
 	title: string;
 	device: string;
 	variant: string;
-	/** The screenshot, in CSS pixels (so `@x,y` in a step is a point on it); none when `picture: false`. */
+	/** The screenshot (`@x,y` in a step is a point on it, in `units`); none when `picture: false`. */
 	image?: string;
+	/** CSS pixels for a page, points for a Mac window. */
+	units?: 'CSS pixels' | 'points';
 	width?: number;
 	height?: number;
 	/** Log lines since the last view. */
@@ -125,25 +110,28 @@ export class Session {
 	private closers: (() => Promise<void>)[] = [];
 	private tail: LogTail;
 	private busy: Promise<unknown> = Promise.resolve();
-	page!: PageSession;
-	private host!: StepHost;
-	private open!: (address: string) => Promise<void>;
+	surface: Surface | undefined;
 	start = '/';
 
 	constructor(
 		readonly id: string,
 		readonly root: string,
-		private ctx: RunContext,
+		ctx: RunContext,
 		readonly folder: string
 	) {
 		this.tail = new LogTail(join(ctx.stateDir, 'logs'));
 	}
 
 	get log(): LogBook {
-		return this.page.watch.log;
+		return this.screen.log;
 	}
 
-	/** One thing at a time per session: two agents' steps on one page would be anyone's guess. */
+	private get screen(): Surface {
+		if (!this.surface) throw new Error(`Session ${this.id} has no screen open.`);
+		return this.surface;
+	}
+
+	/** One thing at a time per session: two agents' steps on one screen would be anyone's guess. */
 	private serial<T>(work: () => Promise<T>): Promise<T> {
 		const next = this.busy.then(work, work);
 		this.busy = next.catch(() => {});
@@ -166,13 +154,12 @@ export class Session {
 			},
 			config
 		);
-		const kind = (each: Cell) => sessionKind(each, config);
-		const cell = planned.cells.find((each) => kind(each));
+		const cell = planned.cells.find((each: Cell) => sessionKind(each, config));
 		if (!cell) {
 			throw new UsageError(
 				planned.unmatched[0] ??
-					`Sessions open web pages, Electron windows and Tauri frontends for now; "${request.target}" on ${request.on ?? 'the default device'} isn't one of them.`,
-				'Give a path (/settings) or a full URL with a web device (--on phone), or app:/path with a window device. To step through other apps, write a flow.'
+					`A session can't open "${request.target}" on ${request.on ?? 'the default device'}.`,
+				'Give a path (/settings) or a full URL with a web device (--on phone), or app:/path with a window device for a desktop app. iOS simulators and Storybook stories take flows for now.'
 			);
 		}
 		const id = `s-${randomBytes(3).toString('hex')}`;
@@ -195,73 +182,15 @@ export class Session {
 		try {
 			await startServices(ctx);
 			Object.assign(ctx.values, await prepareFixtures(ctx));
-			const values = ctx.values;
-			const desktop = config.desktop;
-			if (kind(cell) === 'electron') {
-				const driver = new ElectronDriver();
-				await driver.prepare([cell], ctx);
-				const { app, page, watch, close } = await launchApp(
-					ctx,
-					driver.launchInfo,
-					cell.variant,
-					cell.device.scale
-				);
-				closers.push(close);
-				await sizeWindow(app, page, cell.device);
-				session.page = { page, watch, device: cell.device, variant: cell.variant };
-				session.host = {
-					open: (address) =>
-						openInApp(app, page, desktop!.navigate, fillAddress(cell, address, values), values),
-					menu: (path) => chooseMenu(app, path)
-				};
-			} else if (kind(cell) === 'tauri') {
-				const driver = new TauriDriver();
-				await driver.prepare([cell], ctx);
-				const browser = await runtime.browser('webkit', cell.variant.appearance);
-				const made = await newSession(
-					browser,
-					// A window is not a phone: whatever the device says, no mobile emulation or touch.
-					{ ...cell.device, mobile: false, touch: false },
-					cell.variant,
-					config.web,
-					{
-						baseURL: driver.frontendURL,
-						root: ctx.root,
-						initScript: tauriMockScript(desktop!.invoke)
-					}
-				);
-				closers.push(made.close);
-				session.page = made.session;
-				session.host = {
-					open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
-				};
-			} else {
-				const driver = new WebDriver();
-				await driver.prepare([cell], ctx);
-				const browser = await runtime.browser(
-					engineOf(config, cell.device),
-					cell.variant.appearance
-				);
-				const made = await newSession(browser, cell.device, cell.variant, config.web, {
-					baseURL: driver.url,
-					root: ctx.root,
-					stateDir: ctx.stateDir
-				});
-				closers.push(made.close);
-				session.page = made.session;
-				session.host = {
-					open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
-				};
-			}
-			session.open = async (address: string) => {
-				session.page.watch.reset();
-				await session.host.open(address);
-			};
+			const surface = await openSurface(cell, ctx, runtime, closers);
+			session.surface = surface;
 			session.start = cell.target.value;
-			// The servers' log starts here: building and starting them is setup, not something the page did.
+			// The servers' log starts here: building and starting them is setup, not something the screen did.
 			session.tail = new LogTail(join(ctx.stateDir, 'logs'));
-			await ctx.pools.web.run(() => session.open(session.start));
-			const view = await ctx.pools.web.run(() => session.view({ elements: true, ...request.look }));
+			const view = await surface.guard(async () => {
+				await surface.open(session.start);
+				return session.view({ elements: true, ...request.look });
+			});
 			return { session, view };
 		} catch (error) {
 			await session.close();
@@ -269,18 +198,15 @@ export class Session {
 		}
 	}
 
-	/** Does the steps in order, stopping at the first that fails, then shows where the page is. */
+	/** Does the steps in order, stopping at the first that fails, then shows where the screen is. */
 	act(steps: Step[], options: LookOptions = {}): Promise<View> {
 		return this.serial(() =>
-			this.ctx.pools.web.run(async () => {
+			this.screen.guard(async () => {
 				let failed: View['failed'];
 				for (const [index, step] of steps.entries()) {
 					if ('shot' in step) continue;
 					try {
-						// Worked out before the step: a click may take the element away.
-						const kept = await lasting(this.page.page, step);
-						await doStep(this.page.page, step, { ...this.host, open: this.open });
-						this.steps.push(kept);
+						this.steps.push(await this.screen.step(step));
 					} catch (error) {
 						failed = {
 							step: index + 1,
@@ -296,7 +222,7 @@ export class Session {
 	}
 
 	look(options: LookOptions = {}): Promise<View> {
-		return this.serial(() => this.ctx.pools.web.run(() => this.view(options)));
+		return this.serial(() => this.screen.guard(() => this.view(options)));
 	}
 
 	/** Log lines after a position, with the servers' new lines. */
@@ -310,33 +236,13 @@ export class Session {
 	}
 
 	private async view(options: LookOptions): Promise<View> {
-		const { page, watch, device, variant } = this.page;
-		const address = new URL(page.url()).pathname;
-		const settled = await waitReady(page, watch, {
-			...readyRuleFor(address, this.ctx.config.web?.ready),
-			timeout: 8000
-		});
-		const findings = await readPage(page, watch, ['console', 'network'], device);
-		watch.failures.length = 0;
-		watch.consoleErrors.length = 0;
-		let picture: Pick<View, 'image' | 'width' | 'height'> = {};
+		const screen = this.screen;
+		let image: string | undefined;
 		if (options.picture !== false) {
 			this.views += 1;
-			const image = join(this.folder, `${String(this.views).padStart(3, '0')}.png`);
-			const buffer = await page.screenshot({
-				path: image,
-				fullPage: options.full ?? false,
-				animations: 'disabled',
-				caret: 'hide',
-				scale: 'css',
-				timeout: 20_000
-			});
-			picture = { image, width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+			image = join(this.folder, `${String(this.views).padStart(3, '0')}.png`);
 		}
-		const snapshot =
-			options.elements || options.tree
-				? await page.ariaSnapshot({ mode: 'ai', boxes: true, timeout: 10_000 }).catch(() => '')
-				: '';
+		const look = await screen.look(options, image);
 		this.pollServers();
 		const level = options.logLevel ?? 'info';
 		const logs = atLeast(
@@ -349,18 +255,13 @@ export class Session {
 		this.serverCursor = this.servers.cursor;
 		return {
 			session: this.id,
-			url: redact(page.url()),
-			title: await page.title().catch(() => ''),
-			device: device.name,
-			variant: variant.name,
-			...picture,
-			logs,
-			findings,
-			elements: options.elements
-				? onScreen(snapshot, page.viewportSize() ?? { width: 1e5, height: 1e5 })
-				: undefined,
-			tree: options.tree ? snapshot.replace(/ \[box=[^\]]*\]/g, '') : undefined,
-			unsettled: settled.ready ? undefined : settled.waitingFor
+			url: redact(screen.url()),
+			title: await screen.title(),
+			device: screen.device.name,
+			variant: screen.variant.name,
+			...look,
+			units: screen.units,
+			logs
 		};
 	}
 
@@ -368,9 +269,9 @@ export class Session {
 		return {
 			id: this.id,
 			root: this.root,
-			url: this.page?.page.url() ?? '',
-			device: this.page?.device.name ?? '',
-			variant: this.page?.variant.name ?? '',
+			url: this.surface?.url() ?? '',
+			device: this.surface?.device.name ?? '',
+			variant: this.surface?.variant.name ?? '',
 			steps: this.steps.length,
 			idleSeconds: Math.round((Date.now() - this.lastUsed) / 1000)
 		};
@@ -392,170 +293,12 @@ export class Session {
 		return path;
 	}
 
-	/** Closes the page and lets go of what the session started (test data goes with the project's runtime). */
+	/** Closes the screen and lets go of what the session started (test data goes with the project's runtime). */
 	async close(): Promise<void> {
 		for (const close of this.closers.reverse()) await within(close(), 10_000);
 		this.closers = [];
 		rmSync(this.folder, { recursive: true, force: true });
 	}
-}
-
-/** Roles a person acts on. Anything the page marks as clickable (`cursor=pointer`) counts too. */
-const ACTIONABLE = new Set([
-	'button',
-	'link',
-	'textbox',
-	'searchbox',
-	'checkbox',
-	'radio',
-	'switch',
-	'combobox',
-	'listbox',
-	'option',
-	'menuitem',
-	'menuitemcheckbox',
-	'menuitemradio',
-	'tab',
-	'slider',
-	'spinbutton',
-	'treeitem',
-	'gridcell',
-	'columnheader',
-	'separator'
-]);
-
-/**
- * What on screen can be acted on, read from Playwright's accessibility snapshot in its "ai" mode: each line has the
- * element's ref and box. A frame's boxes are relative to the frame, so they are moved by the frame's own box.
- */
-export function onScreen(
-	snapshot: string,
-	viewport: { width: number; height: number }
-): OnScreen[] {
-	const out: OnScreen[] = [];
-	/** The offset of the frame each indentation level is in. */
-	const frames: { indent: number; x: number; y: number }[] = [];
-	for (const line of snapshot.split('\n')) {
-		const match = /^(\s*)- ([\w-]+)(?: "((?:[^"\\]|\\.)*)")?(.*)$/.exec(line);
-		if (!match) continue;
-		const [, space, role, rawName, rest] = match;
-		const indent = space.length;
-		while (frames.length && frames[frames.length - 1].indent >= indent) frames.pop();
-		const offset = frames[frames.length - 1] ?? { x: 0, y: 0 };
-		const ref = /\[ref=([\w]+)\]/.exec(rest)?.[1];
-		const box = /\[box=(-?[\d.]+),(-?[\d.]+),([\d.]+),([\d.]+)\]/.exec(rest);
-		if (!box) continue;
-		const [x, y, width, height] = box.slice(1).map(Number);
-		if (role === 'iframe') frames.push({ indent, x: offset.x + x, y: offset.y + y });
-		if (!ref || !(ACTIONABLE.has(role) || rest.includes('[cursor=pointer]'))) continue;
-		const left = offset.x + x;
-		const top = offset.y + y;
-		if (width < 1 || height < 1) continue;
-		if (left + width < 0 || top + height < 0 || left > viewport.width || top > viewport.height)
-			continue;
-		const states = [
-			...rest.matchAll(/\[(checked|disabled|expanded|selected|pressed|checked=mixed|active)\]/g)
-		].map((state) => state[1]);
-		const value = /\]:\s*(.+)$/.exec(rest)?.[1]?.trim();
-		out.push({
-			ref,
-			role,
-			name: (rawName ?? '').replace(/\\"/g, '"'),
-			x: Math.round(left),
-			y: Math.round(top),
-			width: Math.round(width),
-			height: Math.round(height),
-			states: states.length ? states : undefined,
-			value: value && !value.endsWith(':') ? value.slice(0, 80) : undefined
-		});
-		if (out.length >= 200) break;
-	}
-	return out;
-}
-
-/** A step's ref (`e12`, `ref=e12`), if it names one. */
-export function refOf(target: string): string | undefined {
-	return /^(?:ref=)?((?:f\d+)?e\d+)$/.exec(target.trim())?.[1];
-}
-
-/**
- * The step with each ref replaced by a selector that finds the element again in a later run: Playwright's own
- * best locator for it (role and name, test id, label…), written as a selector; a CSS path when there's none.
- */
-async function lasting(page: PageSession['page'], step: Step): Promise<Step> {
-	const out: Record<string, unknown> = { ...step };
-	for (const [key, value] of Object.entries(out)) {
-		const ref = typeof value === 'string' ? refOf(value) : undefined;
-		if (!ref) continue;
-		const element = page.getByRef(ref);
-		const code = await element
-			.normalize()
-			.then((locator) => locator.toString())
-			.catch(() => '');
-		out[key] = selectorOf(code) ?? (await cssPath(element)) ?? value;
-	}
-	return out as Step;
-}
-
-/** A Playwright locator written as code (`getByRole('button', { name: 'Save' })`), as a selector string. */
-export function selectorOf(code: string): string | undefined {
-	const quoted = `'((?:[^'\\\\]|\\\\.)*)'`;
-	const unquote = (text: string) => text.replace(/\\'/g, "'");
-	let match = new RegExp(
-		`^getByRole\\(${quoted}(?:, \\{ name: ${quoted}(, exact: true)? \\})?\\)$`
-	).exec(code);
-	if (match)
-		return match[2] === undefined
-			? `role=${match[1]}`
-			: `role=${match[1]}[name=${JSON.stringify(unquote(match[2]))}${match[3] ? 's' : 'i'}]`;
-	match = new RegExp(`^getByTestId\\(${quoted}\\)$`).exec(code);
-	if (match) return `internal:testid=[data-testid=${JSON.stringify(unquote(match[1]))}s]`;
-	match = new RegExp(
-		`^getBy(Text|Label|Placeholder|AltText|Title)\\(${quoted}(, \\{ exact: true \\})?\\)$`
-	).exec(code);
-	if (match) {
-		const engine = {
-			Text: 'text',
-			Label: 'label',
-			Placeholder: 'placeholder',
-			AltText: 'alt',
-			Title: 'title'
-		}[match[1] as 'Text'];
-		return `internal:${engine}=${JSON.stringify(unquote(match[2]))}${match[3] ? 's' : 'i'}`;
-	}
-	match = new RegExp(`^locator\\(${quoted}\\)$`).exec(code);
-	if (match) return unquote(match[1]);
-	return undefined;
-}
-
-async function cssPath(
-	element: ReturnType<PageSession['page']['getByRef']>
-): Promise<string | undefined> {
-	return element
-		.evaluate(
-			(node) => {
-				const parts: string[] = [];
-				for (
-					let at: globalThis.Element | null = node as globalThis.Element;
-					at && at !== document.body;
-					at = at.parentElement
-				) {
-					if (at.id) {
-						parts.unshift(`#${CSS.escape(at.id)}`);
-						break;
-					}
-					const tag = at.tagName.toLowerCase();
-					const same = at.parentElement
-						? [...at.parentElement.children].filter((child) => child.tagName === at!.tagName)
-						: [];
-					parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(at) + 1})` : tag);
-				}
-				return `css=${parts.join(' > ')}`;
-			},
-			undefined,
-			{ timeout: 2000 }
-		)
-		.catch(() => undefined);
 }
 
 /** A view as text: where, what happened, what's clickable. Shared by the CLI and the MCP server. */
@@ -566,7 +309,9 @@ export function describeView(view: View): string {
 	if (view.failed) lines.push(`✗ Step ${view.failed.step} didn't work: ${view.failed.error}`);
 	if (view.unsettled) lines.push(`! Not settled after 8s: still waiting for ${view.unsettled}.`);
 	if (view.image)
-		lines.push(`Screenshot: ${view.image} (${view.width}×${view.height}, CSS pixels)`);
+		lines.push(
+			`Screenshot: ${view.image} (${view.width}×${view.height}, ${view.units ?? 'CSS pixels'})`
+		);
 	for (const finding of view.findings)
 		lines.push(`${finding.severity === 'error' ? '✗' : '!'} ${finding.check}: ${finding.message}`);
 	if (view.logs.length) {

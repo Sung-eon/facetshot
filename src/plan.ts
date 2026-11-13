@@ -308,15 +308,16 @@ function platformsOf(target: Target, config: Config): Platform[] {
 	return target.kind === 'flow' ? flowPlatforms(target.value, config) : PLATFORMS[target.kind];
 }
 
-/** A flow is shown where its start is: an `app:` start on apps, anything else in a browser or an Electron window. */
+/**
+ * A flow is shown where its start is: an `app:` start on apps; a plain path in a browser, and in the desktop app's
+ * window when the config has one (only there, when the config has nothing for the web).
+ */
 function flowPlatforms(file: string, config: Config): Platform[] {
 	try {
 		const start = loadFlow(file, config.root ?? process.cwd()).start;
-		return start.startsWith('app:')
-			? ['ios', 'window']
-			: config.desktop?.kind === 'electron'
-				? ['web', 'window']
-				: ['web'];
+		if (start.startsWith('app:')) return ['ios', 'window'];
+		if (!config.desktop) return ['web'];
+		return config.web ? ['web', 'window'] : ['window'];
 	} catch {
 		return PLATFORMS.flow;
 	}

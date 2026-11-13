@@ -13,6 +13,8 @@ import {
 	writeFileSync
 } from 'node:fs';
 import { join } from 'node:path';
+import { spawn, type ChildProcess } from 'node:child_process';
+import type { Readable } from 'node:stream';
 import type { ConsoleMessage, Page, Request } from 'playwright';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -167,6 +169,83 @@ export function recordPage(page: Page, book: LogBook, blocked: (url: string) => 
 		const quiet = blocked(request.url()) || /ERR_ABORTED|cancelled/i.test(reason);
 		book.add('network', quiet ? 'debug' : 'error', line(request, `failed: ${reason}`));
 	});
+}
+
+/** Calls `onLine` with each line a stream writes, as it writes them. */
+export function eachLine(
+	stream: Readable | null | undefined,
+	onLine: (line: string) => void
+): void {
+	let rest = '';
+	stream?.setEncoding('utf8');
+	stream?.on('data', (chunk: string) => {
+		const lines = (rest + chunk).split('\n');
+		rest = lines.pop() ?? '';
+		for (const line of lines) if (line.trim()) onLine(line.trimEnd());
+	});
+}
+
+/** An app's standard output (as `info`) and standard error (as `warn`), into its log, but for lines `skip` matches. */
+export function recordOutput(
+	child: ChildProcess,
+	book: LogBook,
+	options: { source?: string; skip?: RegExp } = {}
+): void {
+	const { source = 'app', skip } = options;
+	eachLine(child.stdout, (line) => skip?.test(line) || book.add(source, 'info', line));
+	eachLine(child.stderr, (line) => skip?.test(line) || book.add(source, 'warn', line));
+}
+
+const OS_LEVELS: Record<string, LogLevel> = {
+	Debug: 'debug',
+	Info: 'info',
+	Default: 'info',
+	Error: 'error',
+	Fault: 'error'
+};
+
+/**
+ * What an app writes to the system log (`Logger`, `os_log`, `NSLog`), as it writes it: `log stream` on a Mac, or the
+ * same inside a simulator (`command` = `['xcrun', 'simctl', 'spawn', udid, 'log']`). Only lines sent from the app's
+ * own bundle (`bundle`, its folder name: `Notes.app`), or with a subsystem that isn't Apple's: the system's frameworks
+ * talk a lot in an app's process and rarely about the app. Started before the app, by its process name, so its first
+ * lines are kept; `pid`, once known, narrows it to that one process. Returns how to stop it.
+ */
+export function recordSystemLog(
+	processName: string,
+	bundle: string,
+	book: LogBook,
+	options: { command?: string[]; pid?: () => number | undefined } = {}
+): () => void {
+	const [file, ...args] = options.command ?? ['/usr/bin/log'];
+	const predicate =
+		`process == ${JSON.stringify(processName)} AND (senderImagePath CONTAINS ${JSON.stringify(`/${bundle}/`)} ` +
+		`OR (subsystem CONTAINS "." AND NOT subsystem BEGINSWITH "com.apple."))`;
+	const child = spawn(
+		file,
+		[...args, 'stream', '--style', 'ndjson', '--level', 'info', '--predicate', predicate],
+		{ stdio: ['ignore', 'pipe', 'ignore'] }
+	);
+	child.on('error', () => {});
+	eachLine(child.stdout, (line) => {
+		let event: {
+			eventMessage?: string;
+			messageType?: string;
+			subsystem?: string;
+			category?: string;
+			processID?: number;
+		};
+		try {
+			event = JSON.parse(line);
+		} catch {
+			return; // the header line `log stream` prints first
+		}
+		const pid = options.pid?.();
+		if (!event.eventMessage || (pid && event.processID && event.processID !== pid)) return;
+		const source = event.subsystem ? `os_log:${event.category || event.subsystem}` : 'os_log';
+		book.add(source, OS_LEVELS[event.messageType ?? ''] ?? 'info', event.eventMessage);
+	});
+	return () => void child.kill();
 }
 
 /**

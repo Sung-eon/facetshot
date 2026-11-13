@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, cpSync } fr
 import { join } from 'node:path';
 import { loadConfig } from './config.ts';
 import { EXIT, explain, FacetshotError, UsageError } from './errors.ts';
-import { listRuns, readManifest, stateDir, type RunRequest } from './run.ts';
+import { listRuns, stateDir, type RunRequest } from './run.ts';
 import { markdown, summarize } from './output/manifest.ts';
 import { spawn } from 'node:child_process';
 
