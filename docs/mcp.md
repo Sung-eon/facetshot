@@ -3,9 +3,22 @@
 `facetshot mcp` runs an MCP server over standard input and output. [AI agents](agents.md) explains how to connect
 it. This page lists every tool and parameter.
 
-Runs go through the same [background helper](concepts.md#the-background-helper) as the command line. Each response
-is text and images. `capture`, `check`, `compare`, `open` and `act` also give the same result as structured data, for
-clients that read it. Long runs report progress as they go, to clients that ask for it.
+Runs go through the same [background helper](concepts.md#the-background-helper) as the command line. Each tool below
+has a **Returns** line saying what its response holds: text, images, and for some tools the same result as
+structured data (`structuredContent`), for clients that read it. Long runs report progress as they go, to clients
+that ask for it.
+
+## Errors
+
+- A tool that can't do its job (a wrong target, a config that doesn't load, a port that's taken) answers with
+  `isError: true` and one text block: what went wrong, then what to try.
+- Screenshots that failed inside a run that went ahead aren't an error. The summary lists them, and
+  `structuredContent.counts.failed` counts them.
+- In `act`, a step that fails stops the steps after it. The answer is the usual view of where the screen ended up,
+  with `isError: true` and `failed: { step, error }` (the step's position, counting from 1, and why).
+- Sessions (`open`, `act`, `close`) are kept by the background helper. With `FACETSHOT_NO_DAEMON` set in the
+  server's environment (the MCP server's form of `--no-daemon`), `open` answers with an error; `capture`, `check`
+  and `compare` still work.
 
 ## Names compared with the command line
 
@@ -27,6 +40,10 @@ Some parameters have different names from the command-line options they match:
 
 Takes screenshots and returns a summary and one contact sheet per screen.
 
+**Returns** the summary as text (counts, sheet paths, failures, findings), then one JPEG contact sheet per screen (at
+most 4; the rest are named in a text line), and `structuredContent` with the run id, folder, counts, screens, grouped
+findings and log file paths.
+
 | Parameter  | Type               | Meaning                                                                                                                                                                                     |
 | ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `targets`  | string[]           | what to look at: `/settings`, `app:/inbox`, `story:button--primary`, `preview:Settings/Account`, `flows/x.yaml` or `flows/*.yaml`, or an alias. Leave out to take the profile's own targets |
@@ -41,12 +58,15 @@ To compare with an earlier run, use `compare`. To read a detail a sheet is too s
 
 ## `check`
 
-Reads screens for problems without taking screenshots, and returns the list as text. Takes `targets`, `devices`,
-`variants`, `profile`, `browsers` and `steps` like `capture`, and:
+Reads screens for problems without taking screenshots. Takes `targets`, `devices`, `variants`, `profile`, `browsers`
+and `steps` like `capture`, and:
 
 | Parameter | Type     | Meaning                                                                          |
 | --------- | -------- | -------------------------------------------------------------------------------- |
 | `checks`  | string[] | which [checks](checks.md) to run. Default: all but `a11y`; `["all"]` adds `a11y` |
+
+**Returns** the findings as text (or a line saying none were found), no images, and the same `structuredContent` as
+`capture`.
 
 ## `compare`
 
@@ -63,6 +83,9 @@ the earlier request's `profile` and `steps` aren't used.
 | `browsers` | string[] | as for `capture`                                                |
 | `against`  | string   | `previous` (the default), a baseline name, a run id or a folder |
 
+**Returns** a line naming the screens that changed, the summary, the contact sheets of the changed screens only (at
+most 4), and the same `structuredContent` as `capture`.
+
 ## `inspect`
 
 Returns screenshots from a run, scaled to fit 1568 pixels, each with its findings, notes and log lines. With a
@@ -78,6 +101,9 @@ failed, have problems or changed, at most 4.
 | `region`  | `{ x, y, width, height }` | with a device and variant: only this part, in CSS pixels or points |
 | `diff`    | boolean                   | return the difference image instead, if the run compared           |
 
+**Returns** for each screenshot a text block (findings, notes, log lines) and a PNG image. No `structuredContent`.
+`isError` is set when the one screenshot asked for failed.
+
 ## `list`
 
 | Parameter | Type                                                                       | Meaning                         |
@@ -87,12 +113,13 @@ failed, have problems or changed, at most 4.
 `flows` lists the flow files in the project with their start and shots, and `profiles` shows each profile's targets,
 so an agent can run a check that already exists instead of writing a new one.
 
+**Returns** the list as text.
+
 ## `open`
 
 Opens a screen and keeps it open as a [session](sessions.md) on one device and variant, with the project's servers,
 sign-in and test data: a web page, or a desktop app's window ([what sessions open](sessions.md#what-sessions-open)).
-Responds with the session id, a screenshot, the log, and what on screen can be acted on, with refs. The view options
-below apply to this first response, as they do for `act`.
+The view options below apply to this first response, as they do for `act`.
 
 | Parameter    | Type                               | Meaning                                                                                  |
 | ------------ | ---------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -106,16 +133,24 @@ below apply to this first response, as they do for `act`.
 | `full`       | boolean                            | take the whole page, not only the screen                                                 |
 | `logLevel`   | `debug`, `info`, `warn` or `error` | the least important log lines to return. Default `info`                                  |
 
+**Returns** a view: text with the session id, address, title, log lines, console errors and failed requests, and the
+elements with their refs; the screenshot as a PNG (unless `screenshot: false`); and the same view as
+`structuredContent` (`session`, `url`, `title`, `device`, `variant`, `image`, `width`, `height`, `units`, `logs`,
+`findings`, `elements`, `tree`, `failed`, `unsettled`).
+
 ## `act`
 
-Does steps in an open session, in order, stopping at the first that fails. Responds like `open`. With no steps, it
-looks again. `shot` steps are ignored.
+Does steps in an open session, in order, stopping at the first that fails. With no steps, it looks again. `shot`
+steps are ignored.
 
 | Parameter                                            | Type             | Meaning                                                                            |
 | ---------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
 | `session`                                            | string, required | the id `open` returned                                                             |
 | `steps`                                              | string[]         | [steps](flows.md#steps) such as `click:e3`, `fill:e4=hello`, `rightclick:@420,180` |
 | `elements`, `screenshot`, `tree`, `full`, `logLevel` |                  | as for `open`                                                                      |
+
+**Returns** a view, as `open` does. When a step failed, the view also has `failed` and the answer has `isError: true`
+([Errors](#errors)).
 
 ## `close`
 

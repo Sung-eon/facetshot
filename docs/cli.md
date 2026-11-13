@@ -1,7 +1,7 @@
 # Command reference
 
-Commands are written `facetshot …`. With facetshot installed in your project, type `bunx facetshot …`, or add a
-`"facetshot": "facetshot"` script to `package.json`.
+Commands are written `facetshot …`, as typed after a global install. Without installing, or with facetshot in your
+project, type `bunx facetshot …` ([Installing](#installing-updating-and-removing)).
 
 | Command                                     | What it does                                                        |
 | ------------------------------------------- | ------------------------------------------------------------------- |
@@ -11,7 +11,9 @@ Commands are written `facetshot …`. With facetshot installed in your project, 
 | `facetshot diff [against]`                  | repeats the last command and shows what changed                     |
 | `facetshot list [what]`                     | devices, variants, profiles, flows, checks, runs or sessions        |
 | `facetshot init [--url …] [--agent …]`      | writes a starter config and connects an agent                       |
+| `facetshot setup [--browser …]`             | installs the browsers facetshot uses, then runs `doctor`            |
 | `facetshot doctor`                          | checks this machine and project, and says how to fix what's missing |
+| `facetshot uninstall [--browsers] [--yes]`  | removes facetshot and what it made from this machine and project    |
 | `facetshot mcp`                             | runs the MCP server over standard input and output                  |
 | `facetshot baseline save\|list\|rm <name>`  | keeps a run to compare with later                                   |
 | `facetshot daemon status\|stop`             | shows or stops the background helper                                |
@@ -21,9 +23,65 @@ Commands are written `facetshot …`. With facetshot installed in your project, 
 | `facetshot look <id>`                       | shows a session again                                               |
 | `facetshot close <id> [--save file]`        | closes a session, optionally keeping its steps as a flow            |
 | `facetshot logs <id\|run\|latest>`          | prints a run's logs, or a session's (live with `--follow`)          |
+| `facetshot --help`, `-h`                    | prints the commands, steps and targets in short                     |
+| `facetshot --version`, `-v`                 | prints the version                                                  |
 
 `fshot` is a shorter name for the same command. Targets are described in
 [How it works](concepts.md#targets-devices-and-variants).
+
+## Installing, updating and removing
+
+facetshot needs [Bun](https://bun.sh) 1.3 or newer. Your project needs no `package.json`: facetshot works the same in
+a Flutter, Swift or any other folder. There are three ways to run it:
+
+| Way                        | Install                | Run                | Update                        | Remove                                                  |
+| -------------------------- | ---------------------- | ------------------ | ----------------------------- | ------------------------------------------------------- |
+| Installed for your user    | `bun add -g facetshot` | `facetshot …`      | `bun add -g facetshot@latest` | `facetshot uninstall` (it also runs `bun remove -g`)    |
+| Without installing         | nothing                | `bunx facetshot …` | by itself (below)             | `bunx facetshot uninstall`                              |
+| In a project, for everyone | `bun add -d facetshot` | `bunx facetshot …` | `bun update facetshot`        | `bunx facetshot uninstall`, then `bun remove facetshot` |
+
+- **Installed** is the one to pick for regular use: the version changes only when you update it, and the MCP server
+  starts without asking the registry first.
+- **Without installing** needs nothing but Bun. `bunx` downloads the package into a `bunx-…-facetshot@…` folder in
+  the system's temporary folder and runs it from there; it asks the registry for a newer version once a day
+  (`bunx facetshot@latest` asks every time, `bunx facetshot@0.1.0` runs that version).
+- **In a project**, the version is pinned in the project's lockfile for everyone who clones it, and the config gets
+  types from `import { defineConfig } from 'facetshot'` ([what is checked](configuration.md#how-the-config-is-checked)).
+
+To install a tagged version from GitHub instead of npm (tags are the bare version number):
+`bun add -g github:Sung-eon/facetshot#0.1.0`. This hasn't been tried yet ([Status](status.md#known-limits)).
+
+After installing or updating, run `facetshot setup` once. A newer facetshot may use a newer Playwright, whose
+browsers are a separate download.
+
+### `setup`
+
+Installs the browsers facetshot uses with facetshot's own copy of Playwright, so they are always the builds it can
+start, then runs [`doctor`](#doctor) and exits with its result. Chromium (about 600 MB) is always installed;
+`--browser webkit,firefox` adds those. The browsers go to Playwright's shared folder (`~/Library/Caches/ms-playwright`
+on macOS, `~/.cache/ms-playwright` on Linux), where any Playwright project of the same version uses them too.
+`chrome`, `msedge` and `moz-firefox` are the browsers already installed on your machine; `setup` doesn't install
+those.
+
+### `uninstall`
+
+Removes facetshot from this machine, and from the project you run it in:
+
+1. Lists everything it will remove and asks before removing it. `--yes` skips the question (for agents and scripts).
+   Without a terminal and without `--yes`, it prints the list and removes nothing.
+2. Stops the background helper, deletes facetshot's own simulators and its home folder (`~/.facetshot`).
+3. In a project (a `facetshot.config.ts` found from the current folder upwards, or the folder you are in): deletes
+   `.facetshot/` (runs, logs, baselines, saved sign-ins) and undoes what `init --agent` wrote: the `facetshot` entry in
+   `.mcp.json`, `.cursor/mcp.json` and `.codex/config.toml` (other servers stay; a file goes only when nothing else
+   is in it), `.claude/skills/facetshot`, `.agents/skills/facetshot`, `.cursor/rules/facetshot.mdc`, and the line
+   about facetshot in `CLAUDE.md` or `AGENTS.md` if it is still exactly as `init` wrote it.
+4. Keeps `facetshot.config.ts`, since you may have changed it, and prints how to delete it.
+5. Installed with `bun add -g`, runs `bun remove -g facetshot` last. In a project, it prints `bun remove facetshot`
+   for you to run. Through `bunx`, there is nothing to remove.
+
+Playwright's browsers stay unless you pass `--browsers`. Then it runs Playwright's own `uninstall` with facetshot's
+copy of Playwright: that unregisters facetshot's Playwright and deletes each browser in the shared folder that no
+other Playwright on this machine is registered as using. Browsers another project's Playwright still uses are kept.
 
 ## Taking screenshots
 
@@ -73,7 +131,8 @@ finds the flow files in the project; `sessions --json` prints the open sessions 
 
 Writes `facetshot.config.ts` from what the project uses, unless a config exists. With `--url <address>`, writes a
 config for an app that is already running. With `--agent claude|cursor|codex|all`, registers the MCP server and
-installs the skill for that agent; with `--yes`, also appends a line to an existing `CLAUDE.md` or `AGENTS.md`. See
+installs the skill for that agent, and adds one line to `CLAUDE.md` or `AGENTS.md` (asked at a terminal; `--yes`
+adds it without asking). See
 [AI agents](agents.md#connecting-your-agent) for exactly what it writes.
 
 ## `doctor`
@@ -130,15 +189,18 @@ Levels are `debug`, `info` (the default), `warn` and `error`. See [Logs](logs.md
 
 | Code | Meaning                                                                                                                                    |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0    | every screenshot was taken                                                                                                                 |
+| 0    | every screenshot was taken, including any taken after the readiness timeout                                                                |
 | 1    | some screenshots failed, or something went wrong around them (the summary says what); for `act`, a step didn't work                        |
 | 2    | the command or the config is wrong                                                                                                         |
 | 3    | something this machine needs is missing or busy (a browser, Xcode, a port, a permission)                                                   |
 | 4    | an unexpected error: often a bug in facetshot, but also a browser or tool failing in a way facetshot doesn't recognise, or a second Ctrl-C |
 
-Exit code 4 that isn't from a second Ctrl-C is worth reporting as a bug. Problems found by checks don't change the
-exit code. To fail a CI job on them, read `manifest.json`
-([Continuous integration](ci.md)).
+Exit code 4 that isn't from a second Ctrl-C is worth reporting as a bug.
+
+Three things don't change the exit code: problems found by checks, changes found by comparing, and screenshots taken
+after the page didn't become ready in time. The last are marked `readyTimedOut: true` in `manifest.json`, and the
+summary lists them under "Taken before the screen settled". To fail a CI job on any of these, read the manifest
+([Failing a job](ci.md#failing-a-job)).
 
 ## Environment variables
 

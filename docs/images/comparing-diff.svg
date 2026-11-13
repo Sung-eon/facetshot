@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 304" role="img" aria-labelledby="t d">
+<title id="t">Comparing two runs</title>
+<desc id="d">Each screenshot of this run is compared pixel by pixel with the same one from the run before or a saved baseline. A screen with no change is left as it is. On a changed screen’s contact sheet, marked with a triangle, the changed screenshot has a red outline and a badge with how much changed, a .diff.png highlights the changed pixels, and the manifest records diff.ratio.</desc>
+<style>
+text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:14px;fill:#1e1d1b}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.s{fill:#4a4741}.u{fill:#67635b}.a{fill:#5b2fd6}
+.b{fill:#1e1d1b;fill-opacity:.03;stroke:#d3cec4;stroke-width:1.25}
+.ab{fill:#5b2fd6;fill-opacity:.06;stroke:#5b2fd6;stroke-width:1.5}
+.bl{fill:none;stroke:#d3cec4;stroke-width:1.25}
+.l{stroke:#67635b;stroke-width:1.5;fill:none}
+.al{stroke:#5b2fd6;stroke-width:2;fill:none}
+.h{fill:#67635b}.ah{fill:#5b2fd6}
+.cl{fill:#ffffff;stroke:#c9c3b8;stroke-width:1}
+.cd{fill:#3a3834;stroke:#3a3834;stroke-width:1}
+.r{stroke:#c43a22;stroke-width:2.5;fill:none}.rt{fill:#c43a22}.rf{fill:#c43a22}.bt{fill:#ffffff}
+@media (prefers-color-scheme:dark){
+text{fill:#ece8e0}.s{fill:#cfcac0}.u{fill:#a8a398}.a{fill:#8f82d8}
+.b{fill:#ffffff;fill-opacity:.04;stroke:#55514a}
+.ab{fill:#8f82d8;fill-opacity:.12;stroke:#8f82d8}
+.bl{stroke:#55514a}.l{stroke:#a8a398}.al{stroke:#8f82d8}.h{fill:#a8a398}.ah{fill:#8f82d8}
+.cl{fill:#ebe7df;stroke:#ebe7df}.cd{fill:#151413;stroke:#6a665e}
+.r{stroke:#ec7a63}.rt{fill:#ec7a63}.rf{fill:#ec7a63}.bt{fill:#1d1c1a}
+}
+</style>
+<defs>
+<marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="h"/></marker>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="ah"/></marker>
+</defs>
+<rect x="10" y="14" width="250" height="128" rx="6" class="b"/>
+<text x="24" y="38" class="m u">the run before, or a baseline</text>
+<text x="24" y="62" class="m" font-size="12">settings</text>
+<rect x="29.5" y="75.55" width="33" height="20.900000000000002" rx="2" class="cl"/>
+<rect x="69.54" y="75.55" width="33" height="20.900000000000002" rx="2" class="cd"/>
+<rect x="40.5" y="102.5" width="11" height="22" rx="2" class="cl"/>
+<rect x="80.54" y="102.5" width="11" height="22" rx="2" class="cd"/>
+<text x="142" y="62" class="m" font-size="12">billing</text>
+<rect x="147.5" y="75.55" width="33" height="20.900000000000002" rx="2" class="cl"/>
+<rect x="187.54000000000002" y="75.55" width="33" height="20.900000000000002" rx="2" class="cd"/>
+<rect x="158.5" y="102.5" width="11" height="22" rx="2" class="cl"/>
+<rect x="198.54000000000002" y="102.5" width="11" height="22" rx="2" class="cd"/>
+<rect x="10" y="166" width="250" height="128" rx="6" class="b"/>
+<text x="24" y="190" class="m u">this run</text>
+<text x="24" y="214" class="m" font-size="12">settings</text>
+<rect x="29.5" y="227.55" width="33" height="20.900000000000002" rx="2" class="cl"/>
+<rect x="69.54" y="227.55" width="33" height="20.900000000000002" rx="2" class="cd"/>
+<rect x="40.5" y="254.5" width="11" height="22" rx="2" class="cl"/>
+<rect x="80.54" y="254.5" width="11" height="22" rx="2" class="cd"/>
+<text x="142" y="214" class="m" font-size="12">billing</text>
+<rect x="147.5" y="227.55" width="33" height="20.900000000000002" rx="2" class="cl"/>
+<rect x="187.54000000000002" y="227.55" width="33" height="20.900000000000002" rx="2" class="cd"/>
+<rect x="158.5" y="254.5" width="11" height="22" rx="2" class="cl"/>
+<rect x="198.54000000000002" y="254.5" width="11" height="22" rx="2" class="cd"/>
+<rect x="153" y="231" width="22" height="5" class="rf"/>
+<path d="M260,78 C318,78 318,160 358,160" class="l" marker-end="url(#h)"/>
+<path d="M260,230 C318,230 318,160 358,160" class="l" marker-end="url(#h)"/>
+<rect x="362" y="132" width="122" height="56" rx="6" class="b"/>
+<text x="423" y="156" class="s" font-size="12.5" text-anchor="middle">each screenshot</text>
+<text x="423" y="174" class="s" font-size="12.5" text-anchor="middle">pixel by pixel</text>
+<path d="M484,160 H512" class="al" marker-end="url(#ah)"/>
+<rect x="516" y="14" width="234" height="64" rx="6" class="b"/>
+<text x="530" y="38" class="m">settings.sheet.jpg</text>
+<text x="530" y="60" class="s" font-size="13">no change</text>
+<rect x="516" y="94" width="234" height="200" rx="6" class="ab"/>
+<text x="530" y="118" class="m a">△ billing.sheet.jpg</text>
+<rect x="542" y="146.8" width="48" height="30.400000000000002" rx="2" class="cl"/>
+<rect x="539" y="143.8" width="54" height="36.400000000000006" rx="3" class="r"/>
+<rect x="626" y="146.8" width="48" height="30.400000000000002" rx="2" class="cd"/>
+<rect x="558" y="186" width="16" height="32" rx="2" class="cl"/>
+<rect x="642" y="186" width="16" height="32" rx="2" class="cd"/>
+<rect x="570" y="129" width="44" height="18" rx="9" class="rf"/>
+<text x="592" y="142" font-size="11" font-weight="600" text-anchor="middle" class="bt">3.1%</text>
+<text x="530" y="254" class="m u" font-size="12">desktop.light.diff.png</text>
+<text x="530" y="276" class="m u" font-size="12">diff.ratio: 0.031</text>
+</svg>

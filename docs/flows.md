@@ -25,6 +25,8 @@ facetshot flows/delete-account.yaml --on phone,desktop --as light,dark
 Each `shot` becomes a screen of its own in the results, here `delete-account.confirm` and `delete-account.error`,
 each with its own contact sheet. The flow runs from the start once per device and variant.
 
+![The flow's two shot steps, confirm and error, become two screens, each with a contact sheet of desktop and phone in light and dark](images/flows-shots.svg)
+
 ## Steps without a file
 
 For a quick look, give the steps on the command line with `--do`. They are played on every target you name, and

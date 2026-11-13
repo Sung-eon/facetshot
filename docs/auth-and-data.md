@@ -1,64 +1,16 @@
 # Sign-in, servers and test data
 
-Most apps need more than a web server before a screen shows anything useful: an API, a signed-in user and some data
-to show. This page covers the three parts of the config that provide them (`services`, `web.personas` and
-`fixtures`) and ends with a complete example of a web app with its own API.
+To log in to your app before each screenshot, start the servers it talks to, or make records for it to show, add
+these parts to `facetshot.config.ts`:
 
-How facetshot builds and serves the web app itself is in [Web apps](web.md).
+| Part                    | What it does                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| [Personas](#personas)   | sign in as a user, with cookies, headers, storage or a login flow                     |
+| [Services](#services)   | start your API, a mock server or anything else your app talks to                      |
+| [Test data](#test-data) | make the records a page needs before the first screenshot, and remove them afterwards |
 
-## Services
-
-An API, a mock server or anything else your app talks to goes under `services`. Each service starts before the first
-screenshot and stays up for later runs while the [background helper](concepts.md#the-background-helper) is running:
-
-```ts
-services: {
-	api: {
-		cmd: 'bun run api',
-		cwd: '../api',
-		port: 4000,
-		health: '/health',
-		reuse: 'http://localhost:4000'
-	}
-}
-```
-
-- `port` is a number, or `auto` for a free one. Leaving it out means `auto`.
-- `health` is a path (or full URL) that answers with a 2xx status once the service is ready. facetshot waits up to
-  `startTimeout` milliseconds for it (two minutes by default).
-- `reuse`: if this URL already answers with a 2xx status, facetshot uses it and starts nothing. The URL itself is
-  asked, not `health`, so give one that answers 2xx (for example `http://localhost:4000/health`).
-- If the port is taken by something that doesn't answer `health`, the run stops and the message shows how to find
-  that process.
-- Services start one after another, in the order you list them, so a later service can use an earlier one's
-  `{services.<name>.url}`.
-
-A service doesn't get the environment of the terminal or agent that asked for the run
-([why](configuration.md#settings-that-differ-per-checkout-or-per-person)). To pass one of your variables to it, read
-it in the config and put it in `env`:
-
-<!-- prettier-ignore -->
-```ts
-services: {
-	api: { cmd: 'bun run api', env: { DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://localhost/app_dev' } }
-}
-```
-
-## Placeholders
-
-Commands, environment values and targets can contain placeholders, which facetshot fills in once the value is known.
-Each one is available only from the moment it exists:
-
-| Placeholder                     | Is                                                                | Can be used in                                                    |
-| ------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `{port}`, `{url}`               | the port of this service or server, and `http://localhost:{port}` | that service's or server's own `cmd` and `env`                    |
-| `{services.<name>.url}`         | a service's address                                               | later services, builds, the web app's `serve`, app `env`, targets |
-| a name `fixtures.setup` returns | e.g. `{project}`                                                  | builds, servers, app `env`, targets                               |
-| `{web.url}`                     | where the web app is served                                       | targets and flow addresses only                                   |
-
-`{web.url}` is set only after the web app's server is up, which is after services and test data have been made. It
-can't be used in a service's `env` (to tell an API which origin to accept, say). Give the web app a fixed port
-instead, as in the [complete example](#a-complete-example-web-app-and-api).
+The page ends with [a complete example](#a-complete-example-web-app-and-api) of a web app with its own API. How
+facetshot builds and serves the web app itself is in [Web apps](web.md).
 
 ## Personas
 
@@ -142,6 +94,61 @@ web: {
 
 For the screenshots build, use an adapter that `vite preview` can serve (such as `@sveltejs/adapter-node`), not the
 one you deploy with.
+
+## Services
+
+An API, a mock server or anything else your app talks to goes under `services`. Each service starts before the first
+screenshot and stays up for later runs while the [background helper](concepts.md#the-background-helper) is running:
+
+```ts
+services: {
+	api: {
+		cmd: 'bun run api',
+		cwd: '../api',
+		port: 4000,
+		health: '/health',
+		reuse: 'http://localhost:4000'
+	}
+}
+```
+
+- `port` is a number, or `auto` for a free one. Leaving it out means `auto`.
+- `health` is a path (or full URL) that answers once the service is ready. facetshot waits up to `startTimeout`
+  milliseconds for it. What counts as an answer, and the defaults, are in the
+  [configuration reference](configuration.md#services).
+- `reuse`: if this URL already answers, facetshot uses it and starts nothing. The URL itself is asked, not `health`,
+  so give one that answers only when the service is up (for example `http://localhost:4000/health`).
+- If the port is taken by something that doesn't answer `health`, the run stops and the message shows how to find
+  that process.
+- Services start one after another, in the order you list them, so a later service can use an earlier one's
+  `{services.<name>.url}`.
+
+A service doesn't get the environment of the terminal or agent that asked for the run
+([why](configuration.md#settings-that-differ-per-checkout-or-per-person)). To pass one of your variables to it, read
+it in the config and put it in `env`:
+
+<!-- prettier-ignore -->
+```ts
+services: {
+	api: { cmd: 'bun run api', env: { DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://localhost/app_dev' } }
+}
+```
+
+## Placeholders
+
+Commands, environment values and targets can contain placeholders, which facetshot fills in once the value is known.
+Each one is available only from the moment it exists:
+
+| Placeholder                     | Is                                                                | Can be used in                                                    |
+| ------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `{port}`, `{url}`               | the port of this service or server, and `http://localhost:{port}` | that service's or server's own `cmd` and `env`                    |
+| `{services.<name>.url}`         | a service's address                                               | later services, builds, the web app's `serve`, app `env`, targets |
+| a name `fixtures.setup` returns | e.g. `{project}`                                                  | builds, servers, app `env`, targets                               |
+| `{web.url}`                     | where the web app is served                                       | targets and flow addresses only                                   |
+
+`{web.url}` is set only after the web app's server is up, which is after services and test data have been made. It
+can't be used in a service's `env` (to tell an API which origin to accept, say). Give the web app a fixed port
+instead, as in the [complete example](#a-complete-example-web-app-and-api).
 
 ## Test data
 

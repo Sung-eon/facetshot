@@ -21,16 +21,15 @@ result. Since several agents may start runs at the same time, it also limits how
 
 ## Example timings
 
-Measured once on a 10-core Apple-silicon Mac that was busy with other work at the time, so treat these as rough
-examples, not a benchmark. "One-off scripts" means a dev server or a fresh app launch per screenshot, a fixed wait,
-and one screenshot at a time.
+One informal measurement, taken once on a 10-core Apple-silicon Mac that was busy with other work at the time. It
+shows how much of a run is getting ready; it isn't a benchmark.
 
-| Job                                                                                                     | One-off scripts | facetshot, first run                            | facetshot, next runs |
-| ------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------- | -------------------- |
-| A large web app: 10 screens × 4 devices × 3 variants = 120 screenshots                                  | 323 s           | 155 s (incl. a 27 s build and starting the API) | 131 s                |
-| The same app on iOS: 10 screens × 3 devices × 3 variants = 90 screenshots, simulators booted, app built | about 1,250 s   | 390 s (incl. booting)                           | 317 s                |
-| A small web app: 3 screens × 2 devices × 2 variants = 12 screenshots                                    | not measured    | about 3 s                                       | about 1.5 s          |
-| SwiftUI scenes: 40 scenes × 3 devices × 3 variants = 360 screenshots (iOS)                              | not measured    | about 2 min build + 2.5 min                     | about 2.5 min        |
+| Job                                                                        | First run                                       | Later runs    |
+| -------------------------------------------------------------------------- | ----------------------------------------------- | ------------- |
+| A large web app: 10 screens × 4 devices × 3 variants = 120 screenshots     | 155 s (incl. a 27 s build and starting the API) | 131 s         |
+| The same app on iOS: 10 screens × 3 devices × 3 variants = 90 screenshots  | 390 s (incl. booting simulators)                | 317 s         |
+| A small web app: 3 screens × 2 devices × 2 variants = 12 screenshots       | about 3 s                                       | about 1.5 s   |
+| SwiftUI scenes: 40 scenes × 3 devices × 3 variants = 360 screenshots (iOS) | about 2 min build + 2.5 min                     | about 2.5 min |
 
 Most of the remaining time in the iOS row is the iPad's large screenshots, taken one after another on one simulator.
 
@@ -56,6 +55,6 @@ however many terminals or agents are asking:
 - Keep the background helper running between runs (the default). `--no-daemon` throws everything away each time.
 - Give `web.build` precise `inputs`: everything the build reads, and nothing it doesn't (not `node_modules`, not test
   folders). Otherwise unrelated edits cause rebuilds.
-- Add `ready` rules for pages that never go quiet, so they don't wait for the 15-second timeout.
+- Add `ready` rules for pages that never go quiet, so they don't wait for the [readiness timeout](configuration.md#webready).
 - Run `check` first, and take screenshots only of the screens worth seeing.
 - Keep your `default` profile small, and use `-p full` when you need everything.

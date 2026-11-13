@@ -18,7 +18,7 @@ SwiftUI scenes need a Mac with Xcode.
    ```swift
    // Package.swift
    dependencies: [
-       .package(url: "https://github.com/Sung-eon/Facetshot.git", branch: "main")
+       .package(url: "https://github.com/Sung-eon/facetshot.git", branch: "main")
    ],
    targets: [
        .testTarget(

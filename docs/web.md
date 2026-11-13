@@ -15,6 +15,9 @@ You run the app, and facetshot visits it. Set `baseURL`, and paths like `/settin
 web: { baseURL: 'http://localhost:3000' }
 ```
 
+A `baseURL` with a path keeps it: with `http://localhost:3000/docs`, `/` opens `http://localhost:3000/docs/` and
+`/settings` opens `http://localhost:3000/docs/settings`. Full URLs are opened as they are.
+
 Or facetshot builds and starts the app. Give it a build and a server:
 
 ```ts
@@ -92,15 +95,17 @@ facetshot /pricing /docs --diff=live
 
 ## When a page counts as ready
 
-facetshot takes a screenshot when all of these are true, checked every 50 ms:
+facetshot takes a screenshot when all of these are true:
 
 1. The page has loaded and its fonts have finished loading.
-2. No request has been in flight for `idle` milliseconds (300 by default). WebSockets, event streams and requests
-   open for more than 10 seconds (long polling) don't count.
+2. No request has been in flight for `idle` milliseconds. WebSockets, event streams and long-polling requests don't
+   count.
 3. Nothing in `gone` is visible, and everything in `visible` is.
 4. The `when` expression, if there is one, is true.
 
 Then it waits for two painted frames and takes the screenshot with animations stopped and the text cursor hidden.
+The defaults for `idle` and `timeout`, and how often the page is checked, are in the
+[configuration reference](configuration.md#webready).
 
 ```ts
 web: {
@@ -115,11 +120,11 @@ web: {
 ```
 
 Rules under `routes` apply to paths matching the pattern (`*` within one path segment, `**` across segments) and add
-to the general ones. Set `idle: 0` for pages that never stop talking to the server, such as editors that save
+to the general ones. Paths are matched as targets name them: with `web.baseURL` set to `http://localhost:3000/app`,
+`/settings` matches the page at `/app/settings`. Set `idle: 0` for pages that never stop talking to the server, such as editors that save
 automatically and live dashboards.
 
-If a page isn't ready after `timeout` (15 seconds by default), facetshot takes the screenshot anyway and says what it
-was still waiting for:
+If a page isn't ready after `timeout`, facetshot takes the screenshot anyway and says what it was still waiting for:
 
 ```
 Taken before the screen settled (2):
@@ -172,14 +177,14 @@ Naming browsers replaces Chromium; include `chromium` to keep it. Each browser g
 `check` and `compare`, and `browser` to `open` ([MCP tools](mcp.md)). To make another browser the default for a
 project, set `web.browser` in the config.
 
-| Name          | What it is                                               | Before first use                   |
-| ------------- | -------------------------------------------------------- | ---------------------------------- |
-| `chromium`    | Playwright's build of Chromium (the default)             | `bunx playwright install chromium` |
-| `webkit`      | Playwright's build of WebKit, the engine inside Safari   | `bunx playwright install webkit`   |
-| `firefox`     | Playwright's build of Firefox                            | `bunx playwright install firefox`  |
-| `chrome`      | the Google Chrome installed on this machine              | nothing, if Chrome is installed    |
-| `msedge`      | the Microsoft Edge installed on this machine             | nothing, if Edge is installed      |
-| `moz-firefox` | the Firefox app installed on this machine (experimental) | nothing, if Firefox is installed   |
+| Name          | What it is                                               | Before first use                    |
+| ------------- | -------------------------------------------------------- | ----------------------------------- |
+| `chromium`    | Playwright's build of Chromium (the default)             | `facetshot setup` (always)          |
+| `webkit`      | Playwright's build of WebKit, the engine inside Safari   | `facetshot setup --browser webkit`  |
+| `firefox`     | Playwright's build of Firefox                            | `facetshot setup --browser firefox` |
+| `chrome`      | the Google Chrome installed on this machine              | nothing, if Chrome is installed     |
+| `msedge`      | the Microsoft Edge installed on this machine             | nothing, if Edge is installed       |
+| `moz-firefox` | the Firefox app installed on this machine (experimental) | nothing, if Firefox is installed    |
 
 `facetshot doctor` lists which of these this machine can start.
 

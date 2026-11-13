@@ -3,7 +3,7 @@
 A three-screen React app ("Lantern") with a Storybook, and the facetshot config that takes screenshots of both.
 
 Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
-`bunx playwright install chromium`. In your own project the command is `bunx facetshot` instead of
+`bun --bun ../../src/cli.ts setup`. Elsewhere the command is `facetshot` (or `bunx facetshot`) instead of
 `bun --bun ../../src/cli.ts`.
 
 ```sh

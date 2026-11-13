@@ -35,13 +35,24 @@ in `.facetshot/baselines/`. To commit them so your team can share them, ignore `
 
 ## What you get
 
+![Each screenshot of this run is compared pixel by pixel with the same one from the run before or a baseline; a changed screen is marked with a triangle, and its changed screenshot gets a red outline, a badge, a .diff.png and a diff.ratio](images/comparing-diff.svg)
+
 - The summary counts the screens that changed, and marks them with `△` in the list of sheets.
 - On a contact sheet, a changed screenshot has a red outline and a badge with how much of it changed.
 - Next to each changed screenshot there's a `.diff.png` that highlights the changed pixels.
 - In `manifest.json`, each screenshot has `diff.ratio`: the share of pixels that changed, from 0 to 1.
 
-Small differences in anti-aliasing are ignored, so a ratio above zero means something a person would notice. If a
-screenshot changes on every run although nothing changed (a clock, a random avatar color), see
+## How "changed" is decided
+
+Screenshots are compared pixel by pixel with [pixelmatch](https://github.com/mapbox/pixelmatch):
+
+- A pixel counts as changed when its colour differs by more than pixelmatch's threshold of 0.1 (on a scale from 0 to
+  1). Pixels that pixelmatch takes for anti-aliasing (the soft edges of text and shapes) are left out.
+- Any changed pixel marks the screenshot as changed, however few there are. `diff.ratio` says how many.
+- A screenshot whose size changed, or that has no earlier screenshot to compare with, gets a ratio of 1.
+- The threshold is fixed. There is no setting for how much change to tolerate per screen yet.
+
+If a screenshot changes on every run although nothing changed (a clock, a random avatar colour), see
 [Keeping screenshots the same](web.md#keeping-screenshots-the-same-from-run-to-run).
 
 ## Comparing doesn't fail a run

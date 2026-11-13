@@ -6,6 +6,8 @@ screen open (a web page, or a [desktop app's window](#what-sessions-open)) so yo
 at a time. After each step you get a screenshot, the log lines since the last step, and a list of what on screen can
 be clicked or typed into.
 
+![open returns a response with the screenshot, the new log lines and what's on screen with refs; act sends steps and gets the next response; close --save keeps the steps as a flow file, which a profile's targets replay on every device](images/sessions-loop.svg)
+
 ## From the command line
 
 ```

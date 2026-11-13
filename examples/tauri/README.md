@@ -4,9 +4,9 @@ A minimal Tauri 2 app ("Pebble") with a Vite frontend: two screens (`/` and `/ab
 the deep-link plugin registering the `pebble://` scheme.
 
 Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
-`bunx playwright install chromium`. In your own project the command is `bunx facetshot` instead of
+`bun --bun ../../src/cli.ts setup`. Elsewhere the command is `facetshot` (or `bunx facetshot`) instead of
 `bun --bun ../../src/cli.ts`. The `webkit` way below also needs
-`bunx playwright install webkit`.
+`bun --bun ../../src/cli.ts setup --browser webkit`.
 
 ```sh
 bun install

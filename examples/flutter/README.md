@@ -5,8 +5,8 @@ button and a context menu (right-click, or long press on a phone). The plan card
 on a phone the last one runs off the screen; that bug is left in for the checks to find.
 
 Run these from this folder inside a facetshot clone, after `bun install` at the clone's root and
-`bunx playwright install chromium`. They need the Flutter SDK, and Xcode for `--on mac`. In your own project the
-command is `bunx facetshot` instead of `bun --bun ../../src/cli.ts`.
+`bun --bun ../../src/cli.ts setup`. They need the Flutter SDK, and Xcode for `--on mac`. Elsewhere the
+command is `facetshot` (or `bunx facetshot`) instead of `bun --bun ../../src/cli.ts`.
 
 On the web:
 

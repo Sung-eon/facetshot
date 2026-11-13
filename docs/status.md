@@ -12,16 +12,22 @@ place that says what has and hasn't been tried; other pages describe how things 
 | Storybook, Electron                             | tested                                                                  | expected, untested       | expected, untested               |
 | Sessions and the background helper              | tested                                                                  | untested                 | probably not working (see below) |
 | Mac windows: screenshots, steps, sessions, logs | tested                                                                  | not available            | not available                    |
-| iOS simulator screenshots and label steps       | tested by hand                                                          | not available            | not available                    |
-| SwiftUI scenes                                  | tested                                                                  | not available            | not available                    |
+| iOS simulator screenshots and label steps       | tested by hand; CI needs a macOS runner with Xcode                      | not available            | not available                    |
+| SwiftUI scenes                                  | tested; CI needs a macOS runner with Xcode                              | not available            | not available                    |
 | Flutter                                         | web tested; macOS not run end to end; iOS untested                      | expected, untested (web) | expected, untested (web)         |
 | Tauri                                           | the UI in WebKit tested; the real window run by hand, no automated test | planned                  | planned                          |
 | Android                                         | planned                                                                 | planned                  | planned                          |
 
 "Expected" means the feature uses only Playwright, which behaves the same on that system, but nobody has tried it
-there yet. Reports are welcome.
+there yet. Reports are welcome. No [CI](ci.md) provider has been tried yet.
 
 ## Known limits
+
+- **Installing:** `bun add -g` from a packed tarball, `facetshot setup`, `init --agent all` and `uninstall --yes` in
+  a folder with no `package.json` were run on macOS. Running without installing (`bunx facetshot`) hasn't been tried,
+  since there is no published version yet. Installing a tagged version from GitHub
+  ([command reference](cli.md#installing-updating-and-removing)) hasn't been tried either, and can't be until the tag
+  `0.1.0` exists. `uninstall --browsers` hasn't been run; it calls Playwright's own `uninstall`.
 
 - **Firefox:** Playwright's Firefox build hasn't been confirmed working on macOS yet. `moz-firefox` (the installed
   Firefox app) is driven over WebDriver BiDi, which Playwright supports only experimentally.

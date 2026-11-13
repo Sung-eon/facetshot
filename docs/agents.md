@@ -6,35 +6,59 @@ its context.
 
 ## Connecting your agent
 
-Run one of these in your project's folder:
+Each agent gets two things: facetshot's MCP server, which gives it the tools, and the skill, which tells it when to
+look and how. The skill is a folder: `SKILL.md` (the workflow and the rules) and `references/` (every tool and
+option, steps and flows, results and logs, each platform, and setup and troubleshooting), which the agent reads when
+a task needs it. Install facetshot first ([Getting started](getting-started.md#1-install)), then set up your agent.
+
+The server is registered as `bunx facetshot mcp`. That command uses facetshot from the project's `node_modules` if it
+is there, then a global install, and otherwise downloads it, so it works for whoever clones the project.
+
+### Claude Code
+
+Install the plugin once, for all your projects:
+
+```
+/plugin install facetshot --marketplace Sung-eon/facetshot
+```
+
+Or write both into this project, so everyone who clones it gets them:
 
 ```sh
-bunx facetshot init --agent claude     # Claude Code
-bunx facetshot init --agent cursor     # Cursor
-bunx facetshot init --agent codex      # Codex
-bunx facetshot init --agent all
+facetshot init --agent claude
 ```
 
-In Claude Code there is also a plugin with the same skill and MCP server, installed once for all your projects
-instead of written into each one:
+This registers the server in `.mcp.json`, puts the skill in `.claude/skills/facetshot/` and adds
+[one line](#the-line-in-claudemd-or-agentsmd) to `CLAUDE.md`. With the plugin, add that line to the project's
+`CLAUDE.md` yourself. Short paths such as `/settings` also need a `facetshot.config.ts` (`facetshot init`).
 
+### Codex
+
+```sh
+facetshot init --agent codex
 ```
-/plugin install facetshot --marketplace Sung-eon/Facetshot
+
+This puts the skill in `.agents/skills/facetshot/`, where Codex looks for a repository's skills, and the server
+under `[mcp_servers.facetshot]` in `.codex/config.toml`. Codex reads a project's config once you trust the project;
+otherwise copy that section to `~/.codex/config.toml`.
+
+### Cursor
+
+```sh
+facetshot init --agent cursor
 ```
 
-The plugin's MCP server runs `bunx facetshot mcp`, so a project still needs facetshot installed (`bun add -d
-facetshot`) and, for short paths such as `/settings`, a `facetshot.config.ts` (`bunx facetshot init`).
+This registers the server in `.cursor/mcp.json` and writes the rule `.cursor/rules/facetshot.mdc`. A rule is one
+file, so it carries `SKILL.md` followed by every reference.
 
-What `init --agent` writes:
+### Other agents
 
-| Agent       | File                          | What it is                                                                                                                                                     |
-| ----------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code | `.mcp.json`                   | registers facetshot's MCP server, so the agent gets its tools                                                                                                  |
-|             | `.claude/skills/facetshot/`   | the Agent Skill: `SKILL.md` says when to look and how; `reference.md` has the details                                                                          |
-| Cursor      | `.cursor/mcp.json`            | the same MCP server, for Cursor                                                                                                                                |
-|             | `.cursor/rules/facetshot.mdc` | the skill's text as a Cursor rule                                                                                                                              |
-| Codex       | `.codex/config.toml`          | the MCP server, under `[mcp_servers.facetshot]`. Codex reads a project's file once you trust the project; otherwise copy the section to `~/.codex/config.toml` |
-|             | `.agents/skills/facetshot/`   | the Agent Skill, where Codex looks for a repository's skills                                                                                                   |
+Any agent that can run a local MCP server over standard input and output can use facetshot: register the command
+`bunx facetshot mcp` (the JSON is below). If the agent reads skills or instruction files, point it at the
+`skills/facetshot/` folder of facetshot's install: `node_modules/facetshot/` in a project, or
+`~/.bun/install/global/node_modules/facetshot/` after `bun add -g`.
+
+`facetshot init --agent all` sets up Claude Code, Cursor and Codex at once.
 
 Running `init` again is safe, but note what it does to each file:
 
@@ -44,21 +68,28 @@ Running `init` again is safe, but note what it does to each file:
   symbolic link to facetshot's own `skills/facetshot/`, so it can't drift from the version you run.
 - `.cursor/rules/facetshot.mdc` is overwritten each time.
 
+`facetshot uninstall` takes out exactly these entries and files again ([`uninstall`](cli.md#uninstall)).
+
 Commit these files, so everyone on the team, and every agent, gets the same setup.
 
 `init --agent` connects the agent even in a folder where it finds no app to build or start: it writes no config then,
 and the agent can still take screenshots of full URLs. To give it short paths like `/settings` for an app that's
-already running, add its address: `bunx facetshot init --url http://localhost:3000 --agent claude`.
+already running, add its address: `facetshot init --url http://localhost:3000 --agent claude`.
 
-`init` also prints one line to add to your `CLAUDE.md` or `AGENTS.md`. With `--yes`, it appends the line to whichever
-of those files already exists (`CLAUDE.md` first); it never creates one. The line is:
+### The line in CLAUDE.md or AGENTS.md
+
+`init --agent` also adds one line to your `CLAUDE.md` or `AGENTS.md` (whichever exists, `CLAUDE.md` first; if neither
+does, it creates `CLAUDE.md` for Claude Code and `AGENTS.md` otherwise). At a terminal it asks first, yes by default;
+`--yes` adds it without asking; with no terminal and no `--yes` it only prints the line. It leaves a file that already
+mentions facetshot alone. The line is:
 
 > To see this app's screens or try what they do, use facetshot (the `facetshot` MCP tools, or the `facetshot`
 > command) instead of a one-off screenshot script, and look before answering from the code.
 
-Agents tend to write a one-off screenshot script each time they want to see a screen, and the fixed sleeps in those
-scripts make them flaky. The skill and this line tell them to use facetshot instead. Tests you keep, such as
-Playwright's `toHaveScreenshot`, are a different job; edit the line if your agents should also write those.
+Keep this line. Agents tend to answer from the code, or write a one-off screenshot script whose fixed sleeps make it
+flaky. With the skill alone, many still do; with this line in their instructions, they look in the app first. Tests you
+keep, such as Playwright's `toHaveScreenshot`, are a different job; edit the line if your agents should also write
+those.
 
 Restart your agent after `init`: agents load MCP servers when they start, and Claude Code asks you to approve the
 `facetshot` server the first time. To check the connection, ask "which facetshot tools do you have?" or "check

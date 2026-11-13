@@ -5,14 +5,7 @@ want to understand its behaviour, judge its security, or work on its code.
 
 ## The parts
 
-```mermaid
-flowchart LR
-  cli["facetshot CLI"] --> helper
-  mcp["MCP server (facetshot mcp)"] --> helper
-  helper["Background helper<br/>one per user account"] --> runtime
-  runtime["A runtime per project<br/>browsers, services, simulators, test data"] --> tools
-  tools["Playwright · simctl · xcodebuild · swift test · the Mac helper"]
-```
+![Terminals and agents' MCP servers all talk to one background helper per user account, which holds the shared limits and keeps one runtime per project; drivers do the work through Playwright, simctl, xcodebuild, swift test and the Mac helper](images/architecture-parts.svg)
 
 1. The command line (`src/cli.ts`, sessions in `src/session-cli.ts`) and the MCP server (`src/integrations/mcp.ts`)
    turn what you asked for into a request. Neither takes screenshots itself.
@@ -62,7 +55,8 @@ own, and closes everything when the run ends. Sessions need the background helpe
 | `engine/`                            | the runtime, process groups and environments (`procs.ts`, `ownEnvironment`), builds and caches keyed by inputs, the static file server, locks and the pools (`scheduler.ts`)       |
 | `checks/`, `logs.ts`                 | what is read on each page; logs, masking, and app output and system log recording                                                                                                  |
 | `fixtures.ts`, `ports.ts`            | test data and its ledger; `stablePorts`                                                                                                                                            |
-| `listing.ts`, `doctor.ts`, `init.ts` | `list`, `doctor`, `init` (and the agent files it writes)                                                                                                                           |
+| `listing.ts`, `doctor.ts`, `init.ts` | `list`, `doctor`, `init` (and the agent files it writes, with `undoAgents`, their inverse)                                                                                         |
+| `setup.ts`, `uninstall.ts`           | `setup` (browsers through facetshot's own Playwright) and `uninstall`                                                                                                              |
 
 ## Sessions
 

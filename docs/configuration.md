@@ -14,6 +14,14 @@ export default defineConfig({
 `defineConfig` only gives you types and autocompletion; the file is plain TypeScript, so you can compute values,
 read environment variables or import helpers.
 
+## How the config is checked
+
+`defineConfig` returns your object unchanged, and the types are checked only by your editor or `tsc`, when facetshot
+is installed in the project. When facetshot loads the config it checks that the file runs and has a default export.
+It doesn't check the keys against a schema, so a misspelt key is ignored without a word. Values are checked when they
+are used: a device, variant, group, profile or persona that doesn't exist, or a device without a platform and size,
+stops the run with exit code 2 and says what to fix.
+
 Paths are relative to the config file. Commands run in a shell, from their `cwd` (relative to the config) or the
 config's folder. Commands and environment values can use placeholders such as `{port}` and `{services.api.url}`;
 [Placeholders](auth-and-data.md#placeholders) lists them and when each one is available.
@@ -74,14 +82,14 @@ through the background helper.
 
 `web.build`, `desktop.build`, `apple.ios.build` and the others are build steps:
 
-| Field    |                                                                                           |
-| -------- | ----------------------------------------------------------------------------------------- |
-| `cmd`    | the command, run in a shell                                                               |
-| `inputs` | files and folders whose contents decide whether a rebuild is needed                       |
-| `output` | what the build makes; if it is missing, the build runs again                              |
-| `cwd`    | the folder to run it in (default: the config's)                                           |
-| `env`    | environment for the command                                                               |
-| `heavy`  | a heavy build (Xcode, a large bundle): only one heavy build runs on the machine at a time |
+| Field    | Default             |                                                                                           |
+| -------- | ------------------- | ----------------------------------------------------------------------------------------- |
+| `cmd`    | required            | the command, run in a shell                                                               |
+| `inputs` | required            | files and folders whose contents decide whether a rebuild is needed                       |
+| `output` |                     | what the build makes; if it is missing, the build runs again                              |
+| `cwd`    | the config's folder | the folder to run it in                                                                   |
+| `env`    |                     | environment for the command                                                               |
+| `heavy`  | false               | a heavy build (Xcode, a large bundle): only one heavy build runs on the machine at a time |
 
 ## `devices`
 
@@ -95,19 +103,19 @@ devices: {
 }
 ```
 
-| Field                          | For            |                                                                                                 |
-| ------------------------------ | -------------- | ----------------------------------------------------------------------------------------------- |
-| `platform`                     | all            | `web`, `ios` or `window`                                                                        |
-| `width`, `height`              | all            | size in CSS pixels or points                                                                    |
-| `scale`                        | all            | pixel density (default 2)                                                                       |
-| `mobile`, `touch`, `userAgent` | web            | phone browser behaviour                                                                         |
-| `model`                        | ios            | simulator device type, as Xcode names it                                                        |
-| `orientation`                  | ios            | `portrait` or `landscape`                                                                       |
-| `split`                        | ios            | width as a fraction of the screen, for Split View (the app is told the width)                   |
-| `idiom`, `safeArea`            | ios, snapshots | the device family (`phone`, `pad`, `mac`) and screen insets a snapshot renderer assumes         |
-| `label`                        | all            | a friendlier name                                                                               |
-| `extends`                      | all            | a built-in device to start from; the other fields change it                                     |
-| `browser`                      | web            | the browser for this device: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox` |
+| Field                          | For            | Default                    |                                                                                                 |
+| ------------------------------ | -------------- | -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `platform`                     | all            | required, unless `extends` | `web`, `ios` or `window`                                                                        |
+| `width`, `height`              | all            | required, unless `extends` | size in CSS pixels or points                                                                    |
+| `scale`                        | all            | 2                          | pixel density                                                                                   |
+| `mobile`, `touch`, `userAgent` | web            | off, off, the browser's    | phone browser behaviour                                                                         |
+| `model`                        | ios            |                            | simulator device type, as Xcode names it                                                        |
+| `orientation`                  | ios            | `portrait`                 | `portrait` or `landscape`                                                                       |
+| `split`                        | ios            |                            | width as a fraction of the screen, for Split View (the app is told the width)                   |
+| `idiom`, `safeArea`            | ios, snapshots |                            | the device family (`phone`, `pad`, `mac`) and screen insets a snapshot renderer assumes         |
+| `label`                        | all            | the device's name          | a friendlier name                                                                               |
+| `extends`                      | all            |                            | a built-in device to start from; the other fields change it                                     |
+| `browser`                      | web            | `web.browser`              | the browser for this device: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox` |
 
 ## `variants`
 
@@ -121,127 +129,148 @@ variants: {
 }
 ```
 
-| Field        | Values                                         |
-| ------------ | ---------------------------------------------- |
-| `appearance` | `light`, `dark`                                |
-| `text`       | `default`, `large`, `xlarge`, `xxl`            |
-| `contrast`   | `more`, `forced`                               |
-| `motion`     | `reduce` (the default for screenshots), `full` |
-| `locale`     | a BCP 47 tag, e.g. `de-DE`                     |
-| `timezone`   | an IANA zone, e.g. `Asia/Seoul`                |
-| `direction`  | `ltr`, `rtl`                                   |
-| `persona`    | a name from `web.personas`                     |
-| `network`    | `offline`                                      |
-| `media`      | `print`                                        |
+| Field        | Default               | Values                              |
+| ------------ | --------------------- | ----------------------------------- |
+| `appearance` | the platform's        | `light`, `dark`                     |
+| `text`       | `default`             | `default`, `large`, `xlarge`, `xxl` |
+| `contrast`   | the platform's        | `more`, `forced`                    |
+| `motion`     | `reduce` on web pages | `reduce`, `full`                    |
+| `locale`     | the platform's        | a BCP 47 tag, e.g. `de-DE`          |
+| `timezone`   | the platform's        | an IANA zone, e.g. `Asia/Seoul`     |
+| `direction`  | the platform's        | `ltr`, `rtl`                        |
+| `persona`    | `web.persona`         | a name from `web.personas`          |
+| `network`    | online                | `offline`                           |
+| `media`      | screen                | `print`                             |
 
 ## `web`
 
-| Key                   |                                                                                                                                                                                                                                                                   |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `baseURL`             | where your app runs, if you start it yourself                                                                                                                                                                                                                     |
-| `build`               | `{ cmd, inputs, output?, cwd?, env?, heavy? }`: a build that runs when `inputs` change                                                                                                                                                                            |
-| `serve`               | `{ cmd, port?, health?, reuse?, cwd?, env?, startTimeout? }`: the server for the app. Leave it out when `build.output` is a folder of static files (a single-page app, Flutter's `build/web`): facetshot serves it, with `index.html` for paths that aren't files |
-| `browser`             | the default browser: `chromium` (default), `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`                                                                                                                                                                 |
-| `personas`, `persona` | who is signed in (below)                                                                                                                                                                                                                                          |
-| `storage`             | `localStorage` entries set before the page loads                                                                                                                                                                                                                  |
-| `ready`               | `{ idle?, visible?, gone?, when?, timeout?, routes? }` ([Web apps](web.md#when-a-page-counts-as-ready))                                                                                                                                                           |
-| `block`               | URL globs to abort                                                                                                                                                                                                                                                |
-| `rewrite`             | `[{ from, to }]`: URL prefixes to send elsewhere                                                                                                                                                                                                                  |
-| `mask`                | selectors painted over in screenshots                                                                                                                                                                                                                             |
-| `css`                 | CSS added to every page                                                                                                                                                                                                                                           |
-| `textSizes`           | root font sizes for `large`, `xlarge`, `xxl` (default 125%, 150%, 200%)                                                                                                                                                                                           |
-| `clock`               | freeze the page's clock at this time (ISO 8601)                                                                                                                                                                                                                   |
-| `fullPage`            | take the whole page instead of the screen (default false)                                                                                                                                                                                                         |
+| Key                   | Default          |                                                                                                                                                                                                                                                     |
+| --------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseURL`             |                  | where your app runs, if you start it yourself                                                                                                                                                                                                       |
+| `build`               |                  | a [build step](#build-steps) that runs when its `inputs` change                                                                                                                                                                                     |
+| `serve`               |                  | the server for the app, with the same fields as a [service](#services). Leave it out when `build.output` is a folder of static files (a single-page app, Flutter's `build/web`): facetshot serves it, with `index.html` for paths that aren't files |
+| `browser`             | `chromium`       | the default browser: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`                                                                                                                                                             |
+| `personas`, `persona` | nobody signed in | who is signed in (below)                                                                                                                                                                                                                            |
+| `storage`             |                  | `localStorage` entries set before the page loads                                                                                                                                                                                                    |
+| `ready`               | (below)          | when a page counts as ready ([`web.ready`](#webready))                                                                                                                                                                                              |
+| `block`               |                  | URL globs to abort                                                                                                                                                                                                                                  |
+| `rewrite`             |                  | `[{ from, to }]`: URL prefixes to send elsewhere                                                                                                                                                                                                    |
+| `mask`                |                  | selectors painted over in screenshots                                                                                                                                                                                                               |
+| `css`                 |                  | CSS added to every page                                                                                                                                                                                                                             |
+| `textSizes`           | 125%, 150%, 200% | root font sizes for `large`, `xlarge`, `xxl`                                                                                                                                                                                                        |
+| `clock`               | the real time    | freeze the page's clock at this time (ISO 8601)                                                                                                                                                                                                     |
+| `fullPage`            | false            | take the whole page instead of the screen                                                                                                                                                                                                           |
 
-Steps in a persona's `login` flow hold their text as written; see [Steps](flows.md#steps).
+### `web.ready`
+
+What each field means, and how route rules work, is in
+[When a page counts as ready](web.md#when-a-page-counts-as-ready).
+
+| Field     | Default |                                                                                                   |
+| --------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `idle`    | 300     | milliseconds with no request in flight; `0` doesn't wait for the network                          |
+| `visible` |         | selectors that must be visible                                                                    |
+| `gone`    |         | selectors that must not be visible                                                                |
+| `when`    |         | a JavaScript expression, run in the page, that must be true                                       |
+| `timeout` | 15 000  | milliseconds before the screenshot is taken anyway. A session waits at most 8 000 after each step |
+| `routes`  |         | `{ pattern: rule }`: rules with the fields above for some paths, laid over the general ones       |
+
+Two numbers are fixed: the page is checked every 50 ms, and a request open for more than 10 seconds (long polling)
+stops counting as in flight.
 
 ### `web.personas`
 
 Each key names a persona. See [Personas](auth-and-data.md#personas) for how each field behaves.
 
-| Field          |                                                                                              |
-| -------------- | -------------------------------------------------------------------------------------------- |
-| `cookies`      | `[{ name, value, domain?, path? }]`; `domain` defaults to the app's host name, `path` to `/` |
-| `headers`      | request headers sent with every request, including requests to other sites                   |
-| `storage`      | `localStorage` entries                                                                       |
-| `storageState` | a Playwright storage state file; used instead of `login` when both are given                 |
-| `login`        | a flow that signs in; its result is saved in `.facetshot/auth/`                              |
-| `ttl`          | minutes a `login` result is reused (default 720)                                             |
+| Field          | Default |                                                                                              |
+| -------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `cookies`      |         | `[{ name, value, domain?, path? }]`; `domain` defaults to the app's host name, `path` to `/` |
+| `headers`      |         | request headers sent with every request, including requests to other sites                   |
+| `storage`      |         | `localStorage` entries                                                                       |
+| `storageState` |         | a Playwright storage state file; used instead of `login` when both are given                 |
+| `login`        |         | a flow that signs in; its result is saved in `.facetshot/auth/`                              |
+| `ttl`          | 720     | minutes a `login` result is reused                                                           |
+
+Steps in a persona's `login` flow hold their text as written; see [Steps](flows.md#steps).
 
 ## `services`
 
-Each key names a service; see [Services](auth-and-data.md#services).
+Each key names a service; see [Services](auth-and-data.md#services). `web.serve` takes the same fields.
 
-| Field               |                                                       |
-| ------------------- | ----------------------------------------------------- |
-| `cmd`, `cwd`, `env` | how to start it                                       |
-| `port`              | a number, or `auto` for a free one                    |
-| `health`            | a path or URL that answers 2xx when it's ready        |
-| `reuse`             | if this URL answers already, use it and start nothing |
-| `startTimeout`      | milliseconds to wait for `health` (default 120 000)   |
+| Field          | Default                   |                                                        |
+| -------------- | ------------------------- | ------------------------------------------------------ |
+| `cmd`          | required                  | the command that starts it, run in a shell             |
+| `cwd`, `env`   | the config's folder, none | where it runs, and its environment                     |
+| `port`         | `auto`                    | a number, or `auto` for a free one                     |
+| `health`       | the service's own address | a path or URL that answers once it's ready             |
+| `reuse`        |                           | if this URL answers already, use it and start nothing  |
+| `startTimeout` | 120 000                   | milliseconds to wait for `health` before the run stops |
+
+"Answers" means any HTTP status below 500, within 2 seconds; redirects aren't followed. While a service starts, `health` is
+asked every 300 ms.
 
 ## `desktop`
 
 One app per project. See [Desktop apps](desktop.md).
 
-| Field        | For                    |                                                                                                  |
-| ------------ | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `kind`       | all                    | `electron`, `tauri` or `macos`                                                                   |
-| `main`       | electron               | the app's entry (`.` for `package.json`'s `main`) or a packaged executable                       |
-| `executable` | electron               | another Electron binary                                                                          |
-| `app`        | tauri, macos           | a built `.app`, or leave it out and give `build` with an `output`                                |
-| `build`      | all                    | a [build step](#build-steps) run before launch when its inputs change                            |
-| `navigate`   | all                    | how `app:/path` is reached: `hash`, a URL with `{path}`, `ipc:<channel>` (Electron), or a scheme |
-| `args`       | all                    | launch arguments                                                                                 |
-| `env`        | all                    | environment for the app; placeholders are filled                                                 |
-| `readyFile`  | tauri, macos           | the app writes `FACETSHOT_READY_FILE` when a screen has settled                                  |
-| `engine`     | tauri                  | `webkit` (the UI in WebKit, the default with `frontend`) or `window` (the real window)           |
-| `frontend`   | tauri                  | the web UI: `url`, or `cmd`, `port`, `health` and an optional `build`                            |
-| `invoke`     | tauri, `webkit` engine | answers for `invoke()` calls                                                                     |
+| Field        | For                    | Default                                 |                                                                                                  |
+| ------------ | ---------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `kind`       | all                    | required                                | `electron`, `tauri` or `macos`                                                                   |
+| `main`       | electron               | `.`                                     | the app's entry (`.` for `package.json`'s `main`) or a packaged executable                       |
+| `executable` | electron               | the project's `electron` package        | another Electron binary                                                                          |
+| `app`        | tauri, macos           | `build.output`                          | a built `.app`, or leave it out and give `build` with an `output`                                |
+| `build`      | all                    |                                         | a [build step](#build-steps) run before launch when its inputs change                            |
+| `navigate`   | all                    | `hash` (electron)                       | how `app:/path` is reached: `hash`, a URL with `{path}`, `ipc:<channel>` (Electron), or a scheme |
+| `args`       | all                    |                                         | launch arguments                                                                                 |
+| `env`        | all                    |                                         | environment for the app; placeholders are filled                                                 |
+| `readyFile`  | tauri, macos           | false                                   | the app writes `FACETSHOT_READY_FILE` when a screen has settled                                  |
+| `engine`     | tauri                  | `webkit` with `frontend`, else `window` | `webkit` (the UI in WebKit) or `window` (the real window)                                        |
+| `frontend`   | tauri                  |                                         | the web UI: `url`, or `cmd`, `port`, `health` and an optional `build`                            |
+| `invoke`     | tauri, `webkit` engine |                                         | answers for `invoke()` calls                                                                     |
 
 ## `apple`
 
 For an app that runs on the iOS simulator, and optionally its Mac build. See [iOS simulators](ios.md).
 
-| Field           |                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------- |
-| `bundleId`      | the app's bundle identifier (required)                                                             |
-| `scheme`        | the URL scheme deep links use, such as `myapp`                                                     |
-| `deepLinkStyle` | `path` (`myapp:///settings`, the default) or `host` (`myapp://settings`)                           |
-| `ios`, `macos`  | `{ app }` (a built `.app`) or `{ build }` (a [build step](#build-steps) whose `output` is the app) |
-| `env`, `args`   | environment and launch arguments for the app                                                       |
-| `readyFile`     | the app writes `FACETSHOT_READY_FILE` when a screen has settled                                    |
-| `variantEnv`    | environment that tells the app which variant to show ([Variants on iOS](ios.md#variants-on-ios))   |
+| Field           | Default  |                                                                                                    |
+| --------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `bundleId`      | required | the app's bundle identifier                                                                        |
+| `scheme`        |          | the URL scheme deep links use, such as `myapp`                                                     |
+| `deepLinkStyle` | `path`   | `path` (`myapp:///settings`) or `host` (`myapp://settings`)                                        |
+| `ios`, `macos`  |          | `{ app }` (a built `.app`) or `{ build }` (a [build step](#build-steps) whose `output` is the app) |
+| `env`, `args`   |          | environment and launch arguments for the app                                                       |
+| `readyFile`     | false    | the app writes `FACETSHOT_READY_FILE` when a screen has settled                                    |
+| `variantEnv`    |          | environment that tells the app which variant to show ([Variants on iOS](ios.md#variants-on-ios))   |
 
 ## `swift`
 
 See [SwiftUI scenes](swiftui.md).
 
-| Field     |                                                                       |
-| --------- | --------------------------------------------------------------------- |
-| `package` | the Swift package or Xcode project folder                             |
-| `test`    | the test that draws the scenes, `Target/Test`                         |
-| `scheme`  | the xcodebuild scheme for iOS runs (default `<package name>-Package`) |
-| `inputs`  | folders whose change rebuilds the test bundle (default: the package)  |
+| Field     | Default                  |                                               |
+| --------- | ------------------------ | --------------------------------------------- |
+| `package` | required                 | the Swift package or Xcode project folder     |
+| `test`    | required                 | the test that draws the scenes, `Target/Test` |
+| `scheme`  | `<package name>-Package` | the xcodebuild scheme for iOS runs            |
+| `inputs`  | the package folder       | folders whose change rebuilds the test bundle |
 
 ## `storybook`
 
 See [Storybook](storybook.md).
 
-| Field     |                                                                                        |
-| --------- | -------------------------------------------------------------------------------------- |
-| `url`     | a Storybook that is already running                                                    |
-| `build`   | a [build step](#build-steps) whose `output` is a static Storybook, served by facetshot |
-| `ready`   | readiness for stories, with `routes` keyed by story id globs                           |
-| `globals` | Storybook globals to set per variant, for decorators that switch themes themselves     |
+| Field     | Default     |                                                                                        |
+| --------- | ----------- | -------------------------------------------------------------------------------------- |
+| `url`     |             | a Storybook that is already running                                                    |
+| `build`   |             | a [build step](#build-steps) whose `output` is a static Storybook, served by facetshot |
+| `ready`   | `web.ready` | readiness for stories, with `routes` keyed by story id globs                           |
+| `globals` |             | Storybook globals to set per variant, for decorators that switch themes themselves     |
 
 ## `fixtures`
 
-| Field               |                                                                                                                                                                                                                  |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup(ctx)`        | a function that makes test data and returns `{ name: value }` (strings) for placeholders. `ctx` has `runId`, `label`, `services`, `record(kind, id, extra?)` and `log` ([Test data](auth-and-data.md#test-data)) |
-| `remove(item, ctx)` | removes one recorded item: `{ kind, id, extra }`                                                                                                                                                                 |
-| `reuse`             | keep the data while the background helper is up (default true)                                                                                                                                                   |
+| Field               | Default |                                                                                                                                                                                                                  |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup(ctx)`        |         | a function that makes test data and returns `{ name: value }` (strings) for placeholders. `ctx` has `runId`, `label`, `services`, `record(kind, id, extra?)` and `log` ([Test data](auth-and-data.md#test-data)) |
+| `remove(item, ctx)` |         | removes one recorded item: `{ kind, id, extra }`                                                                                                                                                                 |
+| `reuse`             | true    | keep the data while the background helper is up                                                                                                                                                                  |
 
 ## `limits`
 

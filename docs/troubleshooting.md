@@ -115,6 +115,11 @@ terminal, or an agent's MCP server), not of the command you just typed. Pass wha
 ([Configuration](configuration.md#settings-that-differ-per-checkout-or-per-person)), or `facetshot daemon stop` and
 run again.
 
+## Removing facetshot
+
+`facetshot uninstall` removes facetshot, what it made and what `init --agent` wrote, and asks first. See
+[Installing, updating and removing](cli.md#uninstall).
+
 ## Reporting a problem
 
 Include `facetshot doctor`'s output, the command, and the run's `manifest.json`. The logs of servers and builds are

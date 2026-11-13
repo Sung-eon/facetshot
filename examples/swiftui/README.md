@@ -4,8 +4,8 @@ A Swift package with three SwiftUI views and a test, `FacetshotRender`, that han
 [FacetshotKit](../../FacetshotKit) as scenes. facetshot runs that test and collects the screenshots; no app is built
 or launched.
 
-Run these from this folder inside a facetshot clone, after `bun install` at the clone's root; they need Xcode. In
-your own project the command is `bunx facetshot` instead of `bun --bun ../../src/cli.ts`.
+Run these from this folder inside a facetshot clone, after `bun install` at the clone's root; they need Xcode. Elsewhere
+the command is `facetshot` (or `bunx facetshot`) instead of `bun --bun ../../src/cli.ts`.
 
 ```sh
 bun --bun ../../src/cli.ts 'preview:Trips/*' --on mac                  # on this Mac (swift test)

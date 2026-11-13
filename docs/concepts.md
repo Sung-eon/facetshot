@@ -51,6 +51,8 @@ facetshot takes every target on every device that can show it, in every variant.
 simulator, and an `app:` screen isn't taken in a browser. If nothing you asked for can show a target, the summary
 says so.
 
+![Targets, devices and variants multiply into one screenshot each; each screen's screenshots make one contact sheet, with devices down the side and variants across, and every run also writes report.html, the logs and manifest.json](images/concepts-sheet.svg)
+
 ## Profiles
 
 A **profile** is a named choice of devices and variants, so you don't have to repeat `--on` and `--as`. It says

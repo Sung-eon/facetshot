@@ -1,7 +1,8 @@
 # Security
 
 facetshot runs your app's code, signs in as your personas and, when an agent drives it, does what the agent asks.
-This page describes what that allows, what facetshot writes to disk, and what it masks.
+This page describes what that allows, what facetshot writes to disk, and what it masks. How to report a
+vulnerability, and a short list of hardening steps, are in [SECURITY.md](../SECURITY.md).
 
 ## What an agent can do
 
@@ -55,7 +56,10 @@ and `list` ([Tool hints](mcp.md#tool-hints)).
 | `~/.facetshot/ports.json`, `locks/`   | port blocks from `stablePorts`, and machine-wide locks                      | when a checkout is removed, and when a lock is released |
 | `~/.facetshot/cache/`                 | built apps, keyed by their inputs, shared by every project                  | `facetshot clean`                                       |
 | `~/.facetshot/bin/`                   | the compiled Mac window helper                                              | delete it yourself                                      |
-| Playwright's browser cache            | the browsers (`~/Library/Caches/ms-playwright` or `~/.cache/ms-playwright`) | `bunx playwright uninstall`                             |
+| Playwright's browser cache            | the browsers (`~/Library/Caches/ms-playwright` or `~/.cache/ms-playwright`) | `facetshot uninstall --browsers`                        |
+
+`facetshot uninstall` removes everything above in `~/.facetshot` and the project's `.facetshot/` at once
+([`uninstall`](cli.md#uninstall)).
 
 Keep `.facetshot/` out of version control (see [Getting started](getting-started.md#2-take-screenshots-of-any-page)
 for the lines that still let you commit baselines), and don't commit storage state files you saved yourself (such as

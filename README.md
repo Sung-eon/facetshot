@@ -22,43 +22,48 @@ saved list of steps. It is made for AI coding agents as well as for people: it h
 
 ## First run
 
-1. Install [Bun](https://bun.sh) 1.3 or newer. facetshot runs on Bun whatever your app is built with.
+1. Install [Bun](https://bun.sh) 1.3 or newer. facetshot runs on Bun whatever your app is built with, and your
+   project needs no `package.json`.
 
-2. Install facetshot in your project, then the browser it uses (Chromium, about 600 MB):
+2. Install facetshot, then the browser it uses (Chromium, about 600 MB):
 
    ```sh
-   bun add -d facetshot
-   bunx playwright install chromium
+   bun add -g facetshot
+   facetshot setup
    ```
+
+   To try it without installing, type `bunx facetshot …` instead of `facetshot …` throughout.
 
 3. Take screenshots of any public page. No config is needed for a full URL:
 
    ```sh
-   bunx facetshot https://example.com
+   facetshot https://example.com
    ```
 
    The first run starts a background helper that keeps the browser open for 15 minutes, so the next run is quick.
-   `bunx facetshot daemon stop` stops it now.
+   `facetshot daemon stop` stops it now.
 
 4. Open the `.sheet.jpg` file whose path the summary prints.
 
 5. To use short paths such as `/settings`, and let facetshot build and start your app, write a config in your
-   project's folder:
+   project's folder, then take screenshots of your own pages:
 
    ```sh
-   bunx facetshot init
+   cd your-project
+   facetshot init
+   facetshot / /settings
    ```
 
 6. Connect your coding agent, restart it (Claude Code asks you to approve the `facetshot` server the first time), and
    ask it something like "check /settings on a phone":
 
    ```sh
-   bunx facetshot init --agent claude    # or cursor, codex, all
+   facetshot init --agent claude    # or cursor, codex, all
    ```
 
-The rest of this page writes `facetshot …`. Installed in a project, type `bunx facetshot …`.
 [Getting started](docs/getting-started.md) walks through all of this, including what to do when `init` doesn't
-recognise your project, and how to update or remove facetshot.
+recognise your project. [Installing, updating and removing](docs/cli.md#installing-updating-and-removing) covers
+adding facetshot to a project instead, updating it, and `facetshot uninstall`.
 
 ## Why use it
 
@@ -90,21 +95,20 @@ usable. See [Speed and machine safety](docs/performance.md).
 
 ## Connecting an agent
 
-`facetshot init --agent claude` (or `cursor`, `codex`, `all`), run in your project's folder, adds two things:
+Each agent gets two things: facetshot's **MCP server** (its tools) and its **skill** (plain Markdown that tells the
+agent when to look and how). Install facetshot first, then:
 
-- **The MCP server**, so the agent gets facetshot's tools: registered in `.mcp.json` (Claude Code),
-  `.cursor/mcp.json` (Cursor) or `.codex/config.toml` (Codex, read once you trust the project).
-- **The skill**, plain Markdown that tells the agent when to take screenshots and how: `.claude/skills/facetshot/`
-  (Claude Code), `.agents/skills/facetshot/` (Codex), or a rule in `.cursor/rules/facetshot.mdc` (Cursor).
+- **Claude Code:** install the plugin once for all your projects,
+  `/plugin install facetshot --marketplace Sung-eon/facetshot`, or write both into this project with
+  `facetshot init --agent claude` (`.mcp.json` and `.claude/skills/facetshot/`).
+- **Codex:** `facetshot init --agent codex` writes `.codex/config.toml` (read once you trust the project) and
+  the skill in `.agents/skills/facetshot/`.
+- **Cursor:** `facetshot init --agent cursor` writes `.cursor/mcp.json` and a rule,
+  `.cursor/rules/facetshot.mdc`, that carries the whole skill.
+- **Any other agent with MCP:** register the server `bunx facetshot mcp` (standard input and output), and point the
+  agent at the skill in `skills/facetshot/` of facetshot's install.
 
-Commit these files and everyone on the team gets the same setup. [AI agents](docs/agents.md) says what each file
-contains and how to set it up by hand.
-
-In Claude Code you can install the skill and the MCP server as a plugin instead, for every project at once:
-
-```
-/plugin install facetshot --marketplace Sung-eon/Facetshot
-```
+Restart the agent afterwards. [AI agents](docs/agents.md) says what each file holds and how to set it up by hand.
 
 | MCP tool  | What it does                                                         |
 | --------- | -------------------------------------------------------------------- |
@@ -154,7 +158,7 @@ Sessions open web pages and desktop app windows (Electron, Tauri, native Mac app
 ## Other browsers
 
 Screenshots are taken in Playwright's Chromium unless you ask for others. `--browser webkit` takes web pages in WebKit
-(Safari's engine; install it once with `bunx playwright install webkit`) instead of Chromium; list both
+(Safari's engine; install it once with `facetshot setup --browser webkit`) instead of Chromium; list both
 (`--browser chromium,webkit`) to compare them, and each browser gets its own rows on the sheet. See
 [Other browsers](docs/web.md#other-browsers) for Firefox and the browsers installed on your machine.
 
@@ -176,19 +180,9 @@ the checks to find: [`vite-react`](examples/vite-react) (with Storybook), [`elec
 
 ## How it compares
 
-[Playwright](https://playwright.dev) does all of facetshot's browser work: pages, device emulation, Electron, and the
-accessibility snapshots that list what can be clicked. facetshot adds the project around it (builds, servers, sign-in,
-test data, devices and display settings) and puts the results together.
-
-[Playwright MCP](https://github.com/microsoft/playwright-mcp) gives an agent a general-purpose browser. Use it when an
-agent needs to browse the web or automate a site. facetshot's sessions cover a smaller job: they open your own app,
-already built, served and signed in, on a device and display setting from your config, and a session can be saved as
-a flow to replay on every device.
-
-Visual regression services (Chromatic, Percy, Argos and others) and Playwright's `toHaveScreenshot` compare approved
-screenshots in CI and fail a build when they change. facetshot's comparisons are for checking your own work and don't
-fail a run. For native code, swift-snapshot-testing keeps reference images in tests;
-[FacetshotKit](FacetshotKit/README.md) only draws SwiftUI views so facetshot can take screenshots of them.
+facetshot is built on [Playwright](https://playwright.dev) and adds the project around it: builds, servers,
+sign-in, test data, devices and display settings. [How facetshot compares](docs/comparison.md) sets it beside
+`toHaveScreenshot`, the visual regression services and Playwright MCP, and says when each is the better fit.
 
 ## Documentation
 
@@ -201,17 +195,7 @@ The [documentation index](docs/README.md) lists every page. Good places to start
 
 ## Contributing
 
-From a clone:
-
-```sh
-bun install
-bun test test              # unit and end-to-end tests; Electron, Mac and Tauri tests skip what isn't installed or permitted
-bun --bun tsc --noEmit -p .
-bun run lint               # Prettier
-```
-
-There is no automated iOS simulator test yet. [Architecture](docs/architecture.md) describes how the code is laid out
-and how the parts talk to each other. Please open an issue before a large change, so the approach can be agreed first.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

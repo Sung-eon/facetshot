@@ -1,42 +1,41 @@
 # Getting started
 
 This page takes you from nothing to a contact sheet of your own app, and then to an agent that checks its own UI
-work. It takes about ten minutes. Words such as _target_, _variant_ and _background helper_ are explained in the
+work. It takes about ten minutes. New words are explained in a few words where they first appear, and in full in the
 [glossary](concepts.md#glossary).
 
 ## 1. Install
 
-facetshot runs on [Bun](https://bun.sh) 1.3 or newer. Your app can be built with anything; only facetshot itself
-needs Bun.
+facetshot runs on [Bun](https://bun.sh) 1.3 or newer. Your app can be built with anything, and your project needs no
+`package.json`: Flutter, Swift and other projects work the same. Only facetshot itself needs Bun.
 
-In your project's folder:
+Pick one of two ways. Install it to use it regularly: the version stays fixed until you update it, and your agent's
+MCP server starts quicker. Run it without installing to try it: nothing is installed but the package Bun downloads
+into its cache.
 
-```sh
-bun add -d facetshot
-bunx playwright install chromium
-```
+| Install it for regular use      | Try it without installing            |
+| ------------------------------- | ------------------------------------ |
+| `bun add -g facetshot`          |                                      |
+| `facetshot setup`               | `bunx facetshot setup`               |
+| `facetshot https://example.com` | `bunx facetshot https://example.com` |
 
-The last line downloads Playwright's Chromium (about 600 MB), the browser facetshot uses by default. facetshot uses
-Playwright 1.64; if your project uses the same version, the browsers are shared, otherwise this downloads facetshot's
-own copy.
+`setup` downloads Playwright's Chromium (about 600 MB) and then checks this machine: it lists what it found and, for
+anything missing, the command that fixes it. Run `facetshot doctor` to check again later. The rest of this page
+writes `facetshot …`; without installing, type `bunx facetshot …`.
+
+To pin the version for everyone who clones a project, add facetshot to the project instead (`bun add -d facetshot`)
+and type `bunx facetshot …`; the config then gets types from `import { defineConfig } from 'facetshot'`.
+[Installing, updating and removing](cli.md#installing-updating-and-removing) compares the three ways.
 
 facetshot is tested on macOS. Web pages should work on Linux and Windows, but nobody has tried them there yet; see
 [Status and limits](status.md).
-
-Check that everything is in place:
-
-```sh
-bunx facetshot doctor
-```
-
-`doctor` lists what it found and, for anything missing, the command that fixes it.
 
 ## 2. Take screenshots of any page
 
 No config is needed for a full URL:
 
 ```sh
-bunx facetshot https://example.com
+facetshot https://example.com
 ```
 
 The summary looks like this:
@@ -53,16 +52,16 @@ Logs: /your/project/.facetshot/runs/20261110-091502-3f1a/logs.txt (12 lines)
 ```
 
 Open the sheet, or `report.html` for every screenshot on one page. Each row of the sheet is a device (a desktop, a
-tablet in both orientations, a phone) and each column a variant (light and dark). The single screenshots are in a
+tablet in both orientations, a phone) and each column a _variant_, a display setting such as light or dark mode. The single screenshots are in a
 folder next to it.
 
-The first run also starts the [background helper](concepts.md#the-background-helper), which keeps the browser open
-for 15 minutes so the next run is quick. `bunx facetshot daemon stop` stops it now.
+The first run also starts the [background helper](concepts.md#the-background-helper), a process that keeps the
+browser open for 15 minutes so the next run is quick. `facetshot daemon stop` stops it now.
 
 Choose devices and variants with `--on` and `--as`:
 
 ```sh
-bunx facetshot https://example.com --on phone --as light,dark,large
+facetshot https://example.com --on phone --as light,dark,large
 ```
 
 Runs, logs and saved sign-ins are kept in `.facetshot/`. Add this to your `.gitignore`:
@@ -82,7 +81,7 @@ for you. `init` writes a config from what your project already uses (Vite, Svelt
 Storybook, Electron, Tauri or a Swift package):
 
 ```sh
-bunx facetshot init
+facetshot init
 ```
 
 For a Vite app that uses Bun, you get something like this:
@@ -117,7 +116,8 @@ What each part means:
   running between runs and restarts it after a rebuild.
 - `ready` lists what means "still loading" in your app. facetshot waits for those elements to disappear before it
   takes a screenshot.
-- `profiles.default` is what you get when you don't pass `--on` or `--as`. `review` is a built-in group: desktop,
+- A _profile_ is a named choice of devices and variants. `profiles.default` is what you get when you don't pass
+  `--on` or `--as`. `review` is a built-in group: desktop,
   tablet in landscape and portrait, and phone.
 
 SvelteKit: `vite preview` needs an adapter it can serve, such as `adapter-node`; see
@@ -127,25 +127,25 @@ If `init` finds nothing it can build or start, it writes nothing and says what i
 your project's folder, or tell it where the app is already running (your own dev server, staging or production):
 
 ```sh
-bunx facetshot init --url http://localhost:3000
+facetshot init --url http://localhost:3000
 ```
 
 Now take screenshots of your own pages:
 
 ```sh
-bunx facetshot / /settings
+facetshot / /settings
 ```
 
 The first run builds and starts things, so it takes longer. Run it again and it's quick, because the browser and the
 server are still running.
 
-If your app needs a signed-in user, test data or an API server, see
+If your app needs a signed-in user (a _persona_), test data or an API server, see
 [Sign-in, servers and test data](auth-and-data.md).
 
 ## 4. Let your agent use it
 
 ```sh
-bunx facetshot init --agent claude     # or cursor, codex, all
+facetshot init --agent claude     # or cursor, codex, all
 ```
 
 This registers facetshot's MCP server with your agent and installs a short skill that tells it when to look and how.
@@ -155,25 +155,24 @@ page on a phone in dark mode". See [AI agents](agents.md) for what this writes a
 
 ## Updating and removing
 
-To update, run `bun update facetshot`. A newer facetshot may use a newer Playwright; if `facetshot doctor` says a
-browser is missing, run `bunx playwright install chromium` again.
+To update, run `bun add -g facetshot@latest` (or `bun update facetshot` in a project), then `facetshot setup`: a newer
+facetshot may use a newer Playwright, whose browser is a separate download.
 
-To work on facetshot itself, clone https://github.com/Sung-eon/Facetshot and see the Contributing section of its
-README.
+To remove facetshot, run `facetshot uninstall` in your project's folder. It lists what it will remove and asks first:
+the background helper, `~/.facetshot`, `.facetshot/`, what `init --agent` wrote, and the global package. It keeps
+`facetshot.config.ts` and tells you what to delete by hand. See [`uninstall`](cli.md#uninstall).
 
-To remove facetshot from a project:
+If you installed the Claude Code plugin, remove it in Claude Code: type `/plugin`, open the installed plugins and
+uninstall `facetshot`. `facetshot uninstall` doesn't touch plugins.
 
-1. `bunx facetshot clean --all` stops the background helper and removes what facetshot made.
-2. `bun remove facetshot`, and delete `.facetshot/` and `facetshot.config.ts`.
-3. Remove the `facetshot` entry from `.mcp.json`, `.cursor/mcp.json` or `.codex/config.toml`, and delete
-   `.claude/skills/facetshot/`, `.agents/skills/facetshot/` or `.cursor/rules/facetshot.mdc`, whichever `init` wrote.
-4. If no other project uses it, delete `~/.facetshot/`. Playwright's browsers are in `~/Library/Caches/ms-playwright`
-   (macOS) or `~/.cache/ms-playwright` (Linux), shared with any other Playwright project.
+To work on facetshot itself, clone https://github.com/Sung-eon/facetshot and see its
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## What next
 
 - [How it works](concepts.md) explains targets, devices, variants and the background helper.
-- [Flows](flows.md) take screenshots of menus, dialogs and half-filled forms.
-- [Sessions](sessions.md) let you use a screen step by step and see what each click does.
+- [Flows](flows.md), saved lists of steps such as clicks and typing, take screenshots of menus, dialogs and
+  half-filled forms.
+- [Sessions](sessions.md) keep one screen open, so you can use it step by step and see what each click does.
 - [Comparing](comparing.md) shows only what changed since the last run.
 - [Troubleshooting](troubleshooting.md) helps when a screenshot shows a spinner or the sign-in page.
