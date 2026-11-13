@@ -30,6 +30,11 @@ web gets works here too: variants, readiness rules, checks, flows and masks.
   work as on the web, `locale` uses Electron's `--lang`, and `timezone` uses `TZ`.
 - The window is resized to each device's size and checked; if your app enforces a minimum size, the screenshot's
   notes say so.
+- The app's own menu bar is reached with a `menu:` step, `menu: File>Export Report…`. The item's handler runs in the
+  main process, as if it had been clicked. Labels match whatever their case, `&` and trailing `…`.
+- The main process is part of the log: its `console` messages, with their level, and anything else it or its native
+  modules write to standard output (as `info`) and standard error (as `warn`).
+- [Sessions](sessions.md) open the app too: `facetshot open app:/ --on window` launches it, and `close` quits it.
 
 Electron opens a real window while it works, but only the page is captured, never the screen. Apps run one at a time,
 because many take a single-instance lock.

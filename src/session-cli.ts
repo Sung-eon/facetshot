@@ -71,7 +71,8 @@ export async function sessionCommand(
 				open: {
 					target: positional[0],
 					on: withEngine(one(flags.on, 'on'), one(flags.browser, 'browser')),
-					as: one(flags.as, 'as')
+					as: one(flags.as, 'as'),
+					look: options
 				},
 				configFile: typeof flags.config === 'string' ? flags.config : undefined,
 				cwd: process.cwd(),

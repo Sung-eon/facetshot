@@ -62,6 +62,7 @@ The second column is how a step is written in a flow file; the third is the same
 | wait until gone          | `gone: <element>`                       | `gone:<element>`            | waits until it is hidden (up to 15 s)                            |
 | go to                    | `goto: <path>`                          | `goto:<path>`               | opens another address                                            |
 | back, forward, reload    | `back` or `back: true`                  | `back`                      | the browser's buttons                                            |
+| menu                     | `menu: File>Export…`                    | `menu:File>Export…`         | chooses an item from a desktop app's menu bar (Electron)         |
 | screenshot               | `shot: <name>`                          | `shot:<name>`               | waits for the screen to be ready, then takes a screenshot        |
 
 A flow with no `shot` step takes one screenshot at the end. Steps that act on an element wait up to 10 seconds for

@@ -143,7 +143,7 @@ facetshot act s-42cb1d "fill:e14=Grace" click:e18
 facetshot close s-42cb1d --save flows/edit-settings.yaml
 ```
 
-Sessions open web pages only, for now. See [Sessions](docs/sessions.md).
+Sessions open web pages, Electron windows and Tauri frontends. See [Sessions](docs/sessions.md).
 
 ## Other browsers
 

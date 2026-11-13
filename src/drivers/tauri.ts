@@ -111,6 +111,11 @@ export function variantEnv(device: Device, variant: Variant): Record<string, str
 export class TauriDriver implements Driver {
 	readonly name = 'tauri';
 	private baseURL = '';
+
+	/** Where the frontend is served, once `prepare` has started it (WebKit engine). */
+	get frontendURL(): string {
+		return this.baseURL;
+	}
 	private app = '';
 
 	handles(cell: Cell, config: Config): boolean {

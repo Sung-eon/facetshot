@@ -41,6 +41,7 @@ export type Step =
 	| { back: unknown }
 	| { forward: unknown }
 	| { reload: unknown }
+	| { menu: string }
 	| { shot: string };
 
 export interface Flow {
@@ -71,6 +72,7 @@ const KEYS = [
 	'back',
 	'forward',
 	'reload',
+	'menu',
 	'shot'
 ];
 /** Steps that need no value: `back`, not `back:`. */
@@ -180,6 +182,14 @@ export function shotNames(flow: Flow): string[] {
 	return names.length ? names : ['end'];
 }
 
+/** What a step needs from the driver it runs in, beyond the page. */
+export interface StepHost {
+	/** Shows an address the way the driver does (navigate, or ask an app to route). */
+	open: (address: string) => Promise<void>;
+	/** Chooses an item in the app's own menu, `File>Save`: desktop apps only. */
+	menu?: (path: string) => Promise<void>;
+}
+
 /**
  * Plays a flow in a browser page. `onShot` is called at each `shot` step (and at the end if there are none) and is
  * expected to wait for readiness and take the screenshot.
@@ -187,10 +197,10 @@ export function shotNames(flow: Flow): string[] {
 export async function playInPage(
 	page: Page,
 	flow: Flow,
-	open: (path: string) => Promise<void>,
+	host: StepHost,
 	onShot: (name: string) => Promise<void>
 ): Promise<void> {
-	await open(flow.start);
+	await host.open(flow.start);
 	let shots = 0;
 	for (const [index, step] of flow.steps.entries()) {
 		const where = `step ${index + 1} of ${flow.name}`;
@@ -198,7 +208,7 @@ export async function playInPage(
 			if ('shot' in step) {
 				shots += 1;
 				await onShot(step.shot);
-			} else await doStep(page, step, open);
+			} else await doStep(page, step, host);
 		} catch (error) {
 			const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
 			throw new Error(`${where} (${JSON.stringify(step)}) didn't work: ${message}`, {
@@ -245,12 +255,8 @@ export function locate(page: Page, target: string): Locator {
 	return page.locator(trimmed).first();
 }
 
-/** Does one step (anything but `shot`) in a page. `open` shows an address the way the driver does. */
-export async function doStep(
-	page: Page,
-	step: Step,
-	open: (address: string) => Promise<void>
-): Promise<void> {
+/** Does one step (anything but `shot`) in a page. */
+export async function doStep(page: Page, step: Step, host: StepHost): Promise<void> {
 	const pointer = async (target: string, button: 'left' | 'right', count: number) => {
 		const aimed = aim(page, target);
 		if ('point' in aimed)
@@ -319,8 +325,13 @@ export async function doStep(
 		await locate(page, step.wait).waitFor({ state: 'visible', timeout: 15_000 });
 	else if ('gone' in step)
 		await locate(page, step.gone).waitFor({ state: 'hidden', timeout: 15_000 });
-	else if ('goto' in step) await open(step.goto);
+	else if ('goto' in step) await host.open(step.goto);
 	else if ('back' in step) await page.goBack({ waitUntil: 'load', timeout: 30_000 });
 	else if ('forward' in step) await page.goForward({ waitUntil: 'load', timeout: 30_000 });
 	else if ('reload' in step) await page.reload({ waitUntil: 'load', timeout: 30_000 });
+	else if ('menu' in step) {
+		if (!host.menu)
+			throw new Error("menu: chooses from a desktop app's own menu; a web page has none.");
+		await host.menu(step.menu);
+	}
 }

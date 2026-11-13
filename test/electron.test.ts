@@ -2,7 +2,10 @@ import { afterAll, describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { PNG } from 'pngjs';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { bundleExecutable } from '../src/drivers/apple.ts';
 import { launchSwitches, resolveLaunch } from '../src/drivers/electron.ts';
 import { withAllDrivers } from './drivers.helper.ts';
@@ -92,4 +95,71 @@ describe.skipIf(!installed || process.platform !== 'darwin')('Electron end to en
 		for (const [index, value] of want.entries())
 			expect(Math.abs(png.data[at + index] - value)).toBeLessThanOrEqual(2);
 	}, 120_000);
+
+	test("a flow chooses from the app's menu, and the main process's output is in the logs", async () => {
+		await withAllDrivers();
+		const { run } = await import('../src/run.ts');
+		const manifest = await run(
+			{ targets: [join(example, 'menu-export.yaml')], on: ['window-small'], as: ['light'] },
+			{
+				config: {
+					root: example,
+					out: join(scratch, 'menu'),
+					desktop: { kind: 'electron', main: '.', navigate: 'hash' }
+				}
+			}
+		);
+		expect(manifest.cells.map((cell) => cell.status)).toEqual(['ok']);
+		const logs = readFileSync(join(manifest.out, manifest.logs!.text), 'utf8');
+		// console.log in main, reported once though it reaches both the console and standard output…
+		expect(logs.match(/Showing #\/reports/g)).toHaveLength(1);
+		// …and a line written straight to standard output, as a native module would.
+		expect(logs).toContain('Exported 3 rows to report.csv');
+	}, 120_000);
+
+	test('a session opens the app, clicks by ref, chooses from the menu and closes the app', async () => {
+		const home = mkdtempSync(join(tmpdir(), 'facetshot-home-'));
+		const cli = join(import.meta.dir, '..', 'src', 'cli.ts');
+		const env = { ...(process.env as Record<string, string>), FACETSHOT_HOME: home };
+		const client = new Client({ name: 'test', version: '1' });
+		await client.connect(
+			new StdioClientTransport({
+				command: process.execPath,
+				args: ['--bun', cli, 'mcp'],
+				cwd: example,
+				env
+			})
+		);
+		try {
+			const said = (result: unknown) =>
+				(result as { content: { type: string; text?: string }[] }).content
+					.map((part) => part.text ?? '')
+					.join('\n');
+			const opened = said(
+				await client.callTool({
+					name: 'open',
+					arguments: { target: 'app:/', device: 'window-small' }
+				})
+			);
+			const id = /^(s-[0-9a-f]+)/.exec(opened)![1];
+			const ref = /(\S+) link "Reports"/.exec(opened)![1];
+			const clicked = said(
+				await client.callTool({ name: 'act', arguments: { session: id, steps: [`click:${ref}`] } })
+			);
+			expect(clicked).toContain('main Showing #/reports');
+			const chosen = said(
+				await client.callTool({
+					name: 'act',
+					arguments: { session: id, steps: ['menu:File>Export Report…'], screenshot: false }
+				})
+			);
+			expect(chosen).toContain('Exported 3 rows to report.csv');
+			await client.callTool({ name: 'close', arguments: { session: id } });
+			expect(spawnSync('pgrep', ['-f', join(example, 'node_modules', 'electron')]).status).toBe(1);
+		} finally {
+			await client.close();
+			spawnSync(process.execPath, ['--bun', cli, 'daemon', 'stop'], { env, cwd: example });
+			rmSync(home, { recursive: true, force: true });
+		}
+	}, 180_000);
 });

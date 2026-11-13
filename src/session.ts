@@ -7,9 +7,9 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { stringify } from 'yaml';
-import type { Config, Finding } from './types.ts';
+import type { Cell, Config, Finding } from './types.ts';
 import { plan } from './plan.ts';
-import { doStep, type Step } from './flows.ts';
+import { doStep, type Step, type StepHost } from './flows.ts';
 import { newContext, startServices, stateDir } from './run.ts';
 import { prepareFixtures } from './fixtures.ts';
 import { within } from './engine/procs.ts';
@@ -17,8 +17,25 @@ import type { Runtime } from './engine/runtime.ts';
 import { UsageError } from './errors.ts';
 import { fillAddress, type RunContext } from './drivers/driver.ts';
 import { engineOf, navigate, newSession, WebDriver, type PageSession } from './drivers/web.ts';
+import {
+	chooseMenu,
+	ElectronDriver,
+	launchApp,
+	openInApp,
+	sizeWindow
+} from './drivers/electron.ts';
+import { TauriDriver, tauriEngine, tauriMockScript } from './drivers/tauri.ts';
 import { readPage, readyRuleFor, waitReady } from './drivers/page.ts';
 import { atLeast, LogBook, LogTail, redact, type LogEntry, type LogLevel } from './logs.ts';
+
+/** What a session can open a cell in: a web page, an Electron window, or a Tauri frontend in WebKit. */
+function sessionKind(cell: Cell, config: Config): 'web' | 'electron' | 'tauri' | undefined {
+	if (cell.device.platform === 'web' && cell.target.kind === 'web') return 'web';
+	if (cell.device.platform !== 'window' || cell.target.kind !== 'app') return undefined;
+	if (config.desktop?.kind === 'electron') return 'electron';
+	if (config.desktop?.kind === 'tauri' && tauriEngine(config.desktop) === 'webkit') return 'tauri';
+	return undefined;
+}
 
 /** Sessions open at once on the machine: each is a page with its own memory. */
 export const MAX_SESSIONS = 6;
@@ -30,6 +47,8 @@ export interface OpenRequest {
 	on?: string;
 	/** One variant (default: the first of the default profile's). */
 	as?: string;
+	/** What the first answer shows, as for `look`. */
+	look?: LookOptions;
 }
 
 export interface LookOptions {
@@ -107,6 +126,7 @@ export class Session {
 	private tail: LogTail;
 	private busy: Promise<unknown> = Promise.resolve();
 	page!: PageSession;
+	private host!: StepHost;
 	private open!: (address: string) => Promise<void>;
 	start = '/';
 
@@ -146,14 +166,13 @@ export class Session {
 			},
 			config
 		);
-		const cell = planned.cells.find(
-			(each) => each.device.platform === 'web' && each.target.kind === 'web'
-		);
+		const kind = (each: Cell) => sessionKind(each, config);
+		const cell = planned.cells.find((each) => kind(each));
 		if (!cell) {
 			throw new UsageError(
 				planned.unmatched[0] ??
-					`Sessions open web pages for now; "${request.target}" on ${request.on ?? 'the default device'} isn't one.`,
-				'Give a path (/settings) or a full URL, and a web device (--on phone). App, Storybook and desktop sessions are planned.'
+					`Sessions open web pages, Electron windows and Tauri frontends for now; "${request.target}" on ${request.on ?? 'the default device'} isn't one of them.`,
+				'Give a path (/settings) or a full URL with a web device (--on phone), or app:/path with a window device. To step through other apps, write a flow.'
 			);
 		}
 		const id = `s-${randomBytes(3).toString('hex')}`;
@@ -176,25 +195,73 @@ export class Session {
 		try {
 			await startServices(ctx);
 			Object.assign(ctx.values, await prepareFixtures(ctx));
-			const driver = new WebDriver();
-			await driver.prepare([cell], ctx);
-			const browser = await runtime.browser(engineOf(config, cell.device), cell.variant.appearance);
-			const made = await newSession(browser, cell.device, cell.variant, config.web, {
-				baseURL: driver.url,
-				root: ctx.root,
-				stateDir: ctx.stateDir
-			});
-			closers.push(made.close);
-			session.page = made.session;
+			const values = ctx.values;
+			const desktop = config.desktop;
+			if (kind(cell) === 'electron') {
+				const driver = new ElectronDriver();
+				await driver.prepare([cell], ctx);
+				const { app, page, watch, close } = await launchApp(
+					ctx,
+					driver.launchInfo,
+					cell.variant,
+					cell.device.scale
+				);
+				closers.push(close);
+				await sizeWindow(app, page, cell.device);
+				session.page = { page, watch, device: cell.device, variant: cell.variant };
+				session.host = {
+					open: (address) =>
+						openInApp(app, page, desktop!.navigate, fillAddress(cell, address, values), values),
+					menu: (path) => chooseMenu(app, path)
+				};
+			} else if (kind(cell) === 'tauri') {
+				const driver = new TauriDriver();
+				await driver.prepare([cell], ctx);
+				const browser = await runtime.browser('webkit', cell.variant.appearance);
+				const made = await newSession(
+					browser,
+					// A window is not a phone: whatever the device says, no mobile emulation or touch.
+					{ ...cell.device, mobile: false, touch: false },
+					cell.variant,
+					config.web,
+					{
+						baseURL: driver.frontendURL,
+						root: ctx.root,
+						initScript: tauriMockScript(desktop!.invoke)
+					}
+				);
+				closers.push(made.close);
+				session.page = made.session;
+				session.host = {
+					open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
+				};
+			} else {
+				const driver = new WebDriver();
+				await driver.prepare([cell], ctx);
+				const browser = await runtime.browser(
+					engineOf(config, cell.device),
+					cell.variant.appearance
+				);
+				const made = await newSession(browser, cell.device, cell.variant, config.web, {
+					baseURL: driver.url,
+					root: ctx.root,
+					stateDir: ctx.stateDir
+				});
+				closers.push(made.close);
+				session.page = made.session;
+				session.host = {
+					open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
+				};
+			}
 			session.open = async (address: string) => {
 				session.page.watch.reset();
-				await navigate(session.page.page, fillAddress(cell, address, ctx.values));
+				await session.host.open(address);
 			};
 			session.start = cell.target.value;
 			// The servers' log starts here: building and starting them is setup, not something the page did.
 			session.tail = new LogTail(join(ctx.stateDir, 'logs'));
 			await ctx.pools.web.run(() => session.open(session.start));
-			const view = await ctx.pools.web.run(() => session.view({ elements: true }));
+			const view = await ctx.pools.web.run(() => session.view({ elements: true, ...request.look }));
 			return { session, view };
 		} catch (error) {
 			await session.close();
@@ -212,7 +279,7 @@ export class Session {
 					try {
 						// Worked out before the step: a click may take the element away.
 						const kept = await lasting(this.page.page, step);
-						await doStep(this.page.page, step, this.open);
+						await doStep(this.page.page, step, { ...this.host, open: this.open });
 						this.steps.push(kept);
 					} catch (error) {
 						failed = {

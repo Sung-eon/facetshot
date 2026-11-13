@@ -127,7 +127,7 @@ export async function openInApp(
 }
 
 /** Sizes the window's content to the device and waits until the page has seen it. */
-async function sizeWindow(
+export async function sizeWindow(
 	app: ElectronApplication,
 	page: Page,
 	device: Device
@@ -151,9 +151,191 @@ async function sizeWindow(
 	return `The window is ${seen.width}×${seen.height}, not ${device.width}×${device.height} (the screen may be too small).`;
 }
 
+/**
+ * Lines that reach both the main process's console and its standard output once each. Playwright reports
+ * `console.*` with its level; the stream carries everything else the main process and its native modules print.
+ */
+class MainOutput {
+	private fromConsole = new Map<string, number>();
+	private fromStream = new Map<string, number>();
+	private early: [LogLevel, string][] = [];
+	private sink: ((level: LogLevel, text: string) => void) | undefined;
+
+	constructor(app: ElectronApplication) {
+		app.on('console', (message) => {
+			const type = message.type();
+			this.add(
+				this.fromConsole,
+				this.fromStream,
+				type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'info',
+				message.text()
+			);
+		});
+		const stream = (level: LogLevel) => {
+			let rest = '';
+			return (chunk: Buffer) => {
+				const lines = (rest + chunk.toString('utf8')).split('\n');
+				rest = lines.pop() ?? '';
+				for (const line of lines.map((each) => each.trimEnd()).filter(Boolean)) {
+					// Chromium's own diagnostics (`[1234:0101/120000.000:ERROR:…]`) are noise unless asked for.
+					const chromium = /^\[\d+:\d+\/[\d.]+:[A-Z]+:/.test(line);
+					this.add(this.fromStream, this.fromConsole, chromium ? 'debug' : level, line);
+				}
+			};
+		};
+		app.process().stdout?.on('data', stream('info'));
+		app.process().stderr?.on('data', stream('warn'));
+	}
+
+	/** Logs a line unless the other source already did; held until there is a log to write to. */
+	private add(
+		mine: Map<string, number>,
+		other: Map<string, number>,
+		level: LogLevel,
+		text: string
+	): void {
+		const seen = other.get(text);
+		if (seen) {
+			if (seen === 1) other.delete(text);
+			else other.set(text, seen - 1);
+			return;
+		}
+		// A line only one source ever prints must not be remembered for ever.
+		if (mine.size > 500) mine.clear();
+		mine.set(text, (mine.get(text) ?? 0) + 1);
+		if (this.sink) this.sink(level, text);
+		else this.early.push([level, text]);
+	}
+
+	/** From now on, lines go to `sink`; the ones held since launch go first. */
+	to(sink: (level: LogLevel, text: string) => void): void {
+		for (const [level, text] of this.early.splice(0)) sink(level, text);
+		this.sink = sink;
+	}
+}
+
+/** A launched app and its window, ready to show screens: what both a run and a session need. */
+export interface LaunchedApp {
+	app: ElectronApplication;
+	page: Page;
+	watch: NetworkWatch;
+	close: () => Promise<void>;
+}
+
+/**
+ * Launches the app for one variant and pixel density: theme, media, init script, request rules, clock, and a log
+ * that has the window's console and network and the main process's output.
+ */
+export async function launchApp(
+	ctx: RunContext,
+	launch: ElectronLaunch,
+	variant: Variant,
+	scale: number
+): Promise<LaunchedApp> {
+	const desktop = ctx.config.desktop!;
+	const web = ctx.config.web;
+	const { _electron } = await import('playwright');
+	const env: Record<string, string> = {
+		...(process.env as Record<string, string>),
+		FACETSHOT: '1'
+	};
+	for (const [key, value] of Object.entries(desktop.env ?? {})) env[key] = fill(value, ctx.values);
+	if (variant.timezone) env.TZ = variant.timezone;
+	let app: ElectronApplication;
+	try {
+		app = await _electron.launch({
+			executablePath: launch.executablePath,
+			args: [...launchSwitches(variant, scale), ...launch.args],
+			cwd: ctx.root,
+			env,
+			timeout: 60_000
+		});
+	} catch (error) {
+		throw new EnvironmentError(
+			`The Electron app didn't start: ${firstLine(error)}`,
+			`Try it yourself: ${launch.executablePath ?? 'electron'} ${launch.args.join(' ')}`
+		);
+	}
+	const main = new MainOutput(app);
+	// An app that won't close is killed: it is a real window, and a single-instance app would block the next launch.
+	const close = async () => {
+		if (!(await within(app.close(), 10_000))) app.process().kill('SIGKILL');
+	};
+	try {
+		await app.evaluate(({ nativeTheme }, source) => {
+			nativeTheme.themeSource = source;
+		}, variant.appearance ?? 'light');
+		const context = app.context();
+		await context.addInitScript(variantScript(variant, web));
+		const blocked = await routeRequests(context, web);
+		if (variant.network === 'offline') await context.setOffline(true);
+		const page = await app.firstWindow({ timeout: 60_000 });
+		await page.emulateMedia({
+			...mediaOptions(variant),
+			media: variant.media === 'print' ? 'print' : null
+		});
+		if (web?.clock) await page.clock.setFixedTime(new Date(web.clock));
+		// The first page loaded before the init script was added; load it again so the variant is in it from the start.
+		await page.waitForLoadState('load');
+		await page.reload({ waitUntil: 'load' });
+		const watch = new NetworkWatch(page, blocked);
+		main.to((level, text) => void watch.log.add('main', level, text));
+		return { app, page, watch, close };
+	} catch (error) {
+		await close();
+		throw error;
+	}
+}
+
+/**
+ * Chooses `File>Save` in the app's menu bar, as a click would: the item's own handler runs in the main process.
+ * Labels match without regard to case, `&` mnemonics or a trailing `…`.
+ */
+export async function chooseMenu(app: ElectronApplication, path: string): Promise<void> {
+	const labels = path.split('>').map((each) => each.trim());
+	const problem = await app.evaluate(({ Menu, BrowserWindow }, labels) => {
+		const tidy = (text: string) =>
+			text
+				.replace(/&/g, '')
+				.replace(/(\.\.\.|…)$/, '')
+				.trim()
+				.toLowerCase();
+		type Item = {
+			label: string;
+			enabled: boolean;
+			submenu?: { items: unknown[] } | null;
+			click: (...args: unknown[]) => void;
+		};
+		let items = (Menu.getApplicationMenu()?.items ?? []) as unknown as Item[];
+		if (!items.length) return 'The app has no menu bar menu.';
+		for (const [index, label] of labels.entries()) {
+			const item = items.find((each) => tidy(each.label) === tidy(label));
+			if (!item)
+				return `No menu item "${label}"; there are: ${items
+					.map((each) => each.label)
+					.filter(Boolean)
+					.join(', ')}.`;
+			if (index === labels.length - 1) {
+				if (!item.enabled) return `"${label}" is disabled.`;
+				const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+				item.click(undefined, window, window?.webContents);
+				return '';
+			}
+			items = (item.submenu?.items ?? []) as Item[];
+		}
+		return '';
+	}, labels);
+	if (problem) throw new Error(problem);
+}
+
 export class ElectronDriver implements Driver {
 	readonly name = 'electron';
 	private launch: ElectronLaunch | undefined;
+
+	/** What to launch, once `prepare` has worked it out. */
+	get launchInfo(): ElectronLaunch {
+		return this.launch!;
+	}
 
 	handles(cell: Cell, config: Config): boolean {
 		return (
@@ -201,66 +383,14 @@ export class ElectronDriver implements Driver {
 		report: (result: CellResult) => void
 	): Promise<void> {
 		const desktop = ctx.config.desktop!;
-		const web = ctx.config.web;
 		const variant = group[0].variant;
-		const launch = this.launch!;
-		const { _electron } = await import('playwright');
-		const env: Record<string, string> = {
-			...(process.env as Record<string, string>),
-			FACETSHOT: '1'
-		};
-		for (const [key, value] of Object.entries(desktop.env ?? {}))
-			env[key] = fill(value, ctx.values);
-		if (variant.timezone) env.TZ = variant.timezone;
-		let app: ElectronApplication;
-		try {
-			app = await _electron.launch({
-				executablePath: launch.executablePath,
-				args: [...launchSwitches(variant, group[0].device.scale), ...launch.args],
-				cwd: ctx.root,
-				env,
-				timeout: 60_000
-			});
-		} catch (error) {
-			throw new EnvironmentError(
-				`The Electron app didn't start: ${firstLine(error)}`,
-				`Try it yourself: ${launch.executablePath ?? 'electron'} ${launch.args.join(' ')}`
-			);
-		}
-		// The main process's own output goes into the same log as the window's.
-		const early: [LogLevel, string][] = [];
-		let mainLog = (level: LogLevel, text: string): void => void early.push([level, text]);
-		app.on('console', (message) =>
-			mainLog(
-				message.type() === 'error' ? 'error' : message.type() === 'warning' ? 'warn' : 'info',
-				message.text()
-			)
+		const { app, page, watch, close } = await launchApp(
+			ctx,
+			this.launch!,
+			variant,
+			group[0].device.scale
 		);
-		// An app that won't close is killed: it is a real window, and a single-instance app would block the next launch.
-		const close = async () => {
-			if (!(await within(app.close(), 10_000))) app.process().kill('SIGKILL');
-		};
 		try {
-			await app.evaluate(({ nativeTheme }, source) => {
-				nativeTheme.themeSource = source;
-			}, variant.appearance ?? 'light');
-			const context = app.context();
-			await context.addInitScript(variantScript(variant, web));
-			const blocked = await routeRequests(context, web);
-			if (variant.network === 'offline') await context.setOffline(true);
-			const page = await app.firstWindow({ timeout: 60_000 });
-			await page.emulateMedia({
-				...mediaOptions(variant),
-				media: variant.media === 'print' ? 'print' : null
-			});
-			if (web?.clock) await page.clock.setFixedTime(new Date(web.clock));
-			// The first page loaded before the init script was added; load it again so the variant is in it from the start.
-			await page.waitForLoadState('load');
-			await page.reload({ waitUntil: 'load' });
-			const watch = new NetworkWatch(page, blocked);
-			// The main process's output, held from launch until there is a window to log it with.
-			for (const [level, text] of early.splice(0)) watch.log.add('main', level, text);
-			mainLog = (level, text) => void watch.log.add('main', level, text);
 			for (const cells of groupBy(group, (cell) => cell.device.name)) {
 				const device = cells[0].device;
 				const sizeNote = await sizeWindow(app, page, device);
@@ -275,9 +405,10 @@ export class ElectronDriver implements Driver {
 						cell,
 						{
 							ctx,
-							web,
+							web: ctx.config.web,
 							open: (each, address) =>
-								openInApp(app, each.page, desktop.navigate, address, ctx.values)
+								openInApp(app, each.page, desktop.navigate, address, ctx.values),
+							menu: (path) => chooseMenu(app, path)
 						},
 						(result) =>
 							report(sizeNote ? { ...result, notes: [...(result.notes ?? []), sizeNote] } : result)

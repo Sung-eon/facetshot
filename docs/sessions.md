@@ -110,8 +110,13 @@ A session acts as the signed-in persona, and its steps can do anything a person 
 
 ## What sessions open
 
-Web pages for now: paths and full URLs, with the project's servers, sign-in, variants and test data, the same as a
-run. Sessions on iOS simulators, Mac windows, Electron, Tauri and Storybook stories are planned. Until then, use
-[flows](flows.md) for those.
+- Web pages: paths and full URLs, with the project's servers, sign-in, variants and test data, the same as a run.
+- Electron apps: `facetshot open app:/reports --on window` launches the app, and `close` quits it. The answers carry
+  the main process's output with the window's, and a `menu:` step chooses from the app's menu bar.
+- Tauri frontends, with `desktop.frontend` set: the frontend in WebKit, with `invoke()` answered from your config. The
+  Rust side doesn't run there.
+
+Sessions on iOS simulators, native Mac windows (Tauri's real window included) and Storybook stories are planned.
+Until then, use [flows](flows.md) for those.
 
 Sessions are kept by the background helper, so they aren't available with `--no-daemon` or `FACETSHOT_NO_DAEMON`.

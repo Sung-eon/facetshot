@@ -1,0 +1,8 @@
+# Steps from the app's own menu: View > Reports switches the view, File > Export Report… writes to the main
+# process's output, which shows up in the run's logs.
+start: /
+steps:
+  - menu: View>Reports
+  - wait: "section[data-view='/reports'] h1"
+  - menu: File>Export Report…
+  - shot: exported

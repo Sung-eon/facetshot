@@ -1,5 +1,5 @@
 // A minimal Electron app: one window showing index.html, whose two views are switched by the URL hash.
-import { app, BrowserWindow, nativeTheme } from 'electron';
+import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import path from 'node:path';
 
 function createWindow() {
@@ -18,7 +18,37 @@ function createWindow() {
 	);
 }
 
+/** Shows a view in the focused window, as the links in the page do. */
+function showView(hash) {
+	BrowserWindow.getFocusedWindow()?.webContents.executeJavaScript(`location.hash = ${JSON.stringify(hash)}`);
+}
+
+// The app's own menu: facetshot's `menu:View>Reports` step chooses from it, and its handlers run here in the main
+// process. Export writes straight to standard output, the way a native module or a child process would.
+const menu = Menu.buildFromTemplate([
+	...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+	{
+		label: 'File',
+		submenu: [
+			{
+				label: 'Export Report…',
+				accelerator: 'CmdOrCtrl+E',
+				click: () => process.stdout.write('Exported 3 rows to report.csv\n')
+			},
+			{ role: 'quit' }
+		]
+	},
+	{
+		label: 'View',
+		submenu: [
+			{ label: 'Today', click: () => showView('#/') },
+			{ label: 'Reports', click: () => showView('#/reports') }
+		]
+	}
+]);
+
 app.whenReady().then(() => {
+	Menu.setApplicationMenu(menu);
 	createWindow();
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) createWindow();

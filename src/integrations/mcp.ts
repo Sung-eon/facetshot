@@ -498,9 +498,13 @@ export function createServer(): McpServer {
 		{
 			title: 'Open a screen',
 			description:
-				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data. Answers with the session id, a screenshot (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
+				"Opens a screen and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data: a web page, or an Electron or Tauri app's window. Answers with the session id, a screenshot (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
 			inputSchema: {
-				target: z.string().describe('A path ("/settings") or a full URL.'),
+				target: z
+					.string()
+					.describe(
+						'"/settings" or a full URL for a web page; "app:/path" for a desktop app\'s screen (with a window device).'
+					),
 				device: z
 					.string()
 					.optional()
@@ -525,18 +529,14 @@ export function createServer(): McpServer {
 					open: {
 						target: args.target,
 						on: args.browser ? `${args.device ?? 'desktop'}@${args.browser}` : args.device,
-						as: args.variant
+						as: args.variant,
+						look: lookOf(args)
 					},
 					configFile: loaded.file,
 					cwd: cwd(),
 					env: process.env
 				});
 				opened.add(view.session);
-				// Opening always screenshots and lists; look again only for something else.
-				if (!args.screenshot || !args.elements || args.tree || args.full)
-					return viewAnswer(
-						await sessionCall<View>('look', { id: view.session, options: lookOf(args) })
-					);
 				return viewAnswer(view);
 			} catch (error) {
 				return failure(error);

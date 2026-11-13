@@ -22,8 +22,9 @@ there yet. Reports are welcome.
 - Playwright's Firefox build didn't start on the prerelease version of macOS it was tried on, so Firefox hasn't been
   seen working yet. `moz-firefox` (the installed Firefox app) is driven over WebDriver BiDi, which Playwright
   supports only experimentally.
-- [Sessions](sessions.md) open web pages only. Sessions on iOS simulators, Mac windows, Electron, Tauri and Storybook
-  are planned; use [flows](flows.md) for those until then.
+- [Sessions](sessions.md) open web pages, Electron windows and Tauri frontends. Sessions on iOS simulators, native
+  Mac windows (including Tauri's real window) and Storybook stories are planned; use [flows](flows.md) for those
+  until then.
 - [Logs](logs.md) from iOS simulator apps and native Mac apps aren't recorded yet. The output of servers facetshot
   started is still recorded on those platforms.
 - On the iOS simulator, locale, right-to-left, personas, offline and reduced motion aren't applied yet. See

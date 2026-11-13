@@ -171,7 +171,7 @@ async function signedIn(
 				await playInPage(
 					page,
 					flow,
-					(address) => navigate(page, address),
+					{ open: (address) => navigate(page, address) },
 					async () => {}
 				);
 			} catch (error) {
@@ -207,6 +207,8 @@ export interface ShootOptions {
 	web: WebConfig | undefined;
 	/** How to show one address in this page (navigate, or ask an app to route). */
 	open: (session: PageSession, address: string) => Promise<void>;
+	/** Chooses an item in the app's own menu (`menu:` steps), for desktop apps. */
+	menu?: (path: string) => Promise<void>;
 }
 
 /**
@@ -285,9 +287,12 @@ export async function shootCell(
 				await playInPage(
 					session.page,
 					flow,
-					async (address) => {
-						session.watch.reset();
-						await options.open(session, fill(address, ctx.values));
+					{
+						open: async (address) => {
+							session.watch.reset();
+							await options.open(session, fill(address, ctx.values));
+						},
+						menu: options.menu
 					},
 					async (name) => {
 						taken += 1;
