@@ -20,7 +20,9 @@ function createWindow() {
 
 /** Shows a view in the focused window, as the links in the page do. */
 function showView(hash) {
-	BrowserWindow.getFocusedWindow()?.webContents.executeJavaScript(`location.hash = ${JSON.stringify(hash)}`);
+	BrowserWindow.getFocusedWindow()?.webContents.executeJavaScript(
+		`location.hash = ${JSON.stringify(hash)}`
+	);
 }
 
 // The app's own menu: facetshot's `menu:View>Reports` step chooses from it, and its handlers run here in the main
