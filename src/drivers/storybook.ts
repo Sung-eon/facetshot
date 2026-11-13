@@ -344,7 +344,8 @@ export class StorybookDriver implements Driver {
 			session.watch.reset();
 			await navigate(
 				session.page,
-				storyUrl(this.url, id, globalsFor(cell.variant, storybook.globals))
+				storyUrl(this.url, id, globalsFor(cell.variant, storybook.globals)),
+				undefined
 			);
 			const base = storybook.ready ?? web?.ready;
 			const timeout = base?.timeout ?? 15_000;

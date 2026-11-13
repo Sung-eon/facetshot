@@ -173,7 +173,7 @@ async function signedIn(
 				await playInPage(
 					page,
 					flow,
-					{ open: (address) => navigate(page, address) },
+					{ open: (address) => navigate(page, address, options.baseURL) },
 					async () => {}
 				);
 			} catch (error) {
@@ -360,8 +360,46 @@ export function engineOf(config: Config, device?: Device): Engine {
 	return device?.browser ?? config.web?.browser ?? 'chromium';
 }
 
-/** Navigates and waits for the document; readiness is waited for separately. */
-export async function navigate(page: Page, url: string): Promise<void> {
+/**
+ * Where an address leads: a full URL as it is, a path under the base's own path (with `http://host/docs` as the base,
+ * `/` is `http://host/docs/` and `/settings?tab=2` is `http://host/docs/settings?tab=2`). Every page is opened through
+ * here, so a run, a flow's `goto` and a session's start reach the same place.
+ */
+export function resolveAddress(address: string, base: string | undefined): string {
+	if (!base || /^[a-z][a-z\d+.-]*:/i.test(address)) return address;
+	if (address.startsWith('//')) return new URL(address, base).href;
+	const root = new URL(base);
+	root.search = '';
+	root.hash = '';
+	if (!root.pathname.endsWith('/')) root.pathname += '/';
+	return new URL(`./${address.replace(/^\/+/, '')}`, root).href;
+}
+
+/**
+ * The other way round: the path an opened URL has under the base's own path, as a target would name it (with
+ * `http://host/docs` as the base, `http://host/docs/settings` is `/settings`). Readiness route rules are matched on
+ * this, so a rule for `/settings` holds wherever the app is served. A URL on another origin, or outside the base's
+ * path, keeps its whole path.
+ */
+export function addressOf(url: string, base: string | undefined): string {
+	const opened = new URL(url);
+	if (!base) return opened.pathname;
+	const root = new URL(base);
+	const prefix = root.pathname.replace(/\/+$/, '');
+	if (opened.origin !== root.origin || !prefix) return opened.pathname;
+	if (opened.pathname === prefix) return '/';
+	return opened.pathname.startsWith(`${prefix}/`)
+		? opened.pathname.slice(prefix.length)
+		: opened.pathname;
+}
+
+/** Opens an address (see `resolveAddress`) and waits for the document; readiness is waited for separately. */
+export async function navigate(
+	page: Page,
+	address: string,
+	base: string | undefined
+): Promise<void> {
+	const url = resolveAddress(address, base);
 	const response = await page.goto(url, { waitUntil: 'load', timeout: 60_000 });
 	if (response && response.status() >= 400) {
 		throw new Error(`${url} answered ${response.status()}.`);
@@ -440,7 +478,7 @@ export class WebDriver implements Driver {
 		const options: ShootOptions = {
 			ctx,
 			web,
-			open: (session, address) => navigate(session.page, address)
+			open: (session, address) => navigate(session.page, address, this.baseURL)
 		};
 		await shootInContexts(
 			cells,

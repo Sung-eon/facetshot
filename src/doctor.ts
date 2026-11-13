@@ -9,6 +9,7 @@ import { EXIT, explain } from './errors.ts';
 import { exec, portBusy } from './engine/procs.ts';
 import { helper } from './drivers/macos.ts';
 import { VERSION } from './version.ts';
+import { setupCommand } from './setup.ts';
 
 interface Line {
 	/** `info`: neither good nor bad, just so (an optional browser that isn't here). */
@@ -65,7 +66,7 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 		lines.push({
 			ok: false,
 			what: `Playwright Chromium doesn't start: ${explain(error)}`,
-			fix: 'bunx playwright install chromium'
+			fix: setupCommand()
 		});
 	}
 	// The other browsers, used only when asked (--browser): which ones this machine can start.
@@ -97,9 +98,7 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 		lines.push({
 			ok: needed ? false : 'info',
 			what: `${each.name} not available: ${each.why.split('\n')[0]}`,
-			fix: ['webkit', 'firefox'].includes(each.name)
-				? `bunx playwright install ${each.name}`
-				: undefined
+			fix: ['webkit', 'firefox'].includes(each.name) ? setupCommand(each.name) : undefined
 		});
 	}
 

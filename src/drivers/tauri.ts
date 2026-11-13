@@ -208,13 +208,7 @@ export class TauriDriver implements Driver {
 		const options: ShootOptions = {
 			ctx,
 			web,
-			open: (session, address) =>
-				navigate(
-					session.page,
-					/^https?:/.test(address)
-						? address
-						: this.baseURL + (address.startsWith('/') ? address : `/${address}`)
-				)
+			open: (session, address) => navigate(session.page, address, this.baseURL)
 		};
 		const note = (result: CellResult) =>
 			report({

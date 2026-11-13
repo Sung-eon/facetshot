@@ -1,6 +1,6 @@
 /**
- * Pixel differences between this run and an earlier one (or a saved baseline). Anti-aliasing noise is ignored, so a
- * ratio above zero means something a person would see moved or changed.
+ * Pixel differences between this run and an earlier one (or a saved baseline): pixelmatch at a fixed threshold of
+ * 0.1, with anti-aliased pixels left out. Any changed pixel counts; docs/comparing.md describes the rule.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

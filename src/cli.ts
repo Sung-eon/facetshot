@@ -38,6 +38,8 @@ const COMMANDS = [
 	'list',
 	'init',
 	'doctor',
+	'setup',
+	'uninstall',
 	'mcp',
 	'daemon',
 	'baseline',
@@ -129,7 +131,9 @@ Usage
   facetshot diff                                        run the last command again and show what changed
   facetshot list [devices|variants|profiles|flows|checks|runs|sessions]
   facetshot init [--url <address>] [--agent claude|codex|cursor|all]  write a starter config and connect your agent
+  facetshot setup [--browser webkit,firefox]            install the browsers facetshot uses, then run doctor
   facetshot doctor                                      check this machine and say how to fix what's missing
+  facetshot uninstall [--browsers] [--yes]              remove facetshot from this machine and project (asks first)
   facetshot mcp                                         run as an MCP server over stdio (for AI agents)
   facetshot baseline save|list|rm <name>                keep a run to compare against later
   facetshot daemon status|stop                          the background helper that keeps browsers and servers running
@@ -157,8 +161,8 @@ Targets
 Options
   --on phone,desktop     devices or groups (default: the profile's)
   --as dark,large        variants; combine with + (dark+large)
-  --browser webkit       web pages in other browsers too: webkit (Safari's engine), firefox, or the installed
-                         chrome, msedge, moz-firefox; or per device: --on phone@webkit
+  --browser webkit       web pages in these browsers instead of Chromium (add chromium to keep it): webkit,
+                         firefox, or the installed chrome, msedge, moz-firefox; or per device: --on phone@webkit
   -p, --profile name     a named set of devices and variants from your config; with no targets,
                          the profile's own targets (a batch you run again and again)
   --diff, --diff=name    compare with the previous run, or with a baseline or run id
@@ -171,6 +175,8 @@ Options
   --no-daemon            do everything in this process (slower next time)
   -c, --config file      use this config instead of searching for facetshot.config.ts
 
+Works in any folder; the project needs no package.json. Without a global install (bun add -g facetshot),
+type bunx facetshot instead of facetshot.
 Docs: README.md and docs/ in the facetshot repository.`;
 
 function lastRequestFile(state: string) {
@@ -375,6 +381,17 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 				yes: flags.yes === true,
 				url: typeof flags.url === 'string' ? flags.url : undefined
 			});
+		}
+		case 'setup': {
+			const { setup } = await import('./setup.ts');
+			return setup({
+				browsers: list(flags.browser),
+				configFile: typeof flags.config === 'string' ? flags.config : undefined
+			});
+		}
+		case 'uninstall': {
+			const { uninstall } = await import('./uninstall.ts');
+			return uninstall({ yes: flags.yes === true, browsers: flags.browsers === true });
 		}
 		case 'doctor': {
 			const { doctor } = await import('./doctor.ts');

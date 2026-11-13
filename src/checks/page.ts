@@ -57,12 +57,26 @@ export function inPage(args: { checks: string[]; touch: boolean; width: number }
 		}
 		return parts.join(' > ');
 	};
+	// Screen-reader text (`.sr-only`, `.visually-hidden`): clipped away, or a 1px box that hides its overflow. It is meant
+	// to be invisible, so it is never text cut off, a small tap target or something sticking out.
+	const visuallyHidden = (element: Element): boolean => {
+		for (let at: Element | null = element; at && at !== document.body; at = at.parentElement) {
+			const style = getComputedStyle(at);
+			if (/^rect\((0(px)?[,\s]*){4}\)$/.test(style.clip) || /^inset\(50%/.test(style.clipPath))
+				return true;
+			if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
+				const box = at.getBoundingClientRect();
+				if (box.width <= 1 && box.height <= 1) return true;
+			}
+		}
+		return false;
+	};
 	const shown = (element: Element): boolean => {
 		const style = getComputedStyle(element);
 		if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0)
 			return false;
 		const box = element.getBoundingClientRect();
-		return box.width > 0 && box.height > 0;
+		return box.width > 0 && box.height > 0 && !visuallyHidden(element);
 	};
 	const short = (text: string | null | undefined) =>
 		(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -106,8 +120,6 @@ export function inPage(args: { checks: string[]; touch: boolean; width: number }
 			let cut: string | null = null;
 			for (let at: Element | null = parent; at && at !== document.body; at = at.parentElement) {
 				const style = getComputedStyle(at);
-				// Hidden on purpose (screen-reader text) is not a defect.
-				if (style.clip === 'rect(0px, 0px, 0px, 0px)' || style.clipPath === 'inset(50%)') break;
 				if (
 					style.overflowX === 'visible' &&
 					style.overflowY === 'visible' &&

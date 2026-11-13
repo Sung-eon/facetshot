@@ -2,6 +2,7 @@
  * `facetshot init`: a starter config made from what the project already is, and (with `--agent`) the agent
  * connected — the MCP server registered and the skill copied where that agent reads skills.
  */
+import { createInterface } from 'node:readline/promises';
 import {
 	cpSync,
 	existsSync,
@@ -9,6 +10,7 @@ import {
 	mkdirSync,
 	readdirSync,
 	readFileSync,
+	rmdirSync,
 	rmSync,
 	symlinkSync,
 	writeFileSync
@@ -145,15 +147,26 @@ function mergeMcp(file: string, server: { command: string; args: string[] }): bo
 const SKILL = fileURLToPath(new URL('../skills/facetshot', import.meta.url));
 
 /**
- * The skill as one Cursor rule: a rule is a single file, so the reference the skill links to follows its body, and
- * the link becomes a pointer to the section below.
+ * The skill as one Cursor rule: a rule is a single file, so the references follow the body in a fixed order, and
+ * links to `references/<name>.md` (and to sections in them) become links to those sections below.
  */
 function cursorRule(): string {
-	const body = readFileSync(join(SKILL, 'SKILL.md'), 'utf8')
-		.replace(/^---[\s\S]*?---\n/, '')
-		.replace(/\[reference\.md\]\(reference\.md\)/g, 'the reference below');
-	const reference = readFileSync(join(SKILL, 'reference.md'), 'utf8');
-	return `---\ndescription: Seeing the app's screens with facetshot\nalwaysApply: false\n---\n${body.trimEnd()}\n\n${reference}`;
+	const folder = join(SKILL, 'references');
+	const names = readdirSync(folder)
+		.filter((name) => name.endsWith('.md'))
+		.sort();
+	const local = (text: string) =>
+		text.replace(
+			/\]\((?:references\/)?([\w-]+)\.md(#[\w-]+)?\)/g,
+			(_, name: string, anchor?: string) =>
+				names.includes(`${name}.md`) ? `](${anchor ?? `#${name}`})` : `](${name}.md${anchor ?? ''})`
+		);
+	const body = readFileSync(join(SKILL, 'SKILL.md'), 'utf8').replace(/^---[\s\S]*?---\n/, '');
+	const references = names.map(
+		(name) =>
+			`<a id="${name.replace(/\.md$/, '')}"></a>\n\n${local(readFileSync(join(folder, name), 'utf8')).trimEnd()}`
+	);
+	return `---\ndescription: Seeing and trying the app's screens with facetshot\nalwaysApply: false\n---\n${[local(body).trimEnd(), ...references].join('\n\n')}\n`;
 }
 
 /**
@@ -180,7 +193,22 @@ function installSkill(root: string, target: string): void {
 		symlinkSync(rel, destination);
 	else cpSync(SKILL, destination, { recursive: true });
 }
-const AGENT_LINE =
+/**
+ * Where `init --agent` writes, in one place, so that `undoAgents` below removes exactly what was written and the two
+ * can't drift apart.
+ */
+const PLACES = {
+	claudeMcp: '.mcp.json',
+	claudeSkill: join('.claude', 'skills', 'facetshot'),
+	cursorMcp: join('.cursor', 'mcp.json'),
+	cursorRule: join('.cursor', 'rules', 'facetshot.mdc'),
+	codexSkill: join('.agents', 'skills', 'facetshot'),
+	codexConfig: join('.codex', 'config.toml')
+} as const;
+const CODEX_SECTION = /^\[mcp_servers\.facetshot\]/m;
+const MEMORY_FILES = ['CLAUDE.md', 'AGENTS.md'];
+
+export const AGENT_LINE =
 	"To see this app's screens or try what they do, use facetshot (the `facetshot` MCP tools, or the `facetshot` command) instead of a one-off screenshot script, and look before answering from the code.";
 
 export async function init(options: {
@@ -249,26 +277,26 @@ export async function init(options: {
 	for (const agent of agents) {
 		switch (agent) {
 			case 'claude':
-				mergeMcp(join(root, '.mcp.json'), server);
-				installSkill(root, join('.claude', 'skills', 'facetshot'));
+				mergeMcp(join(root, PLACES.claudeMcp), server);
+				installSkill(root, PLACES.claudeSkill);
 				say(
 					'Claude Code: registered the MCP server in .mcp.json and added the skill to .claude/skills/facetshot.'
 				);
 				break;
 			case 'cursor':
-				mergeMcp(join(root, '.cursor', 'mcp.json'), server);
-				mkdirSync(join(root, '.cursor', 'rules'), { recursive: true });
-				writeFileSync(join(root, '.cursor', 'rules', 'facetshot.mdc'), cursorRule());
+				mergeMcp(join(root, PLACES.cursorMcp), server);
+				mkdirSync(dirname(join(root, PLACES.cursorRule)), { recursive: true });
+				writeFileSync(join(root, PLACES.cursorRule), cursorRule());
 				say(
 					'Cursor: registered the MCP server in .cursor/mcp.json and added a rule in .cursor/rules/facetshot.mdc.'
 				);
 				break;
 			case 'codex': {
-				installSkill(root, join('.agents', 'skills', 'facetshot'));
+				installSkill(root, PLACES.codexSkill);
 				// Codex reads a project's .codex/config.toml once the project is trusted; ~/.codex/config.toml otherwise.
-				const file = join(root, '.codex', 'config.toml');
+				const file = join(root, PLACES.codexConfig);
 				const existing = existsSync(file) ? readFileSync(file, 'utf8') : '';
-				if (!/^\[mcp_servers\.facetshot\]/m.test(existing)) {
+				if (!CODEX_SECTION.test(existing)) {
 					mkdirSync(dirname(file), { recursive: true });
 					writeFileSync(
 						file,
@@ -288,20 +316,155 @@ export async function init(options: {
 				);
 		}
 	}
-	if (agents.length) {
-		const memory = ['CLAUDE.md', 'AGENTS.md'].map((name) => join(root, name)).find(existsSync);
-		if (memory && options.yes) {
-			const text = readFileSync(memory, 'utf8');
-			if (!text.includes('facetshot'))
-				writeFileSync(memory, `${text.trimEnd()}\n\n${AGENT_LINE}\n`);
-			say(`Added one line to ${relative(root, memory)}.`);
-		} else {
-			say(
-				`Consider adding this line to ${memory ? relative(root, memory) : 'AGENTS.md or CLAUDE.md'} (or rerun with --yes):\n  ${AGENT_LINE}`
-			);
-		}
-	} else {
-		say('Connect your agent with: facetshot init --agent claude|cursor|codex|all');
-	}
+	if (agents.length) await addAgentLine(root, agents.includes('claude'), options.yes, say);
+	else say('Connect your agent with: facetshot init --agent claude|cursor|codex|all');
 	return EXIT.ok;
+}
+
+/**
+ * The one line in CLAUDE.md or AGENTS.md that makes agents look with facetshot rather than answer from the code or
+ * write a screenshot script; agents follow it far more reliably than the skill alone. Asked at a terminal (yes by
+ * default), written with --yes, only suggested otherwise. A new file is made when the project has neither.
+ */
+async function addAgentLine(
+	root: string,
+	claude: boolean,
+	yes: boolean | undefined,
+	say: (line: string) => void
+) {
+	const existing = MEMORY_FILES.map((name) => join(root, name)).find(existsSync);
+	const file = existing ?? join(root, claude ? 'CLAUDE.md' : 'AGENTS.md');
+	const name = relative(root, file);
+	const text = existing ? readFileSync(existing, 'utf8') : '';
+	if (text.includes('facetshot'))
+		return say(`${name} already mentions facetshot; left it as it is.`);
+	let add = yes === true;
+	if (!add && process.stdin.isTTY) {
+		const ask = createInterface({ input: process.stdin, output: process.stdout });
+		say(`Agents use facetshot much more reliably with this line in ${name}:\n  ${AGENT_LINE}`);
+		add = !/^n(o)?$/i.test(
+			(await ask.question(`${existing ? 'Add it' : `Create ${name} with it`}? [Y/n] `)).trim()
+		);
+		ask.close();
+	}
+	if (add) {
+		writeFileSync(file, text.trim() ? `${text.trimEnd()}\n\n${AGENT_LINE}\n` : `${AGENT_LINE}\n`);
+		say(existing ? `Added one line to ${name}.` : `Created ${name} with one line about facetshot.`);
+	} else
+		say(`Add this line to ${name} so agents use facetshot (or rerun with --yes):\n  ${AGENT_LINE}`);
+}
+
+/** One thing `init --agent` put in a project, and how to take it out again. */
+export interface Undo {
+	/** The path, relative to the project. */
+	path: string;
+	/** What happens to it, for the list shown before anything is removed. */
+	what: string;
+	apply: () => void;
+}
+
+/** Removes a folder init made, and the folders above it up to the project, while they are empty. */
+function pruneEmpty(root: string, folder: string): void {
+	for (
+		let dir = join(root, folder);
+		relative(root, dir) && !relative(root, dir).startsWith('..');
+		dir = dirname(dir)
+	) {
+		try {
+			if (readdirSync(dir).length) return;
+			rmdirSync(dir);
+		} catch {
+			return;
+		}
+	}
+}
+
+/**
+ * The inverse of `init --agent`: facetshot's own entries and files, and nothing of anyone else's. Other MCP servers
+ * stay; a file is deleted only when nothing but facetshot was in it. The config is left for the person (they may have
+ * changed it); the line in CLAUDE.md/AGENTS.md goes only if it is still exactly the line init wrote.
+ */
+export function undoAgents(root: string): Undo[] {
+	const undo: Undo[] = [];
+	const present = (path: string) => {
+		try {
+			lstatSync(join(root, path));
+			return true;
+		} catch {
+			return false;
+		}
+	};
+	for (const path of [PLACES.claudeMcp, PLACES.cursorMcp]) {
+		const file = join(root, path);
+		const json = readJson(file) as { mcpServers?: Record<string, unknown> } | undefined;
+		if (!json?.mcpServers || !('facetshot' in json.mcpServers)) continue;
+		delete json.mcpServers.facetshot;
+		const empty = !Object.keys(json.mcpServers).length && Object.keys(json).length === 1;
+		undo.push({
+			path,
+			what: empty
+				? 'delete (only facetshot was in it)'
+				: 'remove the "facetshot" server, keep the rest',
+			apply: () => {
+				if (empty) {
+					rmSync(file, { force: true });
+					pruneEmpty(root, dirname(path));
+				} else writeFileSync(file, `${JSON.stringify(json, null, 2)}\n`);
+			}
+		});
+	}
+	const codex = join(root, PLACES.codexConfig);
+	const toml = existsSync(codex) ? readFileSync(codex, 'utf8') : '';
+	if (CODEX_SECTION.test(toml)) {
+		const lines = toml.split('\n');
+		const start = lines.findIndex((line) => CODEX_SECTION.test(line));
+		let end = lines.findIndex((line, index) => index > start && /^\s*\[/.test(line));
+		if (end < 0) end = lines.length;
+		const rest = [...lines.slice(0, start), ...lines.slice(end)]
+			.join('\n')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+		undo.push({
+			path: PLACES.codexConfig,
+			what: rest
+				? 'remove the [mcp_servers.facetshot] section, keep the rest'
+				: 'delete (only facetshot was in it)',
+			apply: () => {
+				if (rest) writeFileSync(codex, `${rest}\n`);
+				else {
+					rmSync(codex, { force: true });
+					pruneEmpty(root, dirname(PLACES.codexConfig));
+				}
+			}
+		});
+	}
+	for (const path of MEMORY_FILES) {
+		const file = join(root, path);
+		const text = existsSync(file) ? readFileSync(file, 'utf8') : '';
+		if (!text.includes(AGENT_LINE)) continue;
+		const rest = text
+			.replace(AGENT_LINE, '')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+		undo.push({
+			path,
+			what: rest
+				? 'remove the line about facetshot, keep the rest'
+				: 'delete (only the line about facetshot was in it)',
+			apply: () => (rest ? writeFileSync(file, `${rest}\n`) : rmSync(file, { force: true }))
+		});
+	}
+	for (const path of [PLACES.claudeSkill, PLACES.codexSkill, PLACES.cursorRule]) {
+		if (!present(path)) continue;
+		undo.push({
+			path,
+			what: 'delete',
+			apply: () => {
+				// Not followed if it is a link (a skill inside a checkout): the link goes, what it points at stays.
+				rmSync(join(root, path), { recursive: true, force: true });
+				pruneEmpty(root, dirname(path));
+			}
+		});
+	}
+	return undo;
 }

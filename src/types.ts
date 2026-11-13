@@ -181,7 +181,7 @@ export interface BuildStep extends Command {
 export interface Service extends Command {
 	/** A fixed port, or `auto` to pick a free one (exposed as `{port}` to the command and `{services.<name>.url}` elsewhere). */
 	port?: number | 'auto';
-	/** A path (on the service's URL) or a full URL that answers 2xx once the service is ready. */
+	/** A path (on the service's URL) or a full URL that answers (any status below 500) once the service is ready. Default: the service's own URL. */
 	health?: string;
 	/** If this URL is already healthy, use it and start nothing. */
 	reuse?: string;

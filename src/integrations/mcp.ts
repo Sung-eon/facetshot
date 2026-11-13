@@ -170,7 +170,7 @@ export function createServer(): McpServer {
 			.array(z.enum(['chromium', 'webkit', 'firefox', 'chrome', 'msedge', 'moz-firefox']))
 			.optional()
 			.describe(
-				'Other browsers for web pages, only when asked: "webkit" (Safari\'s engine) and "firefox" (Playwright\'s builds), or the installed "chrome", "msedge", "moz-firefox". Default: Chromium only.'
+				'Other browsers for web pages, only when asked: "webkit" (Safari\'s engine) and "firefox" (Playwright\'s builds, installed once with `facetshot setup --browser webkit,firefox`), or the installed "chrome", "msedge", "moz-firefox". Default: Chromium only.'
 			),
 		steps: z
 			.array(z.string())

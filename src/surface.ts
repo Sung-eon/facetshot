@@ -8,7 +8,14 @@ import { doStep, type Step, type StepHost } from './flows.ts';
 import { withLock } from './engine/lock.ts';
 import type { Runtime } from './engine/runtime.ts';
 import { fillAddress, type RunContext } from './drivers/driver.ts';
-import { engineOf, navigate, newSession, WebDriver, type PageSession } from './drivers/web.ts';
+import {
+	addressOf,
+	engineOf,
+	navigate,
+	newSession,
+	WebDriver,
+	type PageSession
+} from './drivers/web.ts';
 import {
 	chooseMenu,
 	ElectronDriver,
@@ -118,9 +125,15 @@ export async function openSurface(
 				}
 			);
 			closers.push(made.close);
-			return new PageSurface(made.session, ctx, {
-				open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
-			});
+			return new PageSurface(
+				made.session,
+				ctx,
+				{
+					open: (address) =>
+						navigate(made.session.page, fillAddress(cell, address, values), driver.frontendURL)
+				},
+				driver.frontendURL
+			);
 		}
 		case 'mac': {
 			const mac = await prepareMac(ctx);
@@ -159,9 +172,15 @@ export async function openSurface(
 				stateDir: ctx.stateDir
 			});
 			closers.push(made.close);
-			return new PageSurface(made.session, ctx, {
-				open: (address) => navigate(made.session.page, fillAddress(cell, address, values))
-			});
+			return new PageSurface(
+				made.session,
+				ctx,
+				{
+					open: (address) =>
+						navigate(made.session.page, fillAddress(cell, address, values), driver.url)
+				},
+				driver.url
+			);
 		}
 	}
 }
@@ -173,7 +192,9 @@ class PageSurface implements Surface {
 	constructor(
 		private session: PageSession,
 		private ctx: RunContext,
-		private host: StepHost
+		private host: StepHost,
+		/** The address paths are opened under, so readiness rules match paths as targets name them. */
+		private base?: string
 	) {}
 
 	get device(): Device {
@@ -212,7 +233,7 @@ class PageSurface implements Surface {
 
 	async look(options: LookOptions, image: string | undefined): Promise<Look> {
 		const { page, watch, device } = this.session;
-		const address = new URL(page.url()).pathname;
+		const address = addressOf(page.url(), this.base);
 		const settled = await waitReady(page, watch, {
 			...readyRuleFor(address, this.ctx.config.web?.ready),
 			timeout: 8000

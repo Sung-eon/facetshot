@@ -67,17 +67,32 @@ export async function clean(options: { configFile?: string; all?: boolean }): Pr
 	);
 	rmSync(join(homeFolder(), 'cache'), { recursive: true, force: true });
 
-	if (process.platform === 'darwin') {
-		try {
-			const { ownSimulators, simctl } = await import('./drivers/simctl.ts');
-			for (const device of await ownSimulators()) {
-				if (device.state === 'Booted') await simctl('shutdown', device.udid).catch(() => {});
-				await simctl('delete', device.udid);
-				say(`Deleted simulator ${device.name}.`);
-			}
-		} catch {
-			// No Xcode: nothing of ours to delete.
-		}
-	}
+	await deleteSimulators(await ownSimulatorList(), say);
 	return EXIT.ok;
+}
+
+/** facetshot's own iOS simulators (named facetshot-…); none without a Mac or Xcode. */
+export async function ownSimulatorList(): Promise<{ name: string; udid: string; state: string }[]> {
+	if (process.platform !== 'darwin') return [];
+	try {
+		const { ownSimulators } = await import('./drivers/simctl.ts');
+		return await ownSimulators();
+	} catch {
+		return [];
+	}
+}
+
+export async function deleteSimulators(
+	devices: { name: string; udid: string; state: string }[],
+	say: (line: string) => void
+): Promise<void> {
+	if (!devices.length) return;
+	const { simctl } = await import('./drivers/simctl.ts');
+	for (const device of devices) {
+		if (device.state === 'Booted') await simctl('shutdown', device.udid).catch(() => {});
+		await simctl('delete', device.udid).then(
+			() => say(`Deleted simulator ${device.name}.`),
+			(error) => say(`Couldn't delete simulator ${device.name}: ${explain(error)}`)
+		);
+	}
 }

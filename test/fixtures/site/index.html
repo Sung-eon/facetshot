@@ -53,6 +53,19 @@
 				display: none;
 			}
 		}
+		/* Screen-reader text, as documentation themes write it: never a finding. */
+		.sr-only {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			clip-path: inset(50%);
+			white-space: nowrap;
+			border-width: 0;
+		}
 		button.tiny {
 			width: 16px;
 			height: 16px;
@@ -60,8 +73,12 @@
 		}
 	</style>
 	<header>
+		<a class="sr-only" href="#main">Skip to the content</a>
 		<strong>Fixture</strong><a href="/second.html">Second</a
-		><button class="tiny" aria-label="x">×</button>
+		><button class="tiny" aria-label="x">×</button
+		><span class="sr-only"
+			>Read aloud only, and far too long to fit on any phone screen at all</span
+		>
 	</header>
 	<div class="spinner" id="spinner"></div>
 	<main class="card">

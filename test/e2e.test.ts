@@ -1,6 +1,6 @@
 /**
  * End to end on the fixture site: the command line's run, and the MCP server through a real MCP client over stdio.
- * Needs Playwright's Chromium (npx playwright install chromium).
+ * Needs Playwright's Chromium (facetshot setup).
  */
 import { afterAll, expect, test } from 'bun:test';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
@@ -42,6 +42,9 @@ test('a run takes every picture, draws a sheet per screen and finds the planted 
 			.some((f) => f.check === check);
 	expect(found('home', 'overflow')).toBe(true); // the 1200px bar on a phone
 	expect(found('home', 'clipped')).toBe(true);
+	// Screen-reader text past the edge, and a 1px skip link, are hidden on purpose.
+	const findings = manifest.cells.flatMap((cell) => cell.findings ?? []);
+	expect(findings.filter((f) => f.where?.includes('sr-only'))).toEqual([]);
 	expect(found('flow.dialog', 'images')).toBe(true);
 	// The spinner is gone in every picture: readiness waited for it.
 	expect(manifest.cells.every((cell) => !cell.readyTimedOut)).toBe(true);

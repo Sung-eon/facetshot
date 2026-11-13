@@ -6,6 +6,7 @@
  */
 import type { Browser, BrowserType } from 'playwright';
 import { EnvironmentError } from '../errors.ts';
+import { setupCommand } from '../setup.ts';
 import { healthy, within, type Running } from './procs.ts';
 
 export type Engine = import('../types.ts').BrowserName;
@@ -81,7 +82,7 @@ export class Runtime {
 					if (/Executable doesn't exist|browserType.launch/.test(message)) {
 						throw new EnvironmentError(
 							`Playwright's ${engine} isn't installed.`,
-							`Install it once: bunx playwright install ${engine}`
+							`Install it once: ${setupCommand(engine)}`
 						);
 					}
 					// What the browser itself said as it gave up, rather than Playwright's general "failed to launch".
@@ -92,7 +93,7 @@ export class Runtime {
 						.filter((line): line is string => !!line && !/headless mode/i.test(line));
 					throw new EnvironmentError(
 						`${engine} didn't start${said.length ? `: ${said[said.length - 1]}` : '.'}`,
-						`Try reinstalling it (bunx playwright install ${engine}), or leave ${engine} out of --browser.`
+						`Try installing it again (${setupCommand(engine)}), or leave ${engine} out of --browser.`
 					);
 				}
 			})();

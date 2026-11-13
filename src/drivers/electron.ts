@@ -97,7 +97,7 @@ export async function openInApp(
 	path: string,
 	values: Record<string, string>
 ): Promise<void> {
-	if (/^(https?|file):/.test(path)) return navigate(page, path);
+	if (/^(https?|file):/.test(path)) return navigate(page, path, undefined);
 	const mode = how ?? 'hash';
 	if (mode === 'hash') {
 		const hash = `#${path}`;
@@ -124,7 +124,7 @@ export async function openInApp(
 			'Use "hash", "ipc:<channel>", or a URL with {path} in it (e.g. "http://localhost:5173{path}" or "app://-{path}").'
 		);
 	}
-	await navigate(page, fill(mode, { ...values, path }));
+	await navigate(page, fill(mode, { ...values, path }), undefined);
 }
 
 /** Sizes the window's content to the device and waits until the page has seen it. */
