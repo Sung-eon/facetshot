@@ -256,7 +256,7 @@ export async function serve(): Promise<void> {
 		if (!found) {
 			throw new FacetshotError(
 				`There's no open session "${id}".`,
-				`Sessions close after ${SESSION_IDLE_MS / 60_000} idle minutes. Open another with facetshot open <target>; facetshot sessions lists the open ones.`,
+				`Sessions close after ${SESSION_IDLE_MS / 60_000} idle minutes. Open another with facetshot open <target>; facetshot list sessions shows the open ones.`,
 				2
 			);
 		}

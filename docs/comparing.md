@@ -26,7 +26,7 @@ Only the last 20 runs are kept. To keep one for good, save it under a name:
 facetshot /settings /billing -p full
 facetshot baseline save before-redesign
 # … days of work …
-facetshot /settings /billing -p full --diff before-redesign
+facetshot /settings /billing -p full --diff=before-redesign
 ```
 
 `facetshot baseline list` shows what you've saved, and `facetshot baseline rm <name>` removes one. Baselines are kept

@@ -50,7 +50,7 @@ ready: {
 ## Comparing
 
 - `facetshot diff` or MCP `compare`: the last command again, compared with the run before it.
-- `facetshot baseline save before-redesign`, later `facetshot /x --diff before-redesign` (MCP `compare` with
+- `facetshot baseline save before-redesign`, later `facetshot /x --diff=before-redesign` (MCP `compare` with
   `against`).
 - A changed cell has a red outline on the sheet and a `.diff.png` next to its screenshot.
 

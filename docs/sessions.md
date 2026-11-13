@@ -49,7 +49,7 @@ Logs (2):
 ```
 
 `--no-screenshot` leaves out the screenshot and `--no-elements` the list, when you don't need them. `--tree` adds
-the page's whole accessibility tree (all its text and structure) as text. `facetshot sessions` lists what's open.
+the page's whole accessibility tree (all its text and structure) as text. `facetshot list sessions` lists what's open.
 Every option is in the [command reference](cli.md#sessions).
 
 A session closes by itself after 10 minutes without use (`FACETSHOT_SESSION_IDLE_MINUTES` changes this). At most 6

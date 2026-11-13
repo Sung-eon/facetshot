@@ -23,11 +23,10 @@ import { loadConfig } from '../config.ts';
 import { explain } from '../errors.ts';
 import { groupFindings, summarize } from '../output/manifest.ts';
 import { crop, encodePng, fit, readPng } from '../output/image.ts';
-import { allDevices, allVariants } from '../plan.ts';
-import { GROUPS, PROFILES, VARIANT_GROUPS } from '../presets.ts';
-import { CHECK_HELP } from '../checks/page.ts';
+import { allDevices } from '../plan.ts';
+import { listing, LISTS } from '../listing.ts';
 import { listRuns, readManifest, stateDir, type RunRequest } from '../run.ts';
-import type { Manifest } from '../types.ts';
+import type { CellResult, Manifest } from '../types.ts';
 import { VERSION } from '../version.ts';
 import { parseStep } from '../flows.ts';
 import { describeView, type View } from '../session.ts';
@@ -77,27 +76,6 @@ function sheets(manifest: Manifest, onlyChanged = false): Content[] {
 				.slice(shown.length)
 				.map((screen) => screen.screen)
 				.join(', ')}. Ask for them with capture on those targets, or inspect a cell.`
-		});
-	}
-	return content;
-}
-
-/** Each screenshot on its own, scaled to fit 1024 px, at most MAX_CELLS of them. */
-const MAX_CELLS = Number(process.env.FACETSHOT_MCP_MAX_CELLS ?? 8);
-function cellImages(manifest: Manifest): Content[] {
-	const cells = manifest.cells.filter((cell) => cell.image);
-	const content: Content[] = cells.slice(0, MAX_CELLS).flatMap((cell) => [
-		{ type: 'text' as const, text: `${cell.screen} · ${cell.device} · ${cell.variant}` },
-		{
-			type: 'image' as const,
-			data: encodePng(fit(readPng(join(manifest.out, cell.image!)), 1024)).toString('base64'),
-			mimeType: 'image/png'
-		}
-	]);
-	if (cells.length > MAX_CELLS) {
-		content.push({
-			type: 'text',
-			text: `${cells.length - MAX_CELLS} more screenshot(s) not shown; use images: "sheets", fewer devices or variants, or inspect.`
 		});
 	}
 	return content;
@@ -220,28 +198,19 @@ export function createServer(): McpServer {
 				'Takes screenshots of screens on several devices and variants and returns one contact sheet per screen (rows = devices, columns = variants), plus a short summary of failures and problems found.',
 			inputSchema: {
 				...targetsShape,
-				diff: z.string().optional().describe('Also compare with "previous" or a baseline name.'),
 				images: z
-					.enum(['sheets', 'cells', 'none'])
+					.enum(['sheets', 'none'])
 					.default('sheets')
 					.describe(
-						'How screenshots come back: "sheets" one grid per screen (default, cheapest to read), "cells" every screenshot on its own (for a few cells, to read details), "none" paths only.'
+						'"sheets": one grid image per screen (default). "none": text and file paths only. To read a detail, use inspect.'
 					)
 			},
 			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true }
 		},
 		async (args, extra) => {
 			try {
-				const manifest = await execute(
-					{ ...requestOf(args), diff: args.diff },
-					progressOf(extra as never)
-				);
-				const pictures =
-					args.images === 'none'
-						? []
-						: args.images === 'cells'
-							? cellImages(manifest)
-							: sheets(manifest);
+				const manifest = await execute(requestOf(args), progressOf(extra as never));
+				const pictures = args.images === 'none' ? [] : sheets(manifest);
 				return {
 					content: [{ type: 'text', text: summarize(manifest, { absolute: true }) }, ...pictures],
 					structuredContent: runData(manifest)
@@ -343,17 +312,17 @@ export function createServer(): McpServer {
 		{
 			title: 'Look closer',
 			description:
-				'Returns one screenshot from a run at full size (scaled to fit 1568 px), or a region of it. Use after capture when a sheet is too small to read.',
+				"Returns screenshots from a run at full size (scaled to fit 1568 px) with their problems and log lines. Give a screen, device and variant for one screenshot (and optionally a region of it); leave out device or variant to get that screen's screenshots that failed, have problems or changed (at most 4).",
 			inputSchema: {
 				screen: z.string().describe('The screen name as the summary shows it.'),
-				device: z.string(),
-				variant: z.string(),
+				device: z.string().optional(),
+				variant: z.string().optional(),
 				run: z.string().optional().describe('A run id; default the latest.'),
 				region: z
 					.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
 					.optional()
 					.describe(
-						'A part of the screen in CSS pixels/points (multiplied by the device scale for you).'
+						'With device and variant: a part of the screen in CSS pixels/points (multiplied by the device scale for you).'
 					),
 				diff: z
 					.boolean()
@@ -365,56 +334,78 @@ export function createServer(): McpServer {
 		async (args) => {
 			try {
 				const loaded = await loadConfig({ file: configFile(), cwd: cwd() });
-				const runs = listRuns(loaded.config);
-				const id = args.run ?? runs[0];
+				const id = args.run ?? listRuns(loaded.config)[0];
 				if (!id) throw new Error('There are no runs yet.');
 				const manifest = readManifest(join(stateDir(loaded.config), 'runs', id));
 				if (!manifest) throw new Error(`Run ${id} has no manifest.`);
-				const cell = manifest.cells.find(
-					(c) => c.screen === args.screen && c.device === args.device && c.variant === args.variant
+				const ofScreen = manifest.cells.filter(
+					(c) =>
+						c.screen === args.screen &&
+						(!args.device || c.device === args.device) &&
+						(!args.variant || c.variant === args.variant)
 				);
-				if (!cell) {
+				if (!ofScreen.length) {
 					throw new Error(
-						`No screenshot for ${args.screen} ${args.device}/${args.variant} in run ${id}. Screens: ${manifest.screens.map((s) => s.screen).join(', ')}.`
+						`No screenshot for ${[args.screen, args.device, args.variant].filter(Boolean).join(' ')} in run ${id}. Screens: ${manifest.screens.map((s) => s.screen).join(', ')}.`
 					);
 				}
-				const rel = args.diff ? cell.diff?.image : cell.image;
-				if (!rel)
-					throw new Error(
-						args.diff
-							? 'That screenshot has no difference image.'
-							: `That screenshot failed: ${cell.error ?? 'no image'}.`
-					);
-				let image = readPng(join(manifest.out, rel));
-				if (args.region) {
-					// Pixels per point: the screenshot's width over the device's.
-					const device = allDevices(loaded.config)[args.device];
-					const deviceScale = device ? image.width / device.width : 1;
-					image = crop(image, {
-						x: args.region.x * deviceScale,
-						y: args.region.y * deviceScale,
-						width: args.region.width * deviceScale,
-						height: args.region.height * deviceScale
+				const single = Boolean(args.device && args.variant);
+				const problems = (cell: CellResult) =>
+					(cell.findings ?? []).filter((f) => f.severity !== 'info');
+				const chosen = single
+					? ofScreen
+					: ofScreen
+							.filter((c) => c.status !== 'ok' || problems(c).length || (c.diff?.ratio ?? 0) > 0)
+							.slice(0, 4);
+				if (!chosen.length) {
+					return {
+						content: [
+							{
+								type: 'text',
+								text: `No screenshot of ${args.screen} in run ${id} failed, has a problem or changed. Name a device and variant to see one: ${[...new Set(ofScreen.map((c) => `${c.device}/${c.variant}`))].join(', ')}.`
+							}
+						]
+					};
+				}
+				const content: Content[] = [];
+				for (const cell of chosen) {
+					const found = problems(cell);
+					content.push({
+						type: 'text',
+						text:
+							`${cell.screen} on ${cell.device}, ${cell.variant} (run ${id}).` +
+							(cell.error ? `\nFailed: ${cell.error}` : '') +
+							(found.length
+								? `\n${found.map((f) => `- ${f.check}: ${f.message}${f.where ? ` — ${f.where}` : ''}`).join('\n')}`
+								: '') +
+							(cell.notes?.length ? `\n${cell.notes.join('\n')}` : '') +
+							cellLog(manifest, `${cell.screen} · ${cell.device} · ${cell.variant}`)
+					});
+					const rel = args.diff ? cell.diff?.image : cell.image;
+					if (!rel) {
+						if (args.diff)
+							content.push({ type: 'text', text: 'That screenshot has no difference image.' });
+						continue;
+					}
+					let image = readPng(join(manifest.out, rel));
+					if (args.region && single) {
+						// Pixels per point: the screenshot's width over the device's.
+						const device = allDevices(loaded.config)[cell.device];
+						const deviceScale = device ? image.width / device.width : 1;
+						image = crop(image, {
+							x: args.region.x * deviceScale,
+							y: args.region.y * deviceScale,
+							width: args.region.width * deviceScale,
+							height: args.region.height * deviceScale
+						});
+					}
+					content.push({
+						type: 'image',
+						data: encodePng(fit(image, MAX_SIDE)).toString('base64'),
+						mimeType: 'image/png'
 					});
 				}
-				const findings = (cell.findings ?? []).filter((f) => f.severity !== 'info');
-				const text =
-					`${args.screen} on ${args.device}, ${args.variant} (run ${id}).` +
-					(findings.length
-						? `\n${findings.map((f) => `- ${f.check}: ${f.message}${f.where ? ` — ${f.where}` : ''}`).join('\n')}`
-						: '') +
-					(cell.notes?.length ? `\n${cell.notes.join('\n')}` : '') +
-					cellLog(manifest, `${args.screen} · ${args.device} · ${args.variant}`);
-				return {
-					content: [
-						{ type: 'text', text },
-						{
-							type: 'image',
-							data: encodePng(fit(image, MAX_SIDE)).toString('base64'),
-							mimeType: 'image/png'
-						}
-					]
-				};
+				return { content, isError: single && chosen[0].status !== 'ok' ? true : undefined };
 			} catch (error) {
 				return failure(error);
 			}
@@ -424,55 +415,18 @@ export function createServer(): McpServer {
 	server.registerTool(
 		'list',
 		{
-			title: 'What can be shot',
-			description: 'Lists devices, variants, profiles, checks, or recent runs (and their screens).',
+			title: 'What there is',
+			description:
+				'Lists devices, variants, profiles (named batches: targets × devices × variants), flows (saved step files and their shots), checks, recent runs, or open sessions. Look here for an existing flow or profile before writing a new one.',
 			inputSchema: {
-				what: z.enum(['devices', 'variants', 'profiles', 'checks', 'runs']).default('devices')
+				what: z.enum(LISTS).default('devices')
 			},
 			annotations: { readOnlyHint: true, openWorldHint: false }
 		},
 		async (args) => {
 			try {
 				const { config } = await loadConfig({ file: configFile(), cwd: cwd() });
-				let text = '';
-				if (args.what === 'devices') {
-					text = Object.values(allDevices(config))
-						.map((d) => `${d.name} (${d.platform}) ${d.width}×${d.height}`)
-						.join('\n');
-					text += `\nGroups: ${Object.entries({ ...GROUPS, ...config.groups })
-						.map(([name, members]) => `${name}=${members.join('+')}`)
-						.join(', ')}`;
-				} else if (args.what === 'variants') {
-					text = Object.values(allVariants(config))
-						.map(
-							({ name, ...axes }) =>
-								`${name}: ${Object.entries(axes)
-									.map(([k, v]) => `${k}=${v}`)
-									.join(' ')}`
-						)
-						.join('\n');
-					text += `\nGroups: ${Object.entries(VARIANT_GROUPS)
-						.map(([n, m]) => `${n}=${m.join('+')}`)
-						.join(', ')}. Combine with "+".`;
-				} else if (args.what === 'profiles') {
-					text = Object.entries({ ...PROFILES, ...config.profiles })
-						.map(([name, p]) => `${name}: on ${p.on.join(', ')} as ${p.as.join(', ')}`)
-						.join('\n');
-				} else if (args.what === 'checks') {
-					text = Object.entries(CHECK_HELP)
-						.map(([name, help]) => `${name}: ${help}`)
-						.join('\n');
-				} else {
-					text =
-						listRuns(config)
-							.slice(0, 10)
-							.map((id) => {
-								const m = readManifest(join(stateDir(config), 'runs', id));
-								return `${id}: ${m ? `${m.counts.ok}/${m.cells.length} ok — ${m.screens.map((s) => s.screen).join(', ')}` : 'incomplete'}`;
-							})
-							.join('\n') || 'No runs yet.';
-				}
-				return { content: [{ type: 'text', text }] };
+				return { content: [{ type: 'text', text: await listing(args.what, config) }] };
 			} catch (error) {
 				return failure(error);
 			}
@@ -537,7 +491,7 @@ export function createServer(): McpServer {
 	server.registerTool(
 		'open',
 		{
-			title: 'Open a page to work',
+			title: 'Open a screen',
 			description:
 				"Opens a web page and keeps it open (a session) on one device and variant, with the project's servers, sign-in and test data. Answers with the session id, a screenshot (CSS pixels), what the page and servers logged, and what on screen can be acted on, with refs. Then use act; close when done.",
 			inputSchema: {
@@ -588,7 +542,7 @@ export function createServer(): McpServer {
 	server.registerTool(
 		'act',
 		{
-			title: 'Work an open page',
+			title: 'Act on an open screen',
 			description:
 				'Does steps in an open session, in order, stopping at the first that fails, then answers like open: the screenshot, the log lines since the last answer, console errors and failed requests, and fresh refs. With no steps, just looks again. Name an element by its ref ("e12"), a point on the screenshot ("@x,y"), or a selector ("text=Save", "role=button[name=\'Save\']").',
 			inputSchema: {
@@ -624,7 +578,7 @@ export function createServer(): McpServer {
 	server.registerTool(
 		'close',
 		{
-			title: 'Close a page',
+			title: 'Close a screen',
 			description:
 				'Closes a session. With saveAs, the steps that worked are kept as a flow file that capture can play again on every device.',
 			inputSchema: {

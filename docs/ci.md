@@ -49,7 +49,7 @@ To compare a pull request with the main branch, the job needs a baseline. Either
 (`.facetshot/baselines/<name>`, saved with `facetshot baseline save <name>`; ignore `.facetshot/*` and add
 `!.facetshot/baselines/` to `.gitignore`), or make one in the same job: check out
 the main branch, take the screenshots, save them with `facetshot baseline save main`, check out the pull request, and
-run again with `--diff main`.
+run again with `--diff=main`.
 
 Screenshots taken on a CI runner can differ from those taken on your own machine (fonts, pixel density), so compare
 screenshots taken on the same kind of runner. See [Comparing](comparing.md).

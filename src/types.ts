@@ -358,6 +358,8 @@ export interface Limits {
 }
 
 export interface Profile {
+	/** What to take screenshots of when no targets are given: paths, `app:` screens, stories, flow files (`flows/*.yaml`). */
+	targets?: string[];
 	on: string[];
 	as: string[];
 }

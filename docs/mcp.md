@@ -18,7 +18,6 @@ Some parameters have different names from the command-line options they match:
 | `browsers`, `browser` | `--browser`                       |
 | `steps`               | `--do`                            |
 | `against` (`compare`) | `--diff`, `facetshot diff <name>` |
-| `diff` (`capture`)    | `--diff`                          |
 | `saveAs`              | `--save`                          |
 | `logLevel`            | `--level`                         |
 | `screenshot: false`   | `--no-screenshot`                 |
@@ -28,22 +27,17 @@ Some parameters have different names from the command-line options they match:
 
 Takes screenshots and returns a summary and one contact sheet per screen.
 
-| Parameter  | Type                        | Meaning                                                                                                                      |
-| ---------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `targets`  | string[], required          | what to look at: `/settings`, `app:/inbox`, `story:button--primary`, `preview:Settings/Account`, `flows/x.yaml`, or an alias |
-| `devices`  | string[]                    | devices or groups. Default: the profile's                                                                                    |
-| `variants` | string[]                    | variants or groups; `dark+large` combines. Default: the profile's                                                            |
-| `profile`  | string                      | a profile from the config                                                                                                    |
-| `browsers` | string[]                    | other browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only     |
-| `steps`    | string[]                    | [steps](flows.md#steps) played before each screenshot, written as on the command line                                        |
-| `diff`     | string                      | also compare with `previous` or a baseline name                                                                              |
-| `images`   | `sheets`, `cells` or `none` | how screenshots come back (below). Default `sheets`                                                                          |
+| Parameter  | Type               | Meaning                                                                                                                      |
+| ---------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `targets`  | string[], required | what to look at: `/settings`, `app:/inbox`, `story:button--primary`, `preview:Settings/Account`, `flows/x.yaml`, or an alias |
+| `devices`  | string[]           | devices or groups. Default: the profile's                                                                                    |
+| `variants` | string[]           | variants or groups; `dark+large` combines. Default: the profile's                                                            |
+| `profile`  | string             | a profile from the config                                                                                                    |
+| `browsers` | string[]           | other browsers for web pages: `chromium`, `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`. Default: Chromium only     |
+| `steps`    | string[]           | [steps](flows.md#steps) played before each screenshot, written as on the command line                                        |
+| `images`   | `sheets` or `none` | `sheets` (the default): one sheet per screen, at most 4 (`FACETSHOT_MCP_MAX_IMAGES`). `none`: text and paths only            |
 
-| `images` | Returns                                                                              | Use it for                                                          |
-| -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| `sheets` | one sheet per screen, at most 4 (`FACETSHOT_MCP_MAX_IMAGES`)                         | seeing how a screen holds up everywhere                             |
-| `cells`  | each screenshot on its own, scaled to 1024 px, at most 8 (`FACETSHOT_MCP_MAX_CELLS`) | a few cells where details matter                                    |
-| `none`   | paths only                                                                           | clients that show files themselves, or when only the text is needed |
+To compare with an earlier run, use `compare`. To read a detail a sheet is too small to show, use `inspect`.
 
 ## `check`
 
@@ -69,22 +63,27 @@ Takes the same screenshots again and returns only the sheets that changed. With 
 
 ## `inspect`
 
-Returns one screenshot from a run, scaled to fit 1568 pixels, with that screenshot's findings, notes and log lines.
+Returns screenshots from a run, scaled to fit 1568 pixels, each with its findings, notes and log lines. With a
+`device` and a `variant` it returns that one screenshot. Leave either out to get the screen's screenshots that
+failed, have problems or changed, at most 4.
 
-| Parameter | Type                      | Meaning                                                                |
-| --------- | ------------------------- | ---------------------------------------------------------------------- |
-| `screen`  | string, required          | the screen name as the summary shows it                                |
-| `device`  | string, required          | the device                                                             |
-| `variant` | string, required          | the variant                                                            |
-| `run`     | string                    | a run id. Default: the latest run                                      |
-| `region`  | `{ x, y, width, height }` | only this part, in CSS pixels or points (scaled by the device for you) |
-| `diff`    | boolean                   | return the difference image instead, if the run compared               |
+| Parameter | Type                      | Meaning                                                            |
+| --------- | ------------------------- | ------------------------------------------------------------------ |
+| `screen`  | string, required          | the screen name as the summary shows it                            |
+| `device`  | string                    | the device                                                         |
+| `variant` | string                    | the variant                                                        |
+| `run`     | string                    | a run id. Default: the latest run                                  |
+| `region`  | `{ x, y, width, height }` | with a device and variant: only this part, in CSS pixels or points |
+| `diff`    | boolean                   | return the difference image instead, if the run compared           |
 
 ## `list`
 
-| Parameter | Type                                                  | Meaning                         |
-| --------- | ----------------------------------------------------- | ------------------------------- |
-| `what`    | `devices`, `variants`, `profiles`, `checks` or `runs` | what to list. Default `devices` |
+| Parameter | Type                                                                       | Meaning                         |
+| --------- | -------------------------------------------------------------------------- | ------------------------------- |
+| `what`    | `devices`, `variants`, `profiles`, `flows`, `checks`, `runs` or `sessions` | what to list. Default `devices` |
+
+`flows` lists the flow files in the project with their start and shots, and `profiles` shows each profile's targets,
+so an agent can run a check that already exists instead of writing a new one.
 
 ## `open`
 

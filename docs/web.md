@@ -83,7 +83,7 @@ compare ([Comparing](comparing.md)):
 ```sh
 SITE=https://app.example.com facetshot /pricing /docs
 facetshot baseline save live
-facetshot /pricing /docs --diff live
+facetshot /pricing /docs --diff=live
 ```
 
 [Security](security.md) has more on what a run or an agent can do to a live site.

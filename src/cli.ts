@@ -20,9 +20,7 @@ function openFile(file: string): void {
 				: ['xdg-open', file];
 	spawn(command, args, { detached: true, stdio: 'ignore' }).unref();
 }
-import { allDevices, allVariants } from './plan.ts';
-import { GROUPS, PROFILES, VARIANT_GROUPS } from './presets.ts';
-import { CHECK_HELP } from './checks/page.ts';
+import { listing } from './listing.ts';
 import type { CellResult, Manifest } from './types.ts';
 import { VERSION } from './version.ts';
 import { parseStep } from './flows.ts';
@@ -48,7 +46,6 @@ const COMMANDS = [
 	'act',
 	'look',
 	'close',
-	'sessions',
 	'logs',
 	'help',
 	'version'
@@ -97,10 +94,9 @@ export function parseArgs(argv: string[]): Parsed {
 						? `${flags[name]}\n${long[2]}`
 						: long[2];
 			else if (VALUED.has(raw) || VALUED.has(name)) {
-				// `--diff` alone means "compare with the previous run".
 				const next = argv[i + 1];
-				if (name === 'diff' && (next === undefined || next.startsWith('-') || next.startsWith('/')))
-					flags[name] = 'previous';
+				// `--diff` alone compares with the previous run; another baseline is named as --diff=<name>.
+				if (name === 'diff') flags[name] = 'previous';
 				else if (next === undefined) throw new UsageError(`--${raw} needs a value.`);
 				else {
 					flags[name] =
@@ -131,7 +127,7 @@ Usage
   facetshot <targets…> [--on devices] [--as variants]   take screenshots
   facetshot check <targets…>                            read the screens for problems, no screenshots
   facetshot diff                                        run the last command again and show what changed
-  facetshot list [devices|variants|profiles|checks|runs]
+  facetshot list [devices|variants|profiles|flows|checks|runs|sessions]
   facetshot init [--url <address>] [--agent claude|codex|cursor|all]  write a starter config and connect your agent
   facetshot doctor                                      check this machine and say how to fix what's missing
   facetshot mcp                                         run as an MCP server over stdio (for AI agents)
@@ -145,7 +141,6 @@ Sessions (a page kept open to work step by step)
   facetshot look <id> [--full] [--tree]                  show the page again
                          (--no-elements, --no-screenshot: leave out the list of what's on screen, or the screenshot)
   facetshot close <id> [--save flows/name.yaml]          close it (and keep the steps that worked as a flow)
-  facetshot sessions                                    the open sessions
   facetshot logs <id|run|latest> [--follow] [--level debug|info|warn|error] [--json]
 
 Steps (--do, act, flows)
@@ -165,7 +160,7 @@ Options
   --browser webkit       web pages in other browsers too: webkit (Safari's engine), firefox, or the installed
                          chrome, msedge, moz-firefox; or per device: --on phone@webkit
   -p, --profile name     a named set of devices and variants from your config
-  --diff [against]       compare with the previous run, a baseline, or a run id
+  --diff, --diff=name    compare with the previous run, or with a baseline or run id
   --checks a,b|all       which checks to run (facetshot list checks)
   --out folder           write this run to a folder of your choice
   --clean                empty --out first
@@ -263,62 +258,12 @@ async function listCommand(what: string | undefined, flags: Parsed['flags']): Pr
 	const { config } = await loadConfig({
 		file: typeof flags.config === 'string' ? flags.config : undefined
 	});
-	const out: string[] = [];
-	switch (what ?? 'devices') {
-		case 'devices': {
-			const devices = allDevices(config);
-			for (const platform of ['web', 'ios', 'window'] as const) {
-				out.push(`${platform}:`);
-				for (const device of Object.values(devices).filter((d) => d.platform === platform)) {
-					out.push(
-						`  ${device.name.padEnd(18)} ${device.width}×${device.height} @${device.scale}x${device.model ? `  ${device.model}` : ''}`
-					);
-				}
-			}
-			out.push('groups:');
-			for (const [name, members] of Object.entries({ ...GROUPS, ...config.groups }))
-				out.push(`  ${name.padEnd(18)} ${members.join(', ')}`);
-			break;
-		}
-		case 'variants': {
-			for (const variant of Object.values(allVariants(config))) {
-				const { name, ...axes } = variant;
-				out.push(
-					`  ${name.padEnd(12)} ${Object.entries(axes)
-						.map(([k, v]) => `${k}=${v}`)
-						.join(' ')}`
-				);
-			}
-			out.push('groups:');
-			for (const [name, members] of Object.entries(VARIANT_GROUPS))
-				out.push(`  ${name.padEnd(12)} ${members.join(', ')}`);
-			out.push('Combine with "+": dark+large');
-			break;
-		}
-		case 'profiles':
-			for (const [name, profile] of Object.entries({ ...PROFILES, ...config.profiles })) {
-				out.push(`  ${name.padEnd(12)} on ${profile.on.join(', ')}  as ${profile.as.join(', ')}`);
-			}
-			break;
-		case 'checks':
-			for (const [name, help] of Object.entries(CHECK_HELP))
-				out.push(`  ${name.padEnd(10)} ${help}`);
-			break;
-		case 'runs':
-			for (const id of listRuns(config).slice(0, 20)) {
-				const manifest = readManifest(join(stateDir(config), 'runs', id));
-				out.push(
-					`  ${id}  ${manifest ? `${manifest.counts.ok}/${manifest.cells.length} ok, ${manifest.screens.map((s) => s.screen).join(' ')}` : '(incomplete)'}`
-				);
-			}
-			break;
-		default:
-			throw new UsageError(
-				`I can't list "${what}".`,
-				'Try: devices, variants, profiles, checks, runs.'
-			);
+	if (what === 'sessions' && flags.json) {
+		const { listSessions } = await import('./daemon/client.ts');
+		process.stdout.write(`${JSON.stringify(await listSessions(), null, 2)}\n`);
+		return EXIT.ok;
 	}
-	process.stdout.write(`${out.join('\n')}\n`);
+	process.stdout.write(`${await listing(what ?? 'devices', config)}\n`);
 	return EXIT.ok;
 }
 
@@ -341,7 +286,7 @@ async function baselineCommand(
 			rmSync(join(folder, name), { recursive: true, force: true });
 			cpSync(join(state, 'runs', latest), join(folder, name), { recursive: true });
 			process.stdout.write(
-				`Saved run ${latest} as baseline "${name}". Compare with: facetshot <targets> --diff ${name}\n`
+				`Saved run ${latest} as baseline "${name}". Compare with: facetshot <targets> --diff=${name}\n`
 			);
 			return EXIT.ok;
 		}
@@ -447,7 +392,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 		case 'act':
 		case 'look':
 		case 'close':
-		case 'sessions':
 		case 'logs': {
 			const { sessionCommand } = await import('./session-cli.ts');
 			return sessionCommand(command, positional, flags);

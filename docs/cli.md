@@ -16,7 +16,6 @@
 | `facetshot act <id> <step…>`                | does steps in a session, then shows it again                        |
 | `facetshot look <id>`                       | shows a session again                                               |
 | `facetshot close <id> [--save file]`        | closes a session, optionally keeping its steps as a flow            |
-| `facetshot sessions`                        | lists the open sessions                                             |
 | `facetshot logs <id\|run\|latest>`          | prints a run's logs, or a session's (live with `--follow`)          |
 
 `fshot` is a shorter name for the same command. Targets are described in
@@ -34,7 +33,7 @@ facetshot /settings /billing --on phone,desktop --as light,dark+large
 | `--as <variants>`         | variants or groups, comma-separated; `+` combines (`dark+large`). Default: the profile's                                                                                   |
 | `--browser <names>`       | take web pages in other browsers too: `webkit`, `firefox`, `chrome`, `msedge`, `moz-firefox`; or per device, `--on phone@webkit` ([Other browsers](web.md#other-browsers)) |
 | `-p, --profile <name>`    | a profile from your config (default: `default`)                                                                                                                            |
-| `--diff [against]`        | compare with `previous` (the default), a baseline name, a run id, or a folder ([Comparing](comparing.md))                                                                  |
+| `--diff`, `--diff=<name>` | compare with the previous run, or with a baseline name, a run id or a folder ([Comparing](comparing.md))                                                                   |
 | `--checks <names>`        | the checks to run, comma-separated, instead of the default ones; `all` for every check ([Checks](checks.md))                                                               |
 | `--do <step>`             | a step before the screenshot, repeatable: `--do "click:text=Save" --do shot:saved` ([Steps](flows.md#steps))                                                               |
 | `--out <folder>`          | write this run to a folder of your choice instead of `.facetshot/runs/<id>`                                                                                                |
@@ -45,10 +44,6 @@ facetshot /settings /billing --on phone,desktop --as light,dark+large
 | `--open`                  | open `report.html` when the run is done                                                                                                                                    |
 | `--no-daemon`             | do everything in this process; nothing stays running afterwards                                                                                                            |
 | `-c, --config <file>`     | use this config instead of looking for `facetshot.config.ts` upwards from the current folder                                                                               |
-
-`--diff` takes the next word as the name to compare with, unless it starts with `-` or `/`. So in
-`facetshot --diff app:/inbox`, `app:/inbox` is read as a baseline name. Put `--diff` last, or write
-`--diff=previous`.
 
 While it works, facetshot shows progress on one line in a terminal, and prints failures as they happen when its
 output isn't a terminal. When it's done it prints the summary: counts and timing, the sheets, what failed and why,
@@ -62,12 +57,13 @@ which screens need a look.
 
 ## `diff`
 
-Repeats your last `facetshot` command with `--diff previous`, or against the baseline you name:
+Repeats your last `facetshot` command with `--diff`, or against the baseline you name:
 `facetshot diff before-redesign`.
 
 ## `list`
 
-`facetshot list devices` (the default), `variants`, `profiles`, `checks` or `runs`.
+`facetshot list devices` (the default), `variants`, `profiles`, `flows`, `checks`, `runs` or `sessions`. `flows`
+finds the flow files in the project; `sessions --json` prints the open sessions as JSON.
 
 ## `init`
 
@@ -148,4 +144,3 @@ Problems found by checks don't change the exit code. To fail a CI job on them, r
 | `FACETSHOT_CONFIG`               | the config the MCP server uses                                                                                    |
 | `FACETSHOT_CWD`                  | the folder the MCP server looks for a config from                                                                 |
 | `FACETSHOT_MCP_MAX_IMAGES`       | sheets per MCP answer (default 4)                                                                                 |
-| `FACETSHOT_MCP_MAX_CELLS`        | single screenshots per MCP answer with `images: "cells"` (default 8)                                              |

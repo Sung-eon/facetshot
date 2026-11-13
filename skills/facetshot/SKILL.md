@@ -24,8 +24,8 @@ calls, so a second look takes seconds.
 3. Fix, then compare to see only what changed:
    - MCP: `compare` (repeats your last capture)
    - shell: `facetshot diff`
-4. If a sheet is too small to judge a detail, capture with `images: "cells"` for a few cells, or `inspect` one cell
-   (screen, device, variant, and optionally a region), or open the PNG path from the summary. `inspect` also returns
+4. If a sheet is too small to judge a detail, `inspect` the screen (with a device and variant for
+   one screenshot, a region for part of it; without them, the screenshots with problems), or open the PNG path from the summary. `inspect` also returns
    what that page logged.
 
 ## Using a page step by step

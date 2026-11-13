@@ -12,7 +12,9 @@ test('targets come first and run is the default command', () => {
 test('--diff alone compares with the previous run', () => {
 	expect(parseArgs(['/a', '--diff']).flags.diff).toBe('previous');
 	expect(parseArgs(['--diff', '/a']).flags.diff).toBe('previous');
-	expect(parseArgs(['/a', '--diff', 'main']).flags.diff).toBe('main');
+	// A word after --diff is a target, never the baseline's name: that is written --diff=main.
+	expect(parseArgs(['--diff', 'app:/inbox'])).toMatchObject({ positional: ['app:/inbox'] });
+	expect(parseArgs(['/a', '--diff=main']).flags.diff).toBe('main');
 });
 
 test('a word in front is a command', () => {

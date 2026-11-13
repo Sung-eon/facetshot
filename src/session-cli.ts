@@ -1,4 +1,4 @@
-/** `facetshot open | act | look | close | sessions | logs`: sessions and logs from the command line. */
+/** `facetshot open | act | look | close | logs`: sessions and logs from the command line. */
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadConfig } from './config.ts';
@@ -7,7 +7,7 @@ import { parseStep } from './flows.ts';
 import { atLeast, formatEntry, type LogEntry, type LogLevel } from './logs.ts';
 import { listRuns, stateDir } from './run.ts';
 import { describeView, type LookOptions, type View } from './session.ts';
-import { listSessions, sessionCall, sessionLogs } from './daemon/client.ts';
+import { sessionCall, sessionLogs } from './daemon/client.ts';
 
 type Flags = Record<string, string | true>;
 
@@ -49,7 +49,7 @@ export async function sessionCommand(
 	const needId = () => {
 		if (!id)
 			throw new UsageError(
-				`facetshot ${command} needs a session id (facetshot sessions lists them).`
+				`facetshot ${command} needs a session id (facetshot list sessions shows them).`
 			);
 		return id;
 	};
@@ -95,17 +95,6 @@ export async function sessionCommand(
 			process.stdout.write(
 				`Closed ${answer.closed}.${answer.saved ? ` Its steps are in ${answer.saved}; play them again with facetshot ${answer.saved}` : ''}\n`
 			);
-			return EXIT.ok;
-		}
-		case 'sessions': {
-			const open = await listSessions();
-			if (flags.json) process.stdout.write(`${JSON.stringify(open, null, 2)}\n`);
-			else if (!open.length) process.stdout.write('No sessions open.\n');
-			else
-				for (const each of open)
-					process.stdout.write(
-						`${each.id}  ${each.device}/${each.variant}  ${each.url}  ${each.steps} steps, idle ${each.idleSeconds}s  (${each.root})\n`
-					);
 			return EXIT.ok;
 		}
 		case 'logs':
