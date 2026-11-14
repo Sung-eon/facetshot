@@ -2,6 +2,13 @@
   <img src="docs/images/hero.svg" alt="facetshot: one command takes screenshots of a page on desktop, tablet and phone in light, dark and large text, and lists what looks broken, with the logs." width="100%">
 </p>
 
+<p align="center">
+  <a href="https://gh.sung-eon.space/facetshot/"><b>Website</b></a> ·
+  <a href="https://www.npmjs.com/package/facetshot">npm</a> ·
+  <a href="docs/README.md">Docs</a> ·
+  <a href="https://github.com/Sung-eon/facetshot/releases">Releases</a>
+</p>
+
 # facetshot
 
 facetshot takes screenshots of your app's screens on several devices and in several display settings at once (light,
