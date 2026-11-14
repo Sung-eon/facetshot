@@ -1,0 +1,459 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Command reference | facetshot</title><link rel="canonical" href="https://sung-eon.github.io/facetshot/cli/"/><link rel="sitemap" href="/facetshot/sitemap-index.xml"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="true"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@200..700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap"/><link rel="shortcut icon" href="/facetshot/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.4.11"/><meta name="generator" content="Starlight v0.42.11"/><meta property="og:title" content="Command reference"/><meta property="og:type" content="article"/><meta property="og:url" content="https://sung-eon.github.io/facetshot/cli/"/><meta property="og:locale" content="en"/><meta property="og:description" content="Commands are written facetshot …, as typed after a global install. Without installing, or with facetshot in your project, type bunx facetshot … (Installing)."/><meta property="og:site_name" content="facetshot"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="Commands are written facetshot …, as typed after a global install. Without installing, or with facetshot in your project, type bunx facetshot … (Installing)."/><meta property="og:image" content="https://sung-eon.github.io/facetshot/og.png"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><meta property="og:image:alt" content="facetshot: a contact sheet of a settings screen with its menu open, on desktop and tablet, in light and dark."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/facetshot/_astro/print.C9eyqPGL.css" media="print"><link rel="stylesheet" href="/facetshot/_astro/common.Dno8e8Kw.css"><style>@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em;overflow:visible}}
+@layer starlight.components{.sl-link-card:where(.astro-zaaezwya){border:1px solid var(--sl-color-gray-5);box-shadow:var(--sl-shadow-sm);border-radius:.5rem;grid-template-columns:1fr auto;gap:.5rem;padding:1rem;display:grid;position:relative}a:where(.astro-zaaezwya){line-height:var(--sl-line-height-headings);text-decoration:none}a:where(.astro-zaaezwya):before{content:"";position:absolute;inset:0}.stack:where(.astro-zaaezwya){flex-direction:column;gap:.5rem}.title:where(.astro-zaaezwya){color:var(--sl-color-white);font-weight:600;font-size:var(--sl-text-lg)}.description:where(.astro-zaaezwya){color:var(--sl-color-gray-3);line-height:1.5}.icon:where(.astro-zaaezwya){color:var(--sl-color-gray-3)}.sl-link-card:where(.astro-zaaezwya):hover{background:var(--sl-color-gray-7,var(--sl-color-gray-6));border-color:var(--sl-color-gray-2)}.sl-link-card:where(.astro-zaaezwya):hover .icon:where(.astro-zaaezwya){color:var(--sl-color-white)}.sl-steps{--bullet-size:calc(var(--sl-line-height) * 1rem);--bullet-margin:.375rem;counter-reset:steps-counter var(--sl-steps-start,0);padding-inline-start:0;list-style:none}.sl-steps>li{counter-increment:steps-counter;padding-inline-start:calc(var(--bullet-size) + 1rem);min-height:calc(var(--bullet-size) + var(--bullet-margin));padding-bottom:1px;position:relative}.sl-steps>li+li{margin-top:0}.sl-steps>li:before{content:counter(steps-counter);top:0;width:var(--bullet-size);height:var(--bullet-size);line-height:var(--bullet-size);font-size:var(--sl-text-xs);text-align:center;color:var(--sl-color-white);background-color:var(--sl-color-gray-6);box-shadow:inset 0 0 0 1px var(--sl-color-gray-5);border-radius:99rem;font-weight:600;position:absolute;inset-inline-start:0}.sl-steps>li:after{--guide-width:1px;content:"";top:calc(var(--bullet-size) + var(--bullet-margin));bottom:var(--bullet-margin);width:var(--guide-width);background-color:var(--sl-color-hairline-light);position:absolute;inset-inline-start:calc((var(--bullet-size) - var(--guide-width)) / 2)}}@layer starlight.content{.sl-steps>li>:first-child{--lh:calc(1em * var(--sl-line-height));--shift-y:calc(.5 * (var(--bullet-size) - var(--lh)));transform:translateY(var(--shift-y));margin-bottom:var(--shift-y)}.sl-steps>li>:first-child:where(h1,h2,h3,h4,h5,h6){--lh:calc(1em * var(--sl-line-height-headings))}@supports (--prop:1lh){.sl-steps>li>:first-child{--lh:1lh}}}
+</style><script type="module" src="/facetshot/_astro/page.cNngjUgL.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">Skip to content</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/facetshot/" class="site-title sl-flex astro-6rvad3va"><span class="astro-6rvad3va" translate="no">facetshot</span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding: 0" aria-label="Search" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">Cancel</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/facetshot/_astro/Search.astro_astro_type_script_index_0_lang.BubN4tA0.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/Sung-eon/facetshot" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="Main"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">Menu</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="0721war" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Everyday</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/getting-started/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Getting started</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/web/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Web apps</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/auth-and-data/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Sign-in, servers and test data</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/flows/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Flows</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/sessions/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Sessions</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/comparing/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Comparing</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/agents/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">AI agents</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/ci/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Continuous integration</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Other platforms</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/ios/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">iOS simulators</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/swiftui/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">SwiftUI scenes</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/desktop/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Desktop apps</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/flutter/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Flutter</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/storybook/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Storybook</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Reference</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/cli/" aria-current="page" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Command reference</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/configuration/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Configuration reference</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/mcp/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">MCP tools</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/checks/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Checks</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/logs/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Logs</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Explanation</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/concepts/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">How it works</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/architecture/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Architecture</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/performance/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Speed and machine safety</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/comparison/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">How facetshot compares</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/security/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Security</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Help</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/troubleshooting/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Troubleshooting</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/status/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Status and limits</span></a></li></ul></details></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/Sung-eon/facetshot" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">On this page<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#installing-updating-and-removing" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Installing, updating and removing</span></a><ul class="isMobile astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#setup" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">setup</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#uninstall" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">uninstall</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#taking-screenshots" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Taking screenshots</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#check" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">check</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#diff" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">diff</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#list" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">list</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#init" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">init</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#doctor" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">doctor</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#baseline" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">baseline</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#daemon" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">daemon</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#clean" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">clean</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#sessions" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Sessions</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#logs" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">logs</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#exit-codes" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Exit codes</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#environment-variables" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Environment variables</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/facetshot/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.C3fM4Kra.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#installing-updating-and-removing" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Installing, updating and removing</span></a><ul class="astro-jugkfwgx" style="--depth: 1;"><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#setup" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">setup</span></a></li><li style="--depth: 1;" class="astro-jugkfwgx"><a href="#uninstall" style="--depth: 1;" class="astro-jugkfwgx"><span style="--depth: 1;" class="astro-jugkfwgx">uninstall</span></a></li></ul></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#taking-screenshots" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Taking screenshots</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#check" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">check</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#diff" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">diff</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#list" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">list</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#init" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">init</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#doctor" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">doctor</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#baseline" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">baseline</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#daemon" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">daemon</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#clean" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">clean</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#sessions" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Sessions</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#logs" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">logs</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#exit-codes" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Exit codes</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#environment-variables" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Environment variables</span></a></li></ul></nav></starlight-toc><script type="module" src="/facetshot/_astro/TableOfContents.astro_astro_type_script_index_0_lang.BpJaGz7G.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="en" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><h1 id="_top" class="astro-bebwqqxs">Command reference</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><div class="sl-markdown-content"><p>Commands are written <code dir="auto">facetshot …</code>, as typed after a global install. Without installing, or with facetshot in your
+project, type <code dir="auto">bunx facetshot …</code> (<a href="#installing-updating-and-removing">Installing</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">facetshot &lt;targets…&gt; [options]</code></td>
+<td>takes screenshots and prints a short summary</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot -p &lt;profile&gt;</code></td>
+<td>takes the profile’s own targets (a batch you run again and again)</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot check &lt;targets…&gt; [options]</code></td>
+<td>reads screens for problems, without screenshots</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot diff [against]</code></td>
+<td>repeats the last command and shows what changed</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot list [what]</code></td>
+<td>devices, variants, profiles, flows, checks, runs or sessions</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot init [--url …] [--agent …]</code></td>
+<td>writes a starter config and connects an agent</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot setup [--browser …]</code></td>
+<td>installs the browsers facetshot uses, then runs <code dir="auto">doctor</code></td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot doctor</code></td>
+<td>checks this machine and project, and says how to fix what’s missing</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot uninstall [--browsers] [--yes]</code></td>
+<td>removes facetshot and what it made from this machine and project</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot mcp</code></td>
+<td>runs the MCP server over standard input and output</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot baseline save|list|rm &lt;name&gt;</code></td>
+<td>keeps a run to compare with later</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot daemon status|stop</code></td>
+<td>shows or stops the background helper</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot clean [--all]</code></td>
+<td>removes runs, test data and simulators, and stops everything</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot open &lt;target&gt; [--on d] [--as v]</code></td>
+<td>opens a page or app window to use step by step (a session)</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot act &lt;id&gt; &lt;step…&gt;</code></td>
+<td>does steps in a session, then shows it again</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot look &lt;id&gt;</code></td>
+<td>shows a session again</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot close &lt;id&gt; [--save file]</code></td>
+<td>closes a session, optionally keeping its steps as a flow</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot logs &lt;id|run|latest&gt;</code></td>
+<td>prints a run’s logs, or a session’s (live with <code dir="auto">--follow</code>)</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot --help</code>, <code dir="auto">-h</code></td>
+<td>prints the commands, steps and targets in short</td>
+</tr>
+<tr>
+<td><code dir="auto">facetshot --version</code>, <code dir="auto">-v</code></td>
+<td>prints the version</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">fshot</code> is a shorter name for the same command. Targets are described in
+<a href="/facetshot/concepts/#targets-devices-and-variants">How it works</a>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="installing-updating-and-removing">Installing, updating and removing</h2><a class="sl-anchor-link" href="#installing-updating-and-removing"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Installing, updating and removing”</span></a></div>
+<p>facetshot needs <a href="https://bun.sh">Bun</a> 1.3 or newer. Your project needs no <code dir="auto">package.json</code>: facetshot works the same in
+a Flutter, Swift or any other folder. There are three ways to run it:</p>
+<table>
+<thead>
+<tr>
+<th>Way</th>
+<th>Install</th>
+<th>Run</th>
+<th>Update</th>
+<th>Remove</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Installed for your user</td>
+<td><code dir="auto">bun add -g facetshot</code></td>
+<td><code dir="auto">facetshot …</code></td>
+<td><code dir="auto">bun add -g facetshot@latest</code></td>
+<td><code dir="auto">facetshot uninstall</code> (it also runs <code dir="auto">bun remove -g</code>)</td>
+</tr>
+<tr>
+<td>Without installing</td>
+<td>nothing</td>
+<td><code dir="auto">bunx facetshot …</code></td>
+<td>by itself (below)</td>
+<td><code dir="auto">bunx facetshot uninstall</code></td>
+</tr>
+<tr>
+<td>In a project, for everyone</td>
+<td><code dir="auto">bun add -d facetshot</code></td>
+<td><code dir="auto">bunx facetshot …</code></td>
+<td><code dir="auto">bun update facetshot</code></td>
+<td><code dir="auto">bunx facetshot uninstall</code>, then <code dir="auto">bun remove facetshot</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Installed</strong> is the one to pick for regular use: the version changes only when you update it, and the MCP server
+starts without asking the registry first.</li>
+<li><strong>Without installing</strong> needs nothing but Bun. <code dir="auto">bunx</code> downloads the package into Bun’s package cache and runs it
+from there; it asks the registry for a newer version once a day
+(<code dir="auto">bunx facetshot@latest</code> asks every time, <code dir="auto">bunx facetshot@0.1.0</code> runs that version).</li>
+<li><strong>In a project</strong>, the version is pinned in the project’s lockfile for everyone who clones it, and the config gets
+types from <code dir="auto">import { defineConfig } from 'facetshot'</code> (<a href="/facetshot/configuration/#how-the-config-is-checked">what is checked</a>).</li>
+</ul>
+<p>To install a tagged version from GitHub instead of npm (tags are the bare version number):
+<code dir="auto">bun add -g github:Sung-eon/facetshot#0.1.0</code>.</p>
+<p>After installing or updating, run <code dir="auto">facetshot setup</code> once. A newer facetshot may use a newer Playwright, whose
+browsers are a separate download.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="setup"><code dir="auto">setup</code></h3><a class="sl-anchor-link" href="#setup"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “setup”</span></a></div>
+<p>Installs the browsers facetshot uses with facetshot’s own copy of Playwright, so they are always the builds it can
+start, then runs <a href="#doctor"><code dir="auto">doctor</code></a> and exits with its result. Chromium (about 600 MB) is always installed;
+<code dir="auto">--browser webkit,firefox</code> adds those. The browsers go to Playwright’s shared folder (<code dir="auto">~/Library/Caches/ms-playwright</code>
+on macOS, <code dir="auto">~/.cache/ms-playwright</code> on Linux), where any Playwright project of the same version uses them too.
+<code dir="auto">chrome</code>, <code dir="auto">msedge</code> and <code dir="auto">moz-firefox</code> are the browsers already installed on your machine; <code dir="auto">setup</code> doesn’t install
+those.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="uninstall"><code dir="auto">uninstall</code></h3><a class="sl-anchor-link" href="#uninstall"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “uninstall”</span></a></div>
+<p>Removes facetshot from this machine, and from the project you run it in:</p>
+<ol>
+<li>Lists everything it will remove and asks before removing it. <code dir="auto">--yes</code> skips the question (for agents and scripts).
+Without a terminal and without <code dir="auto">--yes</code>, it prints the list and removes nothing.</li>
+<li>Stops the background helper, deletes facetshot’s own simulators and its home folder (<code dir="auto">~/.facetshot</code>).</li>
+<li>In a project (a <code dir="auto">facetshot.config.ts</code> found from the current folder upwards, or the folder you are in): deletes
+<code dir="auto">.facetshot/</code> (runs, logs, baselines, saved sign-ins) and undoes what <code dir="auto">init --agent</code> wrote: the <code dir="auto">facetshot</code> entry in
+<code dir="auto">.mcp.json</code>, <code dir="auto">.cursor/mcp.json</code> and <code dir="auto">.codex/config.toml</code> (other servers stay; a file goes only when nothing else
+is in it), <code dir="auto">.claude/skills/facetshot</code>, <code dir="auto">.agents/skills/facetshot</code>, <code dir="auto">.cursor/rules/facetshot.mdc</code>, and the line
+about facetshot in <code dir="auto">CLAUDE.md</code> or <code dir="auto">AGENTS.md</code> if it is still exactly as <code dir="auto">init</code> wrote it.</li>
+<li>Keeps <code dir="auto">facetshot.config.ts</code>, since you may have changed it, and prints how to delete it.</li>
+<li>Installed with <code dir="auto">bun add -g</code>, runs <code dir="auto">bun remove -g facetshot</code> last. In a project, it prints <code dir="auto">bun remove facetshot</code>
+for you to run. Through <code dir="auto">bunx</code>, there is nothing to remove.</li>
+</ol>
+<p>Playwright’s browsers stay unless you pass <code dir="auto">--browsers</code>. Then it runs Playwright’s own <code dir="auto">uninstall</code> with facetshot’s
+copy of Playwright: that unregisters facetshot’s Playwright and deletes each browser in the shared folder that no
+other Playwright on this machine is registered as using. Browsers another project’s Playwright still uses are kept.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="taking-screenshots">Taking screenshots</h2><a class="sl-anchor-link" href="#taking-screenshots"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Taking screenshots”</span></a></div>
+<div class="expressive-code"><link rel="stylesheet" href="/facetshot/_astro/ec.l3h95.css"><script type="module" src="/facetshot/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">/settings</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">/billing</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">--on</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">phone,desktop</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">--as</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">light,dark+large</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="facetshot /settings /billing --on phone,desktop --as light,dark+large"><div></div></button></div></figure></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">--on &lt;devices&gt;</code></td>
+<td>devices or groups, comma-separated. Default: the profile’s</td>
+</tr>
+<tr>
+<td><code dir="auto">--as &lt;variants&gt;</code></td>
+<td>variants or groups, comma-separated; <code dir="auto">+</code> combines (<code dir="auto">dark+large</code>). Default: the profile’s</td>
+</tr>
+<tr>
+<td><code dir="auto">--browser &lt;names&gt;</code></td>
+<td>take web pages in these browsers instead of Chromium (include <code dir="auto">chromium</code> to keep it): <code dir="auto">webkit</code>, <code dir="auto">firefox</code>, <code dir="auto">chrome</code>, <code dir="auto">msedge</code>, <code dir="auto">moz-firefox</code>; or per device, <code dir="auto">--on phone@webkit</code> (<a href="/facetshot/web/#other-browsers">Other browsers</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">-p, --profile &lt;name&gt;</code></td>
+<td>a profile from your config (default: <code dir="auto">default</code>)</td>
+</tr>
+<tr>
+<td><code dir="auto">--diff</code>, <code dir="auto">--diff=&lt;name&gt;</code></td>
+<td>compare with the previous run, or with a baseline name, a run id or a folder (<a href="/facetshot/comparing/">Comparing</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">--checks &lt;names&gt;</code></td>
+<td>the checks to run, comma-separated, instead of the default ones; <code dir="auto">all</code> for every check (<a href="/facetshot/checks/">Checks</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">--do &lt;step&gt;</code></td>
+<td>a step before the screenshot, repeatable: <code dir="auto">--do "click:text=Save" --do shot:saved</code> (<a href="/facetshot/flows/#steps">Steps</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">--out &lt;folder&gt;</code></td>
+<td>write this run to a folder of your choice instead of <code dir="auto">.facetshot/runs/&lt;id&gt;</code></td>
+</tr>
+<tr>
+<td><code dir="auto">--clean</code></td>
+<td>delete the <code dir="auto">--out</code> folder first</td>
+</tr>
+<tr>
+<td><code dir="auto">--sheet-width &lt;px&gt;</code></td>
+<td>contact sheet width (default 1600)</td>
+</tr>
+<tr>
+<td><code dir="auto">--format text|md|json</code></td>
+<td>what to print: the short summary (default), Markdown with each sheet as an image, or the manifest. The Markdown’s image links are file paths on this machine (<a href="/facetshot/ci/#a-summary-for-the-pull-request">CI</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">--json</code></td>
+<td>the same as <code dir="auto">--format json</code></td>
+</tr>
+<tr>
+<td><code dir="auto">--open</code></td>
+<td>open <code dir="auto">report.html</code> when the run is done</td>
+</tr>
+<tr>
+<td><code dir="auto">--no-daemon</code></td>
+<td>do everything in this process; nothing stays running afterwards</td>
+</tr>
+<tr>
+<td><code dir="auto">-c, --config &lt;file&gt;</code></td>
+<td>use this config instead of looking for <code dir="auto">facetshot.config.ts</code> upwards from the current folder</td>
+</tr>
+</tbody>
+</table>
+<p>While it works, facetshot shows progress on one line in a terminal, and prints failures as they happen when its
+output isn’t a terminal. When it’s done it prints the summary: counts and timing, the sheets, what failed and why,
+and what the checks found.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="check"><code dir="auto">check</code></h2><a class="sl-anchor-link" href="#check"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “check”</span></a></div>
+<p>Takes the same options. Opens each screen, waits for it to be ready, runs every check except <code dir="auto">a11y</code>
+(<code dir="auto">--checks all</code> adds it), and prints what it found. It takes no screenshots, which makes it the quickest way to find
+which screens need a look.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="diff"><code dir="auto">diff</code></h2><a class="sl-anchor-link" href="#diff"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “diff”</span></a></div>
+<p>Repeats your last <code dir="auto">facetshot</code> command with <code dir="auto">--diff</code>, or against the baseline you name:
+<code dir="auto">facetshot diff before-redesign</code>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="list"><code dir="auto">list</code></h2><a class="sl-anchor-link" href="#list"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “list”</span></a></div>
+<p><code dir="auto">facetshot list devices</code> (the default), <code dir="auto">variants</code>, <code dir="auto">profiles</code>, <code dir="auto">flows</code>, <code dir="auto">checks</code>, <code dir="auto">runs</code> or <code dir="auto">sessions</code>. <code dir="auto">flows</code>
+finds the flow files in the project; <code dir="auto">sessions --json</code> prints the open sessions as JSON.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="init"><code dir="auto">init</code></h2><a class="sl-anchor-link" href="#init"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “init”</span></a></div>
+<p>Writes <code dir="auto">facetshot.config.ts</code> from what the project uses, unless a config exists. With <code dir="auto">--url &lt;address&gt;</code>, writes a
+config for an app that is already running. With <code dir="auto">--agent claude|cursor|codex|all</code>, registers the MCP server and
+installs the skill for that agent, and adds one line to <code dir="auto">CLAUDE.md</code> or <code dir="auto">AGENTS.md</code> (asked at a terminal; <code dir="auto">--yes</code>
+adds it without asking). See
+<a href="/facetshot/agents/#connecting-your-agent">AI agents</a> for exactly what it writes.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="doctor"><code dir="auto">doctor</code></h2><a class="sl-anchor-link" href="#doctor"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “doctor”</span></a></div>
+<p>Checks the browsers, the config, the ports it asks for, Xcode and simulators when you use Apple targets, Electron
+when you use it, locks held by other builds, and the background helper, and gives the command that fixes each
+problem.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="baseline"><code dir="auto">baseline</code></h2><a class="sl-anchor-link" href="#baseline"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “baseline”</span></a></div>
+<p><code dir="auto">save &lt;name&gt;</code> copies your latest run to <code dir="auto">.facetshot/baselines/&lt;name&gt;</code>; <code dir="auto">list</code> shows the saved baselines; <code dir="auto">rm &lt;name&gt;</code>
+removes one.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="daemon"><code dir="auto">daemon</code></h2><a class="sl-anchor-link" href="#daemon"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “daemon”</span></a></div>
+<p><code dir="auto">status</code> shows whether the background helper is running and what it holds (browsers, servers, simulators, test
+data). <code dir="auto">stop</code> stops it after the runs in progress finish, closing everything it started. See
+<a href="/facetshot/architecture/#lifecycle">Architecture</a>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="clean"><code dir="auto">clean</code></h2><a class="sl-anchor-link" href="#clean"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “clean”</span></a></div>
+<p>Stops the background helper, removes test data that runs left behind, deletes runs, logs, build stamps and caches,
+and deletes facetshot’s own simulators. Saved sign-ins in <code dir="auto">.facetshot/auth/</code> and the steps given inline
+(<code dir="auto">.facetshot/flows/</code>) are deleted too, so personas sign in again on the next run. Baselines are kept unless you pass
+<code dir="auto">--all</code>. The caches in <code dir="auto">~/.facetshot/cache</code> are shared by every project on this machine, and <code dir="auto">clean</code> empties them for
+all of them.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="sessions">Sessions</h2><a class="sl-anchor-link" href="#sessions"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Sessions”</span></a></div>
+<p>See <a href="/facetshot/sessions/">Sessions</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">open &lt;target&gt;</code></td>
+<td><code dir="auto">--on &lt;device&gt;</code>, <code dir="auto">--as &lt;variant&gt;</code>, <code dir="auto">--browser &lt;name&gt;</code> (one each; <code dir="auto">--browser</code> needs <code dir="auto">--on</code>), and the same view options as <code dir="auto">act</code></td>
+</tr>
+<tr>
+<td><code dir="auto">act &lt;id&gt; &lt;step…&gt;</code></td>
+<td><code dir="auto">--no-elements</code>, <code dir="auto">--no-screenshot</code> (leave out the list or the screenshot), <code dir="auto">--tree</code> (the page’s text and structure), <code dir="auto">--full</code> (the whole page), <code dir="auto">--level &lt;level&gt;</code> (logs), <code dir="auto">--json</code></td>
+</tr>
+<tr>
+<td><code dir="auto">look &lt;id&gt;</code></td>
+<td>the same options as <code dir="auto">act</code></td>
+</tr>
+<tr>
+<td><code dir="auto">close &lt;id&gt;</code></td>
+<td><code dir="auto">--save &lt;file&gt;</code>: write the steps that worked as a flow (<code dir="auto">.yaml</code>, <code dir="auto">.yml</code> or <code dir="auto">.json</code>, inside the project folder)</td>
+</tr>
+</tbody>
+</table>
+<p><code dir="auto">act</code> exits with 1 when a step didn’t work; the rest of its output shows where the screen ended up. <code dir="auto">facetshot list sessions</code> lists the open sessions (<code dir="auto">--json</code> for programs).</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="logs"><code dir="auto">logs</code></h2><a class="sl-anchor-link" href="#logs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “logs”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">logs</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">latest</span><span style="--0:#E9E5DC;--1:#1E1D1B">                   </span><span style="--0:#ABA598;--1:#625E57"># the last run's logs, a section per screenshot</span></div></div><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">logs</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">&lt;run-id&gt;</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">--level</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">warn</span><span style="--0:#E9E5DC;--1:#1E1D1B">    </span><span style="--0:#ABA598;--1:#625E57"># only warnings and errors</span></div></div><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">logs</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">s-3b8ec4</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">--follow</span><span style="--0:#E9E5DC;--1:#1E1D1B">        </span><span style="--0:#ABA598;--1:#625E57"># a session's logs as they happen, until Ctrl-C</span></div></div><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">logs</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">latest</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">--json</span><span style="--0:#E9E5DC;--1:#1E1D1B">            </span><span style="--0:#ABA598;--1:#625E57"># one JSON object per line</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="facetshot logs latest                   # the last run&#x27;s logs, a section per screenshotfacetshot logs <run-id> --level warn    # only warnings and errorsfacetshot logs s-3b8ec4 --follow        # a session&#x27;s logs as they happen, until Ctrl-Cfacetshot logs latest --json            # one JSON object per line"><div></div></button></div></figure></div>
+<p>Levels are <code dir="auto">debug</code>, <code dir="auto">info</code> (the default), <code dir="auto">warn</code> and <code dir="auto">error</code>. See <a href="/facetshot/logs/">Logs</a>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="exit-codes">Exit codes</h2><a class="sl-anchor-link" href="#exit-codes"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Exit codes”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>every screenshot was taken, including any taken after the readiness timeout</td>
+</tr>
+<tr>
+<td>1</td>
+<td>some screenshots failed, or something went wrong around them (the summary says what); for <code dir="auto">act</code>, a step didn’t work</td>
+</tr>
+<tr>
+<td>2</td>
+<td>the command or the config is wrong</td>
+</tr>
+<tr>
+<td>3</td>
+<td>something this machine needs is missing or busy (a browser, Xcode, a port, a permission)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>an unexpected error: often a bug in facetshot, but also a browser or tool failing in a way facetshot doesn’t recognise, or a second Ctrl-C</td>
+</tr>
+</tbody>
+</table>
+<p>Exit code 4 that isn’t from a second Ctrl-C is worth reporting as a bug.</p>
+<p>Three things don’t change the exit code: problems found by checks, changes found by comparing, and screenshots taken
+after the page didn’t become ready in time. The last are marked <code dir="auto">readyTimedOut: true</code> in <code dir="auto">manifest.json</code>, and the
+summary lists them under “Taken before the screen settled”. To fail a CI job on any of these, read the manifest
+(<a href="/facetshot/ci/#failing-a-job">Failing a job</a>).</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="environment-variables">Environment variables</h2><a class="sl-anchor-link" href="#environment-variables"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Environment variables”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">FACETSHOT_HOME</code></td>
+<td>where per-user state lives (default <code dir="auto">~/.facetshot</code>): the background helper’s socket and log, locks, ports, caches</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_NO_DAEMON</code></td>
+<td>the same as <code dir="auto">--no-daemon</code> for every command, including the MCP server</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_IDLE_MINUTES</code></td>
+<td>how long the background helper waits without work before it stops (default 15)</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_SESSION_IDLE_MINUTES</code></td>
+<td>how long an unused session stays open (default 10)</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_CONFIG</code></td>
+<td>the config the MCP server uses</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_CWD</code></td>
+<td>the folder the MCP server looks for a config from</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_MCP_MAX_IMAGES</code></td>
+<td>sheets per MCP response (default 4)</td>
+</tr>
+</tbody>
+</table>
+</div><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><a href="https://github.com/Sung-eon/facetshot/edit/main/docs/cli.md" class="sl-flex print:hidden astro-qlekgd3o"><svg aria-hidden="true" class="astro-qlekgd3o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"><a href="/facetshot/storybook/" rel="prev" class="astro-b5raizh3"><svg aria-hidden="true" class="astro-b5raizh3 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-b5raizh3">Previous<br class="astro-b5raizh3"><span class="link-title astro-b5raizh3">Storybook</span></span></a><a href="/facetshot/configuration/" rel="next" class="astro-b5raizh3"><svg aria-hidden="true" class="astro-b5raizh3 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-b5raizh3">Next<br class="astro-b5raizh3"><span class="link-title astro-b5raizh3">Configuration reference</span></span></a></div></footer><div class="site-footer"><a href="https://github.com/Sung-eon/facetshot">Source</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/issues">Issues</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/releases">Releases</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/blob/main/LICENSE">License (MIT)</a><span aria-hidden="true">·</span><span>0.1.1</span></div></div></div></main></div></div></div></div></body></html>

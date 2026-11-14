@@ -1,0 +1,361 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-g5ptsecz"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>How it works | facetshot</title><link rel="canonical" href="https://sung-eon.github.io/facetshot/concepts/"/><link rel="sitemap" href="/facetshot/sitemap-index.xml"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="true"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@200..700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap"/><link rel="shortcut icon" href="/facetshot/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.4.11"/><meta name="generator" content="Starlight v0.42.11"/><meta property="og:title" content="How it works"/><meta property="og:type" content="article"/><meta property="og:url" content="https://sung-eon.github.io/facetshot/concepts/"/><meta property="og:locale" content="en"/><meta property="og:description" content="This page explains the words facetshot uses and what happens during a run. The glossary at the end defines each term briefly."/><meta property="og:site_name" content="facetshot"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="This page explains the words facetshot uses and what happens during a run. The glossary at the end defines each term briefly."/><meta property="og:image" content="https://sung-eon.github.io/facetshot/og.png"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><meta property="og:image:alt" content="facetshot: a contact sheet of a settings screen with its menu open, on desktop and tablet, in light and dark."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/facetshot/_astro/print.C9eyqPGL.css" media="print"><link rel="stylesheet" href="/facetshot/_astro/common.Dno8e8Kw.css"><style>@layer starlight.components{svg:where(.astro-hkc32dio){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em;overflow:visible}}
+@layer starlight.components{.sl-link-card:where(.astro-zaaezwya){border:1px solid var(--sl-color-gray-5);box-shadow:var(--sl-shadow-sm);border-radius:.5rem;grid-template-columns:1fr auto;gap:.5rem;padding:1rem;display:grid;position:relative}a:where(.astro-zaaezwya){line-height:var(--sl-line-height-headings);text-decoration:none}a:where(.astro-zaaezwya):before{content:"";position:absolute;inset:0}.stack:where(.astro-zaaezwya){flex-direction:column;gap:.5rem}.title:where(.astro-zaaezwya){color:var(--sl-color-white);font-weight:600;font-size:var(--sl-text-lg)}.description:where(.astro-zaaezwya){color:var(--sl-color-gray-3);line-height:1.5}.icon:where(.astro-zaaezwya){color:var(--sl-color-gray-3)}.sl-link-card:where(.astro-zaaezwya):hover{background:var(--sl-color-gray-7,var(--sl-color-gray-6));border-color:var(--sl-color-gray-2)}.sl-link-card:where(.astro-zaaezwya):hover .icon:where(.astro-zaaezwya){color:var(--sl-color-white)}.sl-steps{--bullet-size:calc(var(--sl-line-height) * 1rem);--bullet-margin:.375rem;counter-reset:steps-counter var(--sl-steps-start,0);padding-inline-start:0;list-style:none}.sl-steps>li{counter-increment:steps-counter;padding-inline-start:calc(var(--bullet-size) + 1rem);min-height:calc(var(--bullet-size) + var(--bullet-margin));padding-bottom:1px;position:relative}.sl-steps>li+li{margin-top:0}.sl-steps>li:before{content:counter(steps-counter);top:0;width:var(--bullet-size);height:var(--bullet-size);line-height:var(--bullet-size);font-size:var(--sl-text-xs);text-align:center;color:var(--sl-color-white);background-color:var(--sl-color-gray-6);box-shadow:inset 0 0 0 1px var(--sl-color-gray-5);border-radius:99rem;font-weight:600;position:absolute;inset-inline-start:0}.sl-steps>li:after{--guide-width:1px;content:"";top:calc(var(--bullet-size) + var(--bullet-margin));bottom:var(--bullet-margin);width:var(--guide-width);background-color:var(--sl-color-hairline-light);position:absolute;inset-inline-start:calc((var(--bullet-size) - var(--guide-width)) / 2)}}@layer starlight.content{.sl-steps>li>:first-child{--lh:calc(1em * var(--sl-line-height));--shift-y:calc(.5 * (var(--bullet-size) - var(--lh)));transform:translateY(var(--shift-y));margin-bottom:var(--shift-y)}.sl-steps>li>:first-child:where(h1,h2,h3,h4,h5,h6){--lh:calc(1em * var(--sl-line-height-headings))}@supports (--prop:1lh){.sl-steps>li>:first-child{--lh:1lh}}}
+</style><script type="module" src="/facetshot/_astro/page.cNngjUgL.js"></script></head><body class="astro-g5ptsecz"><a class="sl-skip-link astro-qb7clj6f" href="#_top">Skip to content</a><div class="page sl-flex astro-yntsjkba"><header class="header astro-yntsjkba"><div class="header astro-by6fddyj"><div class="title-wrapper sl-flex astro-by6fddyj"><a href="/facetshot/" class="site-title sl-flex astro-6rvad3va"><span class="astro-6rvad3va" translate="no">facetshot</span></a></div><div class="sl-flex print:hidden astro-by6fddyj"><site-search class="astro-by6fddyj astro-b5kgnn7o" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o"><svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button><dialog style="padding: 0" aria-label="Search" class="astro-b5kgnn7o"><div class="dialog-frame sl-flex astro-b5kgnn7o"><button data-close-modal class="sl-flex md:sl-hidden astro-b5kgnn7o">Cancel</button><div class="search-container astro-b5kgnn7o"><div id="starlight__search" class="astro-b5kgnn7o"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/facetshot/_astro/Search.astro_astro_type_script_index_0_lang.BubN4tA0.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-by6fddyj"><div class="sl-flex social-icons astro-by6fddyj"><a href="https://github.com/Sung-eon/facetshot" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-yntsjkba" aria-label="Main"><button popovertarget="starlight__sidebar" class="sl-menu-button sl-flex md:sl-hidden print:hidden astro-r2osgdlg"><svg aria-hidden="true" class="open-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-r2osgdlg astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg><span class="sr-only astro-r2osgdlg">Menu</span></button><script type="module">var e=class extends HTMLElement{constructor(){super();let e=matchMedia(`(min-width: 50em)`),t=()=>{this.popover=e.matches?null:`auto`};t(),e.addEventListener(`change`,()=>t()),this.addEventListener(`toggle`,({newState:e})=>this.trapFocus(e===`open`))}trapFocus(e){document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}};customElements.define(`sl-sidebar-pane`,e);</script><sl-sidebar-pane popover id="starlight__sidebar" class="sidebar-pane astro-yntsjkba"><div class="sidebar-content sl-flex astro-yntsjkba"><sl-sidebar-state-persist data-hash="0721war" class="astro-ipdry5cl"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-rmhv4bp6"><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Everyday</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/getting-started/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Getting started</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/web/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Web apps</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/auth-and-data/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Sign-in, servers and test data</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/flows/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Flows</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/sessions/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Sessions</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/comparing/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Comparing</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/agents/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">AI agents</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/ci/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Continuous integration</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Other platforms</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/ios/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">iOS simulators</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/swiftui/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">SwiftUI scenes</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/desktop/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Desktop apps</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/flutter/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Flutter</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/storybook/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Storybook</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Reference</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/cli/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Command reference</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/configuration/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Configuration reference</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/mcp/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">MCP tools</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/checks/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Checks</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/logs/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Logs</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Explanation</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="3"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/concepts/" aria-current="page" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">How it works</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/architecture/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Architecture</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/performance/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Speed and machine safety</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/comparison/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">How facetshot compares</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/security/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Security</span></a></li></ul></details></li><li class="astro-rmhv4bp6"><details open class="astro-rmhv4bp6"><summary class="astro-rmhv4bp6"><span class="group-label astro-rmhv4bp6"><span class="large astro-rmhv4bp6">Help</span></span><svg aria-hidden="true" class="caret astro-rmhv4bp6 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="4"></sl-sidebar-restore><ul class="astro-rmhv4bp6"><li class="astro-rmhv4bp6"><a href="/facetshot/troubleshooting/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Troubleshooting</span></a></li><li class="astro-rmhv4bp6"><a href="/facetshot/status/" class="astro-rmhv4bp6"><span class="astro-rmhv4bp6">Status and limits</span></a></li></ul></details></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-p4azlveh"><div class="social-icons astro-p4azlveh"><a href="https://github.com/Sung-eon/facetshot" rel="me" class="sl-flex astro-n2mnl6yq"><span class="sr-only astro-n2mnl6yq">GitHub</span><svg aria-hidden="true" class="astro-n2mnl6yq astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-2z5xp7gb"><span class="sr-only astro-2z5xp7gb">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-2z5xp7gb"><option value="dark" class="astro-2z5xp7gb">Dark</option><option value="light" class="astro-2z5xp7gb">Light</option><option value="auto" selected class="astro-2z5xp7gb">Auto</option></select><svg aria-hidden="true" class="icon caret astro-2z5xp7gb astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></sl-sidebar-pane></nav><div class="main-frame astro-yntsjkba"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-lrzkfocr"><aside class="right-sidebar-container print:hidden astro-lrzkfocr"><div class="right-sidebar astro-lrzkfocr"><div class="lg:sl-hidden astro-qok35upx"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-66cqc7ze"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-66cqc7ze"><details id="starlight__mobile-toc" class="astro-66cqc7ze"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-66cqc7ze"><span class="toggle sl-flex astro-66cqc7ze">On this page<svg aria-hidden="true" class="caret astro-66cqc7ze astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-66cqc7ze"></span></summary><div class="dropdown astro-66cqc7ze"><ul class="isMobile astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#targets-devices-and-variants" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Targets, devices and variants</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#profiles" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Profiles</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#what-a-run-gives-you" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">What a run gives you</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#getting-ready-once" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Getting ready, once</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-background-helper" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The background helper</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#glossary" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Glossary</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/facetshot/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.C3fM4Kra.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-qok35upx"><div class="sl-container astro-qok35upx"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-jugkfwgx" style="--depth: 0;"><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#_top" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Overview</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#targets-devices-and-variants" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Targets, devices and variants</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#profiles" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Profiles</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#what-a-run-gives-you" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">What a run gives you</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#getting-ready-once" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Getting ready, once</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#the-background-helper" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">The background helper</span></a></li><li style="--depth: 0;" class="astro-jugkfwgx"><a href="#glossary" style="--depth: 0;" class="astro-jugkfwgx"><span style="--depth: 0;" class="astro-jugkfwgx">Glossary</span></a></li></ul></nav></starlight-toc><script type="module" src="/facetshot/_astro/TableOfContents.astro_astro_type_script_index_0_lang.BpJaGz7G.js"></script></div></div></div></aside><div class="main-pane astro-lrzkfocr"><main data-pagefind-body class="astro-g5ptsecz" lang="en" dir="ltr"><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><h1 id="_top" class="astro-bebwqqxs">How it works</h1></div></div><div class="content-panel astro-a7po4psb"><div class="sl-container astro-a7po4psb"><div class="sl-markdown-content"><p>This page explains the words facetshot uses and what happens during a run. The <a href="#glossary">glossary</a> at the end
+defines each term briefly.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="targets-devices-and-variants">Targets, devices and variants</h2><a class="sl-anchor-link" href="#targets-devices-and-variants"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Targets, devices and variants”</span></a></div>
+<p>Every screenshot is one <strong>target</strong> on one <strong>device</strong> in one <strong>variant</strong>.</p>
+<p>A target is what you want to see. You tell facetshot which kind it is by how you write it:</p>
+<table>
+<thead>
+<tr>
+<th>Written as</th>
+<th>Kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">/path</code>, <code dir="auto">https://…</code></td>
+<td>a web page</td>
+</tr>
+<tr>
+<td><code dir="auto">app:/path</code></td>
+<td>an app screen (iOS simulator or desktop window), opened by deep link</td>
+</tr>
+<tr>
+<td><code dir="auto">story:id</code>, <code dir="auto">story:Title/*</code></td>
+<td>a Storybook story</td>
+</tr>
+<tr>
+<td><code dir="auto">preview:Name</code>, <code dir="auto">preview:Group/*</code></td>
+<td>a SwiftUI scene (<a href="/facetshot/swiftui/">SwiftUI scenes</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">flows/name.yaml</code></td>
+<td>a <a href="/facetshot/flows/">flow</a></td>
+</tr>
+</tbody>
+</table>
+<p>Your config can give targets short names: <code dir="auto">aliases: { cart: '/shop/cart' }</code>.</p>
+<p>A device is where the screenshot is taken: a browser window of a certain size, a simulator, or a desktop window size.
+These are built in, and your config can add more (<a href="/facetshot/configuration/#devices"><code dir="auto">devices</code></a>):</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">desktop</code></td>
+<td>browser, 1440×900</td>
+</tr>
+<tr>
+<td><code dir="auto">laptop</code></td>
+<td>browser, 1280×800</td>
+</tr>
+<tr>
+<td><code dir="auto">tablet-landscape</code>, <code dir="auto">tablet-portrait</code></td>
+<td>browser, 1180×820 and 820×1180, touch</td>
+</tr>
+<tr>
+<td><code dir="auto">phone</code>, <code dir="auto">phone-small</code></td>
+<td>mobile browser, 390×844 and 360×740</td>
+</tr>
+<tr>
+<td><code dir="auto">iphone</code></td>
+<td>iPhone simulator</td>
+</tr>
+<tr>
+<td><code dir="auto">ipad-portrait</code>, <code dir="auto">ipad-landscape</code>, <code dir="auto">ipad-half</code></td>
+<td>iPad simulator in each orientation, and in half of Split View</td>
+</tr>
+<tr>
+<td><code dir="auto">window</code>, <code dir="auto">window-small</code>, <code dir="auto">mac</code>, <code dir="auto">mac-narrow</code></td>
+<td>a desktop app’s window at 1280×800, 960×640, 1280×800 and 1040×640</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>device group</strong> names several devices at once:</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Devices</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">review</code></td>
+<td><code dir="auto">desktop</code>, <code dir="auto">tablet-landscape</code>, <code dir="auto">tablet-portrait</code>, <code dir="auto">phone</code></td>
+</tr>
+<tr>
+<td><code dir="auto">web</code></td>
+<td>the same four as <code dir="auto">review</code></td>
+</tr>
+<tr>
+<td><code dir="auto">ios</code></td>
+<td><code dir="auto">iphone</code>, <code dir="auto">ipad-portrait</code>, <code dir="auto">ipad-landscape</code></td>
+</tr>
+<tr>
+<td><code dir="auto">apple</code></td>
+<td><code dir="auto">iphone</code>, <code dir="auto">ipad-portrait</code>, <code dir="auto">ipad-landscape</code>, <code dir="auto">ipad-half</code>, <code dir="auto">mac</code></td>
+</tr>
+<tr>
+<td><code dir="auto">windows</code></td>
+<td><code dir="auto">window</code>, <code dir="auto">window-small</code></td>
+</tr>
+</tbody>
+</table>
+<p>A variant is how the screen is shown: light or dark, larger text, more contrast, right to left, offline, or as a
+different signed-in <a href="/facetshot/auth-and-data/#personas">persona</a>. The built-in variants are <code dir="auto">light</code>, <code dir="auto">dark</code>, <code dir="auto">large</code>,
+<code dir="auto">xlarge</code>, <code dir="auto">xxl</code>, <code dir="auto">contrast</code>, <code dir="auto">forced</code>, <code dir="auto">rtl</code>, <code dir="auto">offline</code> and <code dir="auto">print</code>. Join variants with <code dir="auto">+</code> to combine them:
+<code dir="auto">dark+large</code>. The variant groups are <code dir="auto">modes</code> (light, dark, large) and <code dir="auto">a11y</code> (light, dark, xxl, contrast).</p>
+<p>facetshot takes every target on every device that can show it, in every variant. A web page isn’t taken on an iPhone
+simulator, and an <code dir="auto">app:</code> screen isn’t taken in a browser. If nothing you asked for can show a target, the summary
+says so.</p>
+<p><img src="/facetshot/images/concepts-sheet.svg" alt="Targets, devices and variants multiply into one screenshot each; each screen’s screenshots make one contact sheet, with devices down the side and variants across, and every run also writes report.html, the logs and manifest.json"></p>
+<div class="sl-heading-wrapper level-h2"><h2 id="profiles">Profiles</h2><a class="sl-anchor-link" href="#profiles"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Profiles”</span></a></div>
+<p>A <strong>profile</strong> is a named choice of devices and variants, so you don’t have to repeat <code dir="auto">--on</code> and <code dir="auto">--as</code>. It says
+nothing about who is signed in; that is a persona’s job. <code dir="auto">default</code> is used when you pass neither option; choose
+another with <code dir="auto">-p</code>. Two profiles are built in, and your config can change them or add more:</p>
+<div class="expressive-code"><link rel="stylesheet" href="/facetshot/_astro/ec.l3h95.css"><script type="module" src="/facetshot/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="ts"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">profiles</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">default</span><span style="--0:#E9E5DC;--1:#1E1D1B">: </span><span style="--0:#D2CDC2;--1:#4A4741">{</span><span style="--0:#E9E5DC;--1:#1E1D1B"> on</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'review'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> as</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'light'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'dark'</span><span style="--0:#E9E5DC;--1:#1E1D1B">] </span><span style="--0:#D2CDC2;--1:#4A4741">},</span><span style="--0:#E9E5DC;--1:#1E1D1B">          </span><span style="--0:#ABA598;--1:#625E57">// built in</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">full</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">{</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#B6ABF0;--1:#5B2FD6">on</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'review'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#B6ABF0;--1:#5B2FD6">as</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'light'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'dark'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'large'</span><span style="--0:#E9E5DC;--1:#1E1D1B">] </span><span style="--0:#D2CDC2;--1:#4A4741">},</span><span style="--0:#E9E5DC;--1:#1E1D1B">    </span><span style="--0:#ABA598;--1:#625E57">// built in</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">app</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">{</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#B6ABF0;--1:#5B2FD6">on</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'iphone'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'ipad-landscape'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#B6ABF0;--1:#5B2FD6">as</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'light'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'dark'</span><span style="--0:#E9E5DC;--1:#1E1D1B">] </span><span style="--0:#D2CDC2;--1:#4A4741">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D2CDC2;--1:#4A4741">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="profiles: {  default: { on: [&#x27;review&#x27;], as: [&#x27;light&#x27;, &#x27;dark&#x27;] },          // built in  full: { on: [&#x27;review&#x27;], as: [&#x27;light&#x27;, &#x27;dark&#x27;, &#x27;large&#x27;] },    // built in  app: { on: [&#x27;iphone&#x27;, &#x27;ipad-landscape&#x27;], as: [&#x27;light&#x27;, &#x27;dark&#x27;] }}"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">/settings</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">-p</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">full</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="facetshot /settings -p full"><div></div></button></div></figure></div>
+<p>A profile can also say what to take, with <code dir="auto">targets</code>. Then it is a whole batch you run again and again, for example
+before each release, with no targets on the command line:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="ts"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">release</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">targets</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'/'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'/pricing'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'/settings'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'flows/*.yaml'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span><span style="--0:#D2CDC2;--1:#4A4741">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">on</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'review'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'iphone'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span><span style="--0:#D2CDC2;--1:#4A4741">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#B6ABF0;--1:#5B2FD6">as</span><span style="--0:#D2CDC2;--1:#4A4741">:</span><span style="--0:#E9E5DC;--1:#1E1D1B"> [</span><span style="--0:#D2CDC2;--1:#4A4741">'light'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'dark'</span><span style="--0:#D2CDC2;--1:#4A4741">,</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">'large'</span><span style="--0:#E9E5DC;--1:#1E1D1B">]</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D2CDC2;--1:#4A4741">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="release: {  targets: [&#x27;/&#x27;, &#x27;/pricing&#x27;, &#x27;/settings&#x27;, &#x27;flows/*.yaml&#x27;],  on: [&#x27;review&#x27;, &#x27;iphone&#x27;],  as: [&#x27;light&#x27;, &#x27;dark&#x27;, &#x27;large&#x27;]}"><div></div></button></div></figure></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">-p</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">release</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="facetshot -p release"><div></div></button></div></figure></div>
+<p>Each target is taken on the profile’s devices that can show it: here the web pages on the review devices, and any
+<code dir="auto">app:</code> flow on the iPhone. A target no device in the profile can show gets the usual devices for its kind instead.
+Targets you name on the command line replace the profile’s. <a href="/facetshot/flows/#a-batch-to-run-again">Flows</a> shows how to
+build such a batch.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="what-a-run-gives-you">What a run gives you</h2><a class="sl-anchor-link" href="#what-a-run-gives-you"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “What a run gives you”</span></a></div>
+<p>Each run gets a folder, <code dir="auto">.facetshot/runs/&lt;run id&gt;/</code>, and <code dir="auto">.facetshot/latest</code> points at the newest one. The last 20
+runs are kept; to keep one for good, save it as a <a href="/facetshot/comparing/">baseline</a>.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code dir="auto">&lt;screen&gt;.sheet.jpg</code></td>
+<td>the contact sheet: devices down the side, variants across the top. Failed cells say why; cells with problems carry a badge; changed cells have a red outline</td>
+</tr>
+<tr>
+<td><code dir="auto">&lt;screen&gt;/&lt;device&gt;.&lt;variant&gt;.png</code></td>
+<td>each screenshot at the device’s real pixel density</td>
+</tr>
+<tr>
+<td><code dir="auto">report.html</code></td>
+<td>every screen as a grid, what the checks found, the logs, and a switch to show changed pixels (<code dir="auto">--open</code> opens it)</td>
+</tr>
+<tr>
+<td><code dir="auto">summary.md</code></td>
+<td>the summary as Markdown with the sheets as images, for a pull request or an issue</td>
+</tr>
+<tr>
+<td><code dir="auto">logs.txt</code>, <code dir="auto">logs.ndjson</code></td>
+<td>what each page and server logged, for people and for programs (<a href="/facetshot/logs/">Logs</a>)</td>
+</tr>
+<tr>
+<td><code dir="auto">manifest.json</code></td>
+<td>each screenshot’s status, timing, findings, log counts and (when comparing) how much changed, described by <a href="https://github.com/Sung-eon/facetshot/blob/main/schema/manifest.v1.json"><code dir="auto">schema/manifest.v1.json</code></a></td>
+</tr>
+</tbody>
+</table>
+<div class="sl-heading-wrapper level-h2"><h2 id="getting-ready-once">Getting ready, once</h2><a class="sl-anchor-link" href="#getting-ready-once"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Getting ready, once”</span></a></div>
+<p>Before the first screenshot, facetshot gets things ready in this order, and reuses each piece while it is still
+valid:</p>
+<ol>
+<li><a href="/facetshot/auth-and-data/#services">Services</a> your app needs (an API, a mock server) start, unless something healthy
+already answers where they would be.</li>
+<li><a href="/facetshot/auth-and-data/#test-data">Test data</a> is made by your config’s <code dir="auto">fixtures.setup</code>. The values it returns fill
+<code dir="auto">{placeholders}</code> in targets.</li>
+<li>Builds run if their inputs changed since the last build.</li>
+<li>The app’s server, browsers and simulators start.</li>
+</ol>
+<p>Everything facetshot starts, it also stops. Test data is recorded as it is made, so if a run is killed partway, the
+next run removes what was left behind.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="the-background-helper">The background helper</h2><a class="sl-anchor-link" href="#the-background-helper"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “The background helper”</span></a></div>
+<p>The first time you run facetshot, it starts a background helper: a process that keeps the browser, your app’s
+servers, simulators and test data ready between runs. That is most of why the second run is fast. The command that
+controls it is <code dir="auto">facetshot daemon</code>. There is one helper per user account on the machine, and every run goes through
+it, whether it comes from a terminal, an agent’s MCP server or a script, so they all share one browser and the same
+limits.</p>
+<p>You don’t need to manage it. It stops by itself after 15 minutes without work and closes everything it started. To
+see what it holds, or to stop it:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">daemon</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">status</span></div></div><div class="ec-line"><div class="code"><span style="--0:#B6ABF0;--1:#5B2FD6">facetshot</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">daemon</span><span style="--0:#E9E5DC;--1:#1E1D1B"> </span><span style="--0:#D2CDC2;--1:#4A4741">stop</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="facetshot daemon statusfacetshot daemon stop"><div></div></button></div></figure></div>
+<p>It is the “daemon” in <code dir="auto">facetshot daemon</code>, <code dir="auto">--no-daemon</code> and <code dir="auto">FACETSHOT_NO_DAEMON</code>. <code dir="auto">--no-daemon</code> does everything in
+the current process instead. Nothing stays running afterwards, so the next run is
+slower. <a href="/facetshot/architecture/#lifecycle">Architecture</a> describes when it starts, restarts and stops.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="glossary">Glossary</h2><a class="sl-anchor-link" href="#glossary"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Glossary”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>accessibility tree, snapshot</td>
+<td>the screen as assistive technology sees it: roles, names and states. Playwright’s snapshot (or macOS’s Accessibility on a Mac) gives sessions their element list and refs</td>
+</tr>
+<tr>
+<td>Agent Skill</td>
+<td>a folder with a <code dir="auto">SKILL.md</code> file that tells an AI agent when and how to use a tool. facetshot’s is in <code dir="auto">skills/facetshot/</code></td>
+</tr>
+<tr>
+<td>background helper</td>
+<td>the long-running process that keeps browsers, servers and simulators ready between runs. <code dir="auto">facetshot daemon</code> controls it</td>
+</tr>
+<tr>
+<td>baseline</td>
+<td>a run saved under a name, to compare later runs with (<a href="/facetshot/comparing/">Comparing</a>)</td>
+</tr>
+<tr>
+<td>cell</td>
+<td>one target on one device in one variant: one square on a contact sheet</td>
+</tr>
+<tr>
+<td>CI</td>
+<td>continuous integration: a server that builds and tests every change (<a href="/facetshot/ci/">Continuous integration</a>)</td>
+</tr>
+<tr>
+<td>contact sheet</td>
+<td>one image per screen with every device and variant side by side</td>
+</tr>
+<tr>
+<td>deep link</td>
+<td>an address such as <code dir="auto">myapp://settings</code> that opens an app on a given screen</td>
+</tr>
+<tr>
+<td>device</td>
+<td>a screen size and type: a browser viewport, a simulator, or a window size</td>
+</tr>
+<tr>
+<td>fixture, test data</td>
+<td>records your config’s <code dir="auto">fixtures.setup</code> makes before a run (a project, a user) and removes afterwards (<a href="/facetshot/auth-and-data/#test-data">Test data</a>)</td>
+</tr>
+<tr>
+<td>flow</td>
+<td>a file of steps (click, type, wait) that reaches a state no address leads to, with screenshots along the way (<a href="/facetshot/flows/">Flows</a>)</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>the Model Context Protocol, the standard way AI agents call outside tools. <code dir="auto">facetshot mcp</code> is an MCP server (<a href="/facetshot/mcp/">MCP tools</a>)</td>
+</tr>
+<tr>
+<td>persona</td>
+<td>a signed-in user, defined in your config and chosen by a variant (<a href="/facetshot/auth-and-data/#personas">Personas</a>)</td>
+</tr>
+<tr>
+<td>Playwright</td>
+<td>the browser-automation library facetshot uses to drive Chromium, WebKit, Firefox and Electron</td>
+</tr>
+<tr>
+<td>profile</td>
+<td>a named choice of devices and variants, and optionally of targets (<a href="#profiles">Profiles</a>)</td>
+</tr>
+<tr>
+<td>ref</td>
+<td>a short name such as <code dir="auto">e14</code> for an element in a session’s latest list, usable in the next step</td>
+</tr>
+<tr>
+<td>selector</td>
+<td>a way to name an element in a step: <code dir="auto">role=button[name="Save"]</code>, <code dir="auto">text=Save</code>, CSS such as <code dir="auto">#save</code> (<a href="/facetshot/flows/#naming-an-element">Naming an element</a>)</td>
+</tr>
+<tr>
+<td>session</td>
+<td>a page or app window kept open to use step by step (<a href="/facetshot/sessions/">Sessions</a>)</td>
+</tr>
+<tr>
+<td>simulator</td>
+<td>Xcode’s iPhone and iPad simulator, which runs iOS apps on a Mac (<a href="/facetshot/ios/">iOS simulators</a>)</td>
+</tr>
+<tr>
+<td>target</td>
+<td>what to take a screenshot of: a path, an app screen, a story, a SwiftUI scene or a flow</td>
+</tr>
+<tr>
+<td>variant</td>
+<td>a display setting such as dark mode or large text, or a persona; one column of a contact sheet</td>
+</tr>
+</tbody>
+</table>
+</div><footer class="sl-flex astro-ddtxxk7k"><div class="meta sl-flex astro-ddtxxk7k"><a href="https://github.com/Sung-eon/facetshot/edit/main/docs/concepts.md" class="sl-flex print:hidden astro-qlekgd3o"><svg aria-hidden="true" class="astro-qlekgd3o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a></div><div class="pagination-links print:hidden astro-b5raizh3" dir="ltr"><a href="/facetshot/logs/" rel="prev" class="astro-b5raizh3"><svg aria-hidden="true" class="astro-b5raizh3 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-b5raizh3">Previous<br class="astro-b5raizh3"><span class="link-title astro-b5raizh3">Logs</span></span></a><a href="/facetshot/architecture/" rel="next" class="astro-b5raizh3"><svg aria-hidden="true" class="astro-b5raizh3 astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-b5raizh3">Next<br class="astro-b5raizh3"><span class="link-title astro-b5raizh3">Architecture</span></span></a></div></footer><div class="site-footer"><a href="https://github.com/Sung-eon/facetshot">Source</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/issues">Issues</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/releases">Releases</a><span aria-hidden="true">·</span><a href="https://github.com/Sung-eon/facetshot/blob/main/LICENSE">License (MIT)</a><span aria-hidden="true">·</span><span>0.1.1</span></div></div></div></main></div></div></div></div></body></html>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 356" role="img" aria-labelledby="t d">
+<title id="t">A flow and its contact sheets</title>
+<desc id="d">The flow file flows/delete-account.yaml has two shot steps, confirm and error. It is played from the start on each device and variant, and each shot becomes a screen with its own contact sheet: delete-account.confirm and delete-account.error.</desc>
+<style>
+text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:14px;fill:#1e1d1b}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.s{fill:#4a4741}.u{fill:#67635b}.a{fill:#5b2fd6}
+.b{fill:#1e1d1b;fill-opacity:.03;stroke:#d3cec4;stroke-width:1.25}
+.ab{fill:#5b2fd6;fill-opacity:.06;stroke:#5b2fd6;stroke-width:1.5}
+.bl{fill:none;stroke:#d3cec4;stroke-width:1.25}
+.l{stroke:#67635b;stroke-width:1.5;fill:none}
+.al{stroke:#5b2fd6;stroke-width:2;fill:none}
+.h{fill:#67635b}.ah{fill:#5b2fd6}
+.cl{fill:#ffffff;stroke:#c9c3b8;stroke-width:1}
+.cd{fill:#3a3834;stroke:#3a3834;stroke-width:1}
+.r{stroke:#c43a22;stroke-width:2.5;fill:none}.rt{fill:#c43a22}.rf{fill:#c43a22}.bt{fill:#ffffff}
+@media (prefers-color-scheme:dark){
+text{fill:#ece8e0}.s{fill:#cfcac0}.u{fill:#a8a398}.a{fill:#8f82d8}
+.b{fill:#ffffff;fill-opacity:.04;stroke:#55514a}
+.ab{fill:#8f82d8;fill-opacity:.12;stroke:#8f82d8}
+.bl{stroke:#55514a}.l{stroke:#a8a398}.al{stroke:#8f82d8}.h{fill:#a8a398}.ah{fill:#8f82d8}
+.cl{fill:#ebe7df;stroke:#ebe7df}.cd{fill:#151413;stroke:#6a665e}
+.r{stroke:#ec7a63}.rt{fill:#ec7a63}.rf{fill:#ec7a63}.bt{fill:#1d1c1a}
+}
+</style>
+<defs>
+<marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="h"/></marker>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="ah"/></marker>
+</defs>
+<rect x="10" y="14" width="300" height="330" rx="6" class="b"/>
+<text x="26" y="46" class="m u" xml:space="preserve">flows/delete-account.yaml</text>
+<text x="26" y="76" class="m " xml:space="preserve">start: /settings/account</text>
+<text x="26" y="106" class="m " xml:space="preserve">steps:</text>
+<text x="26" y="136" class="m " xml:space="preserve">  - click: Delete account</text>
+<text x="26" y="166" class="m " xml:space="preserve">  - wait: role=dialog</text>
+<text x="26" y="196" class="m a" xml:space="preserve">  - shot: confirm</text>
+<text x="26" y="226" class="m " xml:space="preserve">  - fill: input[name=confirm]</text>
+<text x="26" y="256" class="m " xml:space="preserve">  - click: Delete</text>
+<text x="26" y="286" class="m " xml:space="preserve">  - wait: Type DELETE…</text>
+<text x="26" y="316" class="m a" xml:space="preserve">  - shot: error</text>
+<rect x="420" y="14" width="330" height="156" rx="6" class="ab"/>
+<text x="434" y="38" class="m a">delete-account.confirm</text>
+<text x="590" y="60" class="m u" text-anchor="middle">light</text>
+<text x="682" y="60" class="m u" text-anchor="middle">dark</text>
+<text x="540" y="92" class="m u" text-anchor="end">desktop</text>
+<rect x="560" y="69" width="60" height="38" rx="3" class="cl"/>
+<rect x="652" y="69" width="60" height="38" rx="3" class="cd"/>
+<text x="540" y="146" class="m u" text-anchor="end">phone</text>
+<rect x="580" y="122" width="20" height="40" rx="3" class="cl"/>
+<rect x="672" y="122" width="20" height="40" rx="3" class="cd"/>
+<rect x="420" y="188" width="330" height="156" rx="6" class="ab"/>
+<text x="434" y="212" class="m a">delete-account.error</text>
+<text x="590" y="234" class="m u" text-anchor="middle">light</text>
+<text x="682" y="234" class="m u" text-anchor="middle">dark</text>
+<text x="540" y="266" class="m u" text-anchor="end">desktop</text>
+<rect x="560" y="243" width="60" height="38" rx="3" class="cl"/>
+<rect x="652" y="243" width="60" height="38" rx="3" class="cd"/>
+<text x="540" y="320" class="m u" text-anchor="end">phone</text>
+<rect x="580" y="296" width="20" height="40" rx="3" class="cl"/>
+<rect x="672" y="296" width="20" height="40" rx="3" class="cd"/>
+<path d="M172,196 C300,196 320,92 414,92" class="al" marker-end="url(#ah)"/>
+<path d="M152,316 C300,316 320,266 414,266" class="al" marker-end="url(#ah)"/>
+</svg>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 480" role="img" aria-labelledby="t d">
+<title id="t">From targets to contact sheets</title>
+<desc id="d">Every target is taken on every device in every variant, one screenshot each. Each screen gets one contact sheet with devices down the side and variants across the top. Every run also writes report.html, the logs and manifest.json.</desc>
+<style>
+text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:14px;fill:#1e1d1b}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.s{fill:#4a4741}.u{fill:#67635b}.a{fill:#5b2fd6}
+.b{fill:#1e1d1b;fill-opacity:.03;stroke:#d3cec4;stroke-width:1.25}
+.ab{fill:#5b2fd6;fill-opacity:.06;stroke:#5b2fd6;stroke-width:1.5}
+.bl{fill:none;stroke:#d3cec4;stroke-width:1.25}
+.l{stroke:#67635b;stroke-width:1.5;fill:none}
+.al{stroke:#5b2fd6;stroke-width:2;fill:none}
+.h{fill:#67635b}.ah{fill:#5b2fd6}
+.cl{fill:#ffffff;stroke:#c9c3b8;stroke-width:1}
+.cd{fill:#3a3834;stroke:#3a3834;stroke-width:1}
+.r{stroke:#c43a22;stroke-width:2.5;fill:none}.rt{fill:#c43a22}.rf{fill:#c43a22}.bt{fill:#ffffff}
+@media (prefers-color-scheme:dark){
+text{fill:#ece8e0}.s{fill:#cfcac0}.u{fill:#a8a398}.a{fill:#8f82d8}
+.b{fill:#ffffff;fill-opacity:.04;stroke:#55514a}
+.ab{fill:#8f82d8;fill-opacity:.12;stroke:#8f82d8}
+.bl{stroke:#55514a}.l{stroke:#a8a398}.al{stroke:#8f82d8}.h{fill:#a8a398}.ah{fill:#8f82d8}
+.cl{fill:#ebe7df;stroke:#ebe7df}.cd{fill:#151413;stroke:#6a665e}
+.r{stroke:#ec7a63}.rt{fill:#ec7a63}.rf{fill:#ec7a63}.bt{fill:#1d1c1a}
+}
+</style>
+<defs>
+<marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="h"/></marker>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="ah"/></marker>
+</defs>
+<text x="30" y="22" class="m u">targets</text>
+<rect x="30" y="34" width="190" height="28" rx="6" class="b"/>
+<text x="42" y="53" class="m">/</text>
+<rect x="30" y="70" width="190" height="28" rx="6" class="b"/>
+<text x="42" y="89" class="m">/pricing</text>
+<rect x="30" y="106" width="190" height="28" rx="6" class="b"/>
+<text x="42" y="125" class="m">flows/checkout.yaml</text>
+<text x="285" y="22" class="m u">devices</text>
+<rect x="285" y="34" width="190" height="28" rx="6" class="b"/>
+<text x="297" y="53" class="m">desktop</text>
+<rect x="285" y="70" width="190" height="28" rx="6" class="b"/>
+<text x="297" y="89" class="m">tablet-portrait</text>
+<rect x="285" y="106" width="190" height="28" rx="6" class="b"/>
+<text x="297" y="125" class="m">phone</text>
+<text x="540" y="22" class="m u">variants</text>
+<rect x="540" y="34" width="190" height="28" rx="6" class="b"/>
+<text x="552" y="53" class="m">light</text>
+<rect x="540" y="70" width="190" height="28" rx="6" class="b"/>
+<text x="552" y="89" class="m">dark</text>
+<text x="252" y="92" class="s" font-size="22" text-anchor="middle">×</text>
+<text x="507" y="92" class="s" font-size="22" text-anchor="middle">×</text>
+<path d="M230,148 V200" class="al" marker-end="url(#ah)"/>
+<text x="246" y="168" class="s">one screenshot for each target × device × variant,</text>
+<text x="246" y="188" class="s">gathered into one contact sheet per screen</text>
+<path d="M56,236 V226 q0,-6 6,-6 H400 q6,0 6,6 V450 q0,6 -6,6 H390" class="bl"/>
+<path d="M48,236 V234 q0,-6 6,-6 H392 q6,0 6,6 V458 q0,6 -6,6 H390" class="bl"/>
+<rect x="40" y="236" width="350" height="236" rx="6" class="ab"/>
+<text x="56" y="262" class="m a">pricing.sheet.jpg</text>
+<text x="240" y="290" class="m u" text-anchor="middle">light</text>
+<text x="330" y="290" class="m u" text-anchor="middle">dark</text>
+<text x="190" y="330" class="m u" text-anchor="end">desktop</text>
+<rect x="210" y="307" width="60" height="38" rx="3" class="cl"/>
+<rect x="300" y="307" width="60" height="38" rx="3" class="cd"/>
+<text x="190" y="382" class="m u" text-anchor="end">tablet-portrait</text>
+<rect x="226" y="358" width="28" height="40" rx="3" class="cl"/>
+<rect x="316" y="358" width="28" height="40" rx="3" class="cd"/>
+<text x="190" y="434" class="m u" text-anchor="end">phone</text>
+<rect x="230" y="410" width="20" height="40" rx="3" class="cl"/>
+<rect x="320" y="410" width="20" height="40" rx="3" class="cd"/>
+<text x="450" y="224" class="m u">with every run</text>
+<rect x="450" y="244" width="290" height="56" rx="6" class="b"/>
+<text x="464" y="267" class="m">report.html</text>
+<text x="464" y="287" class="s" font-size="13">every sheet, what the checks found</text>
+<rect x="450" y="316" width="290" height="56" rx="6" class="b"/>
+<text x="464" y="339" class="m">logs.txt, logs.ndjson</text>
+<text x="464" y="359" class="s" font-size="13">what pages and servers logged</text>
+<rect x="450" y="388" width="290" height="56" rx="6" class="b"/>
+<text x="464" y="411" class="m">manifest.json</text>
+<text x="464" y="431" class="s" font-size="13">each screenshot’s status and findings</text>
+</svg>
