@@ -162,8 +162,6 @@ const what = paragraphs(opening)[0]
 // A real session, as docs/sessions.md shows it: the first command and what it prints.
 const sessions = readFileSync(join(DOCS, 'sessions.md'), 'utf8');
 const transcript = /```\n(\$ facetshot open[\s\S]*?)```/.exec(sessions)?.[1]?.trimEnd();
-const pkg = JSON.parse(readFileSync(join(REPO, 'package.json'), 'utf8'));
-const release = pkg.version.split('.').slice(0, 2).join('.');
 
 const page = (slug: string) => `${BASE}/${slug}/`;
 const needsMac = '<em class="needs">needs a Mac</em>';
@@ -195,8 +193,7 @@ const more: [string, string][] = [
 
 const tagline =
 	"Screenshots of your app's screens on several devices and display settings at once, with what looks broken and what it logged. For people and AI coding agents.";
-const hero = `<p class="hero-meta">${release} · free and open source (MIT) · runs on your machine, uploads nothing · <a href="${page('status')}">tested on macOS</a></p>
-<figure class="hero-sheet"><img src="${BASE}/images/pricing-sheet.jpg" width="1600" height="1323" alt="A contact sheet of a pricing page on desktop, tablet and phone, in light, dark and large text. The plan cards run off the right edge on tablet and phone."><figcaption>The <a href="${GITHUB}/tree/main/examples/vite-react">example app</a>'s pricing page. Each row is a device, each column a display setting. The plan cards run off the edge on tablet and phone.</figcaption></figure>`;
+const hero = `<figure class="hero-sheet"><img src="${BASE}/images/pricing-sheet.jpg" width="1600" height="1323" alt="A contact sheet of a pricing page on desktop, tablet and phone, in light, dark and large text. The plan cards run off the right edge on tablet and phone."><figcaption>The <a href="${GITHUB}/tree/main/examples/vite-react">example app</a>'s pricing page. Each row is a device, each column a display setting. The plan cards run off the edge on tablet and phone.</figcaption></figure>`;
 
 const landing = `---
 title: facetshot

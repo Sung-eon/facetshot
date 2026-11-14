@@ -157,20 +157,6 @@ h1#_top {
 	margin-top: 0.25rem;
 }
 
-/* The one quiet line under the buttons: version, licence, privacy and where it's tested. */
-.hero-meta {
-	font-family: var(--sl-font-mono);
-	font-size: 0.75rem;
-	line-height: 1.6;
-	color: var(--sl-color-gray-3);
-}
-
-.hero-meta a {
-	color: inherit;
-	text-decoration-color: var(--sl-color-gray-4);
-	text-underline-offset: 0.2em;
-}
-
 /* The contact sheet lies on the mat at the column's full width, as photographs do on Sung-eon Space. */
 .hero-sheet {
 	width: 100%;
@@ -409,7 +395,7 @@ h1#_top {
 	color: var(--sl-color-gray-3);
 }
 
-/* One line at the foot of every page: a full-width hairline, then the source, issues, releases, licence and version. */
+/* One line at the foot of every page: a full-width hairline, then the source, issues, releases and licence. */
 .site-footer {
 	position: relative;
 	display: flex;
