@@ -1,6 +1,6 @@
 {
 	"name": "facetshot",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Screenshots of your app on several devices and display settings, with what looks broken and what it logged. Adds the facetshot skill and MCP server; facetshot itself runs on Bun.",
 	"author": {
 		"name": "Sung-eon Park",
