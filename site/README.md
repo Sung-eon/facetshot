@@ -1,6 +1,6 @@
 # facetshot's site
 
-The documentation site at https://sung-eon.github.io/facetshot/, made with [Astro](https://astro.build) and
+The documentation site at https://gh.sung-eon.space/facetshot/, made with [Astro](https://astro.build) and
 [Starlight](https://starlight.astro.build). Its pages are the repository's `docs/` and the README's opening:
 `scripts/sync-docs.ts` turns them into Starlight content before every build, so there is no second copy to keep up
 to date. Edit `docs/` and `README.md`, not the generated files.

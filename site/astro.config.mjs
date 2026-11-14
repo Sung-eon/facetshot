@@ -8,7 +8,7 @@ import { codeThemes } from './src/code-themes.mjs';
 const sidebar = JSON.parse(readFileSync(new URL('./src/sidebar.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
-	site: 'https://sung-eon.github.io',
+	site: 'https://gh.sung-eon.space',
 	base: '/facetshot',
 	trailingSlash: 'always',
 	integrations: [
@@ -27,7 +27,7 @@ export default defineConfig({
 			head: [
 				// Link previews: Starlight sets the title, description and URL; the image is og/og.html, rendered.
 				...[
-					['og:image', 'https://sung-eon.github.io/facetshot/og.png'],
+					['og:image', 'https://gh.sung-eon.space/facetshot/og.png'],
 					['og:image:width', '1200'],
 					['og:image:height', '630'],
 					[
