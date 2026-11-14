@@ -14,7 +14,7 @@ import { EXIT } from './errors.ts';
 import { undoAgents } from './init.ts';
 
 /**
- * How facetshot itself is installed, judged by where this file is: Bun's global folder, bunx's cache (a `bunx-<uid>-facetshot@<version>` folder in the temp folder, which Bun manages itself), a
+ * How facetshot itself is installed, judged by where this file is: Bun's global folder, bunx's copy (in Bun's install cache, which Bun manages itself), a
  * project's node_modules, or a checkout.
  */
 export function installedAs(): 'global' | 'project' | 'bunx' | 'checkout' {
@@ -31,7 +31,10 @@ export function installedAs(): 'global' | 'project' | 'bunx' | 'checkout' {
 			join(process.env.BUN_INSTALL ?? join(homedir(), '.bun'), 'install', 'global')
 	);
 	if (own.startsWith(global + sep)) return 'global';
-	if (/[\\/]bunx-[^\\/]*facetshot[^\\/]*[\\/]/.test(own)) return 'bunx';
+	// bunx runs a package from Bun's install cache (`install/cache/facetshot@<version>…`), or from a `bunx-…` folder
+	// in the temp folder on some versions of Bun.
+	if (/[\\/](bunx-[^\\/]*facetshot[^\\/]*|install[\\/]cache[\\/]facetshot@[^\\/]*)[\\/]/.test(own))
+		return 'bunx';
 	return own.includes(`${sep}node_modules${sep}facetshot${sep}`) ? 'project' : 'checkout';
 }
 

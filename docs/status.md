@@ -23,11 +23,10 @@ there yet. Reports are welcome. No [CI](ci.md) provider has been tried yet.
 
 ## Known limits
 
-- **Installing:** `bun add -g` from a packed tarball, `facetshot setup`, `init --agent all` and `uninstall --yes` in
-  a folder with no `package.json` were run on macOS. Running without installing (`bunx facetshot`) hasn't been tried,
-  since there is no published version yet. Installing a tagged version from GitHub
-  ([command reference](cli.md#installing-updating-and-removing)) hasn't been tried either, and can't be until the tag
-  `0.1.0` exists. `uninstall --browsers` hasn't been run; it calls Playwright's own `uninstall`.
+- **Installing:** `bun add -g` (from npm and from a packed tarball), `bunx facetshot` from npm, a tagged version from
+  GitHub, `facetshot setup`, `init --agent all` and `uninstall --yes` in a folder with no `package.json` were run on
+  macOS. In 0.1.0, `uninstall` run through `bunx` wrongly says facetshot is installed in the project; the next
+  version fixes it. `uninstall --browsers` hasn't been run; it calls Playwright's own `uninstall`.
 
 - **Firefox:** Playwright's Firefox build hasn't been confirmed working on macOS yet. `moz-firefox` (the installed
   Firefox app) is driven over WebDriver BiDi, which Playwright supports only experimentally.

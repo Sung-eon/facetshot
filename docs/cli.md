@@ -42,14 +42,14 @@ a Flutter, Swift or any other folder. There are three ways to run it:
 
 - **Installed** is the one to pick for regular use: the version changes only when you update it, and the MCP server
   starts without asking the registry first.
-- **Without installing** needs nothing but Bun. `bunx` downloads the package into a `bunx-…-facetshot@…` folder in
-  the system's temporary folder and runs it from there; it asks the registry for a newer version once a day
+- **Without installing** needs nothing but Bun. `bunx` downloads the package into Bun's package cache and runs it
+  from there; it asks the registry for a newer version once a day
   (`bunx facetshot@latest` asks every time, `bunx facetshot@0.1.0` runs that version).
 - **In a project**, the version is pinned in the project's lockfile for everyone who clones it, and the config gets
   types from `import { defineConfig } from 'facetshot'` ([what is checked](configuration.md#how-the-config-is-checked)).
 
 To install a tagged version from GitHub instead of npm (tags are the bare version number):
-`bun add -g github:Sung-eon/facetshot#0.1.0`. This hasn't been tried yet ([Status](status.md#known-limits)).
+`bun add -g github:Sung-eon/facetshot#0.1.0`.
 
 After installing or updating, run `facetshot setup` once. A newer facetshot may use a newer Playwright, whose
 browsers are a separate download.
