@@ -110,6 +110,13 @@ a run happens in your own process instead, outside the shared limits, and a sess
 free. Code is compared by content, so two checkouts with the same code share one helper. See
 [Lifecycle](architecture.md#lifecycle).
 
+## Many `429 Too Many Requests` in a run's logs
+
+Up to four browser pages load at once, and each screen of a single-page app may call its API a dozen times or more,
+all as the same signed-in person. An API with a per-person rate limit can answer `429`, which fills the issue list
+and can leave a screen on its loading state. Lower `limits.webPages` for the project
+([`limits`](configuration.md#limits)), or raise the rate limit for the local server facetshot starts.
+
 ## A command works in your terminal but not in a run
 
 Builds, servers and apps get the background helper's environment, which is that of whatever started it first (your
