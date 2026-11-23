@@ -107,6 +107,10 @@ export function loadFlow(file: string, root: string): Flow {
 				`Steps: ${KEYS.join(', ')}.`
 			);
 		}
+		// `wait: 500` reads as a number in YAML; steps hold it as written inline, a string.
+		const held = step as unknown as { wait?: unknown };
+		if (typeof held.wait === 'number') held.wait = String(held.wait);
+		checkPause(step, `Step ${index + 1} in ${path}`);
 	});
 	return {
 		name: flow.name ?? basename(path).replace(/\.(flow\.)?(ya?ml|json)$/, ''),
@@ -118,7 +122,7 @@ export function loadFlow(file: string, root: string): Flow {
 
 /**
  * One step written on a command line: `click:<selector>`, `fill:<selector>=<text>`, `select:<selector>=<option>`,
- * `press:Enter`, `scroll:600`, `wait:<selector>`, `shot:<name>`…
+ * `press:Enter`, `scroll:600`, `wait:<selector>` or `wait:<milliseconds>`, `shot:<name>`…
  */
 export function parseStep(text: string): Step {
 	if (BARE.has(text.trim())) return { [text.trim()]: true } as Step;
@@ -151,7 +155,31 @@ export function parseStep(text: string): Step {
 		const split = value.lastIndexOf('=');
 		return { scroll: value.slice(0, split), by: Number(value.slice(split + 1)) };
 	}
-	return { [key]: value } as Step;
+	const step = { [key]: value } as Step;
+	checkPause(step, `"${text}"`);
+	return step;
+}
+
+/** The longest `wait:<milliseconds>`: a wait for longer is a mistake, not a pause. */
+export const MAX_PAUSE = 60_000;
+
+/**
+ * How long a `wait` step pauses, when it gives a number (milliseconds) instead of an element; undefined otherwise.
+ * The same everywhere: no selector is only digits, so a number can't mean an element.
+ */
+export function pause(step: Step): number | undefined {
+	if (!('wait' in step)) return undefined;
+	const text = String(step.wait).trim();
+	return /^\d+$/.test(text) ? Number(text) : undefined;
+}
+
+function checkPause(step: Step, where: string): void {
+	const ms = pause(step);
+	if (ms !== undefined && ms > MAX_PAUSE)
+		throw new UsageError(
+			`${where} waits ${ms} ms; a wait is at most ${MAX_PAUSE} ms.`,
+			'To wait for something to appear, name it: wait:text=Done (up to 15 s).'
+		);
 }
 
 /**
@@ -321,9 +349,11 @@ export async function doStep(page: Page, step: Step, host: StepHost): Promise<vo
 				await aimed.at.evaluate((element, by) => element.scrollBy(0, by), step.by);
 			} else await aimed.at.scrollIntoViewIfNeeded({ timeout: TIMEOUT });
 		}
-	} else if ('wait' in step)
-		await locate(page, step.wait).waitFor({ state: 'visible', timeout: 15_000 });
-	else if ('gone' in step)
+	} else if ('wait' in step) {
+		const ms = pause(step);
+		if (ms !== undefined) await page.waitForTimeout(ms);
+		else await locate(page, step.wait).waitFor({ state: 'visible', timeout: 15_000 });
+	} else if ('gone' in step)
 		await locate(page, step.gone).waitFor({ state: 'hidden', timeout: 15_000 });
 	else if ('goto' in step) await host.open(step.goto);
 	else if ('back' in step) await page.goBack({ waitUntil: 'load', timeout: 30_000 });

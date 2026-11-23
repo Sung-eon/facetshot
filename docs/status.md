@@ -39,6 +39,12 @@ there yet. Reports are welcome. No [CI](ci.md) provider has been tried yet.
   not affected.
 - **Tauri's real window** was run by hand on macOS: a flow pressed a link through Accessibility, and the Rust side's
   `println!` came back in the logs. No automated test covers it.
+- **`wait` with a number on iOS:** `wait:500` pauses on web pages and in Mac windows; on the iOS simulator it is
+  still read as an accessibility label to wait for, and fails after 15 s.
+- **Mac keys and focus:** `press:Enter` and `press:Tab` into a SwiftUI text editor, a menu shortcut
+  (`press:Meta+N`), bringing the window to the front and a window with an 800-child custom view are covered by
+  `test/mac.test.ts` on macOS 27. A shortcut no menu item lists is sent as a key press to the key window; that path
+  was run by hand on the same app, not in a test. AppKit apps other than the SwiftUI fixture haven't been tried.
 - **Mac permissions:** steps and sessions in Mac windows need Accessibility, and resizing a window from outside needs
   Automation. See [Desktop apps](desktop.md#permissions).
 - **iOS variants:** on the iOS simulator, locale, right-to-left, personas, offline and reduced motion aren't applied

@@ -1,6 +1,8 @@
-// A tiny SwiftUI Mac app for facetshot's tests of Mac windows: a button, a text field, a context menu and a menu bar
-// command, each of which prints a line to standard output so a test can see it was really pressed. Built with swiftc
-// (no Xcode project): see test/mac.test.ts.
+// A tiny SwiftUI Mac app for facetshot's tests of Mac windows: a button, a text field, a text editor, a context menu
+// and menu bar commands (one with a shortcut), each of which prints a line to standard output so a test can see it was
+// really pressed. On /canvas it shows a large custom view whose accessibility children are many and partly malformed,
+// as a drawing canvas's can be. Built with swiftc (no Xcode project): see test/mac.test.ts.
+import AppKit
 import OSLog
 import SwiftUI
 
@@ -21,6 +23,9 @@ struct NotesApp: App {
         }
         .windowResizability(.contentSize)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Note") { print("New note") }.keyboardShortcut("n")
+            }
             CommandMenu("Note") {
                 Button("Export…") { print("Exported 2 notes") }
             }
@@ -37,8 +42,21 @@ struct NotesApp: App {
 struct NotesView: View {
     @State private var name = "Ada"
     @State private var saved = false
+    @State private var text = ""
 
     var body: some View {
+        if ProcessInfo.processInfo.environment["FACETSHOT_ROUTE"] == "/canvas" {
+            VStack(alignment: .leading) {
+                Text("Canvas")
+                CanvasView()
+            }
+            .padding(24)
+        } else {
+            form
+        }
+    }
+
+    var form: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Notes").font(.largeTitle)
             TextField("Name", text: $name)
@@ -57,9 +75,42 @@ struct NotesView: View {
                     Button("Copy link") { print("Copied link") }
                     Button("Reset") { print("Reset") }
                 }
+            TextEditor(text: $text)
+                .frame(width: 240, height: 60)
+                .border(.secondary)
+                .accessibilityLabel("Body")
+                .onChange(of: text) { print("Body: \(text.debugDescription)") }
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+/** A big custom view, as a canvas is: 800 accessible children, some of them not elements at all, one with no real frame. */
+struct CanvasView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { Canvas() }
+    func updateNSView(_ view: NSView, context: Context) {}
+
+    final class Canvas: NSView {
+        lazy var parts: [Any] = (0..<800).map { index -> Any in
+            if index % 100 == 7 { return "not an element" }
+            if index % 100 == 9 { return NSNumber(value: index) }
+            let part = NSAccessibilityElement()
+            part.setAccessibilityRole(.staticText)
+            part.setAccessibilityLabel("Shape \(index)")
+            part.setAccessibilityParent(self)
+            part.setAccessibilityFrame(index == 3 ? NSRect(x: CGFloat.nan, y: .infinity, width: .nan, height: 1) : NSRect(x: 40 + index % 20, y: 40 + index / 20, width: 4, height: 4))
+            return part
+        }
+        override var intrinsicContentSize: NSSize { NSSize(width: 400, height: 300) }
+        override func isAccessibilityElement() -> Bool { true }
+        override func accessibilityRole() -> NSAccessibility.Role? { .group }
+        override func accessibilityLabel() -> String? { "Drawing" }
+        override func accessibilityChildren() -> [Any]? { parts }
+        override func draw(_ dirtyRect: NSRect) {
+            NSColor.systemTeal.setFill()
+            dirtyRect.fill()
+        }
     }
 }

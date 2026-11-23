@@ -176,7 +176,7 @@ export function createServer(): McpServer {
 			.array(z.string())
 			.optional()
 			.describe(
-				'Steps before each screenshot, to reach a menu, dialog or half-filled form: "click:role=button[name=\'Delete\']", "fill:#email=a@b.co", "press:Enter", "wait:role=dialog", "shot:confirm" (a screenshot; without any, one at the end).'
+				'Steps before each screenshot, to reach a menu, dialog or half-filled form: "click:role=button[name=\'Delete\']", "fill:#email=a@b.co", "press:Enter", "wait:role=dialog", "wait:500" (a pause in ms), "shot:confirm" (a screenshot; without any, one at the end).'
 			)
 	};
 	type TargetsArgs = {
@@ -566,7 +566,7 @@ export function createServer(): McpServer {
 					.array(z.string())
 					.default([])
 					.describe(
-						'e.g. "click:e3", "rightclick:@420,180", "dblclick:text=Title", "longpress:e5", "hover:e2", "fill:e4=hello", "type:abc", "press:Meta+K", "select:e6=Large", "drag:e7>e9", "scroll:600", "scroll:e10=400", "wait:role=dialog", "goto:/other", "back".'
+						'e.g. "click:e3", "rightclick:@420,180", "dblclick:text=Title", "longpress:e5", "hover:e2", "fill:e4=hello", "type:abc", "press:Meta+K", "select:e6=Large", "drag:e7>e9", "scroll:600", "scroll:e10=400", "wait:role=dialog", "wait:500" (ms), "goto:/other", "back".'
 					),
 				...lookShape
 			},

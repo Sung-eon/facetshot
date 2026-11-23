@@ -154,18 +154,27 @@ command that asked for the run.
 Native Mac apps and Tauri's real window take the same [steps](flows.md#steps) as a web page, in flows and in
 [sessions](sessions.md), through macOS's Accessibility interface:
 
+- Before every step and every screenshot, the app is brought to the front and its window is made the key window,
+  as a person's click on it would. Controls then look active, and keys reach the element that has focus. If a menu
+  or sheet is already open, the window is left as it is.
 - A `click`, `tap` or `rightclick` on an element (`role=button[name="Save"]`, or a ref such as `e12` in a session)
-  uses the element's own action, the one a screen reader would use. The pointer isn't moved and the app doesn't need
-  to be in front. If the element offers no such action, or it fails (SwiftUI's context menus do), facetshot clicks it
-  for real instead.
+  uses the element's own action, the one a screen reader would use. The pointer isn't moved. If the element offers
+  no such action, or it fails (SwiftUI's context menus do), facetshot clicks it for real instead.
 - Everything else that touches the screen is real input: a point (`@120,80`, in points from the window's top left),
-  `dblclick`, `hover`, `drag`, `scroll`, and the keyboard (`fill`, `type`, `press`). The app is brought to the front
-  first, and the step fails if it doesn't come to the front. A point outside the app's window is refused. Pointer
-  events go to whatever is on screen at that point, so don't use the mouse while a step runs.
+  `dblclick`, `hover`, `drag`, `scroll`, and the keyboard (`fill`, `type`, `press`). A pointer step fails if the app
+  doesn't come to the front; keys then go to the app's own process instead. A point outside the app's window is
+  refused. Pointer events go to whatever is on screen at that point, so don't use the mouse while a step runs.
 - `fill` focuses the field, selects its text, and types, so the app sees the same key presses a person makes.
 - `menu: File>Export…` chooses from the app's menu bar.
-- `press` knows the letters, digits, punctuation, arrows, Enter, Escape, Tab, Space, Backspace, Delete, Home, End and
-  Page Up/Down, with Shift, Control, Alt and Meta; not the function keys.
+- `press` knows the letters, digits, punctuation, arrows, Enter, Escape, Tab, Space, Backspace, Delete, Home, End,
+  Page Up/Down and F1 to F12, with Shift, Control, Alt and Meta (also written `Cmd`). Keys are sent to the key window,
+  so `press:Enter` and `press:Tab` reach a text view. A shortcut with Meta that an item in the app's menu bar lists
+  (`press:Meta+N` for File > New) chooses that item; one no menu item lists is sent as a key press.
+- `wait:500` (a plain number) pauses that many milliseconds, as everywhere.
+- The element list and `--tree` are read from the app's accessibility tree, up to 4000 elements, 60 levels deep, the
+  first 500 children of any one element, and 20 seconds. A very large custom view (a canvas, a chart with thousands
+  of parts) is cut at those limits, and the tree ends with a line in parentheses that says what was left out.
+  Elements that report something unreadable are listed without it.
 
 An element is named by a ref, `role=<role>[name="…"]`, `text=…`, `label=…`, `title=…` or a point. Roles use the web's
 names (`button`, `textbox`, `checkbox`, `menuitem`…). Unlike the web, `text=` and the others match the whole name

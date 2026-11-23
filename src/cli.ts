@@ -150,7 +150,7 @@ Sessions (a page kept open to work step by step)
 Steps (--do, act, flows)
   click: dblclick: rightclick: tap: longpress: hover: focus:  <element>
   fill:<element>=<text>  select:<element>=<option>  drag:<element>><element>  type:<text>  press:Shift+A
-  scroll:600  scroll:<element>  scroll:<element>=600  wait:<element>  gone:<element>  goto:/path  back  forward  reload
+  scroll:600  scroll:<element>  scroll:<element>=600  wait:<element>  wait:500 (ms)  gone:<element>  goto:/path  back  forward  reload
   An element is a selector (text=Save, role=button[name='Save'], CSS), a ref from a session's list (e12), or @x,y.
 
 Targets
