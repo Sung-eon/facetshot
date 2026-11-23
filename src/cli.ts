@@ -70,6 +70,7 @@ const VALUED = new Set([
 	'do',
 	'format',
 	'save',
+	'keep',
 	'level'
 ]);
 /** Flags that may be given more than once; their values are kept in order, joined by a newline. */
@@ -145,6 +146,7 @@ Sessions (a page kept open to work step by step)
   facetshot look <id> [--full] [--tree]                  show the page again
                          (--no-elements, --no-screenshot: leave out the list of what's on screen, or the screenshot)
   facetshot close <id> [--save flows/name.yaml]          close it (and keep the steps that worked as a flow)
+                         (--keep <folder>: copy its screenshots and log there first, so they aren't deleted)
   facetshot logs <id|run|latest> [--follow] [--level debug|info|warn|error] [--json]
 
 Steps (--do, act, flows)

@@ -58,7 +58,8 @@ MCP tools when you have them; they return images you can see. The command line p
   screen ended up. `shot` steps are ignored in a session.
 - **`close`**: `session`, and `saveAs`: a `.yaml`, `.yml` or `.json` path for the flow file. It is resolved against
   the folder the MCP server runs in (normally the project) and must stay inside the project; it won't overwrite a
-  file that isn't a flow.
+  file that isn't a flow. `keep`: a new or empty folder to copy the session's screenshots and log into; without it
+  they are deleted when the session closes.
 
 View options (`open` and `act`): `screenshot` (default true; false answers in text only, cheaper for steps you
 needn't see), `elements` (default true: the list of what can be acted on, with refs), `tree` (the whole
@@ -85,7 +86,7 @@ Installed for the user, run it as `facetshot …`; installed in a project or not
 | `facetshot list [what]`                                          | as the `list` tool; `list sessions --json` for programs            |
 | `facetshot open <target> [--on d] [--as v]`                      | opens a session                                                    |
 | `facetshot act <id> <step…>`, `facetshot look <id>`              | does steps / looks again                                           |
-| `facetshot close <id> [--save flows/x.yaml]`                     | closes a session                                                   |
+| `facetshot close <id> [--save flows/x.yaml] [--keep dir]`        | closes a session (`--keep`: copy its screenshots and log first)    |
 | `facetshot logs <id\|run\|latest> [--follow] [--level] [--json]` | prints a run's logs, or follows a session's live                   |
 | `facetshot baseline save\|list\|rm <name>`                       | keeps a run to compare against later                               |
 | `facetshot init [--url …] [--agent …]`                           | writes a starter config and connects agents                        |

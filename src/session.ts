@@ -91,6 +91,8 @@ export interface View {
 export interface SessionInfo {
 	id: string;
 	root: string;
+	/** Where its screenshots are written; deleted when it closes, unless they are kept (`keepSession`). */
+	folder: string;
 	url: string;
 	device: string;
 	variant: string;
@@ -269,6 +271,7 @@ export class Session {
 		return {
 			id: this.id,
 			root: this.root,
+			folder: this.folder,
 			url: redact(this.surface?.url() ?? ''),
 			device: this.surface?.device.name ?? '',
 			variant: this.surface?.variant.name ?? '',

@@ -50,7 +50,8 @@ that didn't load, the request that failed, the menu that runs off the screen.
    effect of your fix without re-reading everything.
 5. **For behaviour, use a session.** `open` a screen, `act` with steps, read each response, and `close` the session
    when you're done, before you answer. An open session holds a browser page or an app window on the person's
-   machine, and only six can be open at once. If you had to discover the steps to a state, `close` with
+   machine, and only six can be open at once. Closing deletes its screenshots: pass `keep: "<folder>"` when your
+   answer relies on them. If you had to discover the steps to a state, `close` with
    `saveAs: "flows/<name>.yaml"` and add the flow to a profile's targets in `facetshot.config.ts`, so the next check
    includes it.
 

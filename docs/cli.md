@@ -139,7 +139,8 @@ adds it without asking). See
 
 Checks the browsers, the config, the ports it asks for, Xcode and simulators when you use Apple targets, Electron
 when you use it, locks held by other builds, and the background helper, and gives the command that fixes each
-problem.
+problem. For a port that is in use, it names the process listening there and, when the background helper started
+it, for which project.
 
 ## `baseline`
 
@@ -169,7 +170,7 @@ See [Sessions](sessions.md).
 | `open <target>`    | `--on <device>`, `--as <variant>`, `--browser <name>` (one each; `--browser` needs `--on`), and the same view options as `act`                                                     |
 | `act <id> <step…>` | `--no-elements`, `--no-screenshot` (leave out the list or the screenshot), `--tree` (the page's text and structure), `--full` (the whole page), `--level <level>` (logs), `--json` |
 | `look <id>`        | the same options as `act`                                                                                                                                                          |
-| `close <id>`       | `--save <file>`: write the steps that worked as a flow (`.yaml`, `.yml` or `.json`, inside the project folder)                                                                     |
+| `close <id>`       | `--save <file>`: write the steps that worked as a flow (`.yaml`, `.yml` or `.json`, inside the project folder); `--keep <folder>`: copy the screenshots and log there first        |
 
 `act` exits with 1 when a step didn't work; the rest of its output shows where the screen ended up. `facetshot list
 sessions` lists the open sessions (`--json` for programs).

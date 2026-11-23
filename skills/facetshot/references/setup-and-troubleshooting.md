@@ -81,8 +81,10 @@ fixtures: {
 ## doctor
 
 `facetshot doctor` checks Bun, Playwright's browsers, the config, ports, Xcode and simulators, Electron, the Mac
-permissions (Screen Recording, Accessibility) and leftover locks, and prints the fix for each problem. Run it first
-when something about the machine is wrong.
+permissions (Screen Recording, Accessibility) and leftover locks, and prints the fix for each problem. For a busy
+port it names the process holding it (and the project, when facetshot's background helper started it). Run it first
+when something about the machine is wrong. Loading the config prints a warning for each key facetshot doesn't know,
+with the key it probably meant; a misspelt key is otherwise ignored.
 
 ## Installing and fixing the install
 

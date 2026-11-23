@@ -105,5 +105,7 @@ reported as failed with the step and the reason, and the sheet shows how far eac
 - **Saving:** `close` with `saveAs` writes the steps that worked as a flow, each ref turned into a selector that
   finds the element again (by role and name where it has them); a point is kept as it is, so check it still lands
   right on other devices. Typed text is saved as typed.
+- **Keeping evidence:** closing deletes the session's screenshots and log. `close` with `keep: "<folder>"` (a new
+  or empty folder) copies them there first; do it when your answer points at a screenshot.
 - **Mac windows:** a session locks the screen's pointer only while a step runs, so between steps another run may
   open windows; the session's screenshots are always of its own window.
