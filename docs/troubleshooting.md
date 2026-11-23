@@ -47,9 +47,9 @@ value.
 Port 5390 (for "web") is taken by something that doesn't answer http://localhost:5390/.
 ```
 
-Something else is listening there. Find it with the command in the message, stop it, or set the port to another
-number or `auto`. If it's a server facetshot started earlier and its run was killed, facetshot takes it over by
-itself; if not, `facetshot clean` stops it.
+Something else is listening there. `facetshot doctor` names the process and, when the background helper started it,
+the project it belongs to. Stop it, or set the port to another number or `auto`. If it's a server facetshot started
+earlier and its run was killed, facetshot takes it over by itself; if not, `facetshot clean` stops it.
 
 ## The build runs every time
 

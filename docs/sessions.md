@@ -42,6 +42,11 @@ facetshot look s-42cb1d --full                             # the whole page, wit
 facetshot close s-42cb1d --save flows/edit-settings.yaml   # keep the steps that worked
 ```
 
+Closing a session deletes its screenshots and its log. To keep them, for example as evidence for a bug you report,
+close it with `--keep <folder>`: the screenshots (`001.png`, `002.png`…) and the log (`logs.txt` for people,
+`logs.ndjson` for programs) are copied into that folder first. The folder must be new or empty. `facetshot logs
+<folder>` prints a kept log again.
+
 Each response has the same shape as the one from `open`: the new screenshot, the log lines since the last response
 (here, what the page logged when Save was pressed), and the list again:
 

@@ -18,13 +18,16 @@ read environment variables or import helpers.
 
 `defineConfig` returns your object unchanged, and the types are checked only by your editor or `tsc`, when facetshot
 is installed in the project. When facetshot loads the config it checks that the file runs and has a default export.
-It doesn't check the keys against a schema, so a misspelt key is ignored without a word. Values are checked when they
-are used: a device, variant, group, profile or persona that doesn't exist, or a device without a platform and size,
-stops the run with exit code 2 and says what to fix.
+It also compares the keys with the ones facetshot knows, in every section whose keys are fixed, and prints a warning
+for each key it doesn't know, with the nearest known key (`unknown key "web.baseUrl" is ignored (did you mean
+"web.baseURL"?)`). The run goes on without that key. Values are checked when they are used: a device, variant,
+group, profile or persona that doesn't exist, or a device without a platform and size, stops the run with exit code 2
+and says what to fix.
 
-Paths are relative to the config file. Commands run in a shell, from their `cwd` (relative to the config) or the
-config's folder. Commands and environment values can use placeholders such as `{port}` and `{services.api.url}`;
-[Placeholders](auth-and-data.md#placeholders) lists them and when each one is available.
+Paths are relative to the config file. A config kept in the project's `.facetshot/` folder (given with `-c`) writes
+its runs to that folder, not to a `.facetshot/` inside it. Commands run in a shell, from their `cwd` (relative to the
+config) or the config's folder. Commands and environment values can use placeholders such as `{port}` and
+`{services.api.url}`; [Placeholders](auth-and-data.md#placeholders) lists them and when each one is available.
 
 ## Settings that differ per checkout or per person
 

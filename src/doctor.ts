@@ -3,7 +3,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { expandHome, homeFolder, loadConfig } from './config.ts';
 import { EXIT, explain } from './errors.ts';
 import { exec, portBusy } from './engine/procs.ts';
@@ -30,6 +30,51 @@ function has(command: string, args: string[] = ['--version']): string | undefine
 	} catch {
 		return undefined;
 	}
+}
+
+/**
+ * Who listens on a port: the command and pid (from lsof), whether facetshot's background helper started it (the pid
+ * or one of its parents is the helper's), and then for which project (the open project whose root holds the
+ * process's working folder). Undefined when lsof can't say (not installed, or another user's process).
+ */
+export async function portHolder(
+	port: number
+): Promise<{ command: string; pid: number; helper: boolean; project?: string } | undefined> {
+	const fields = async (args: string[]) =>
+		(
+			await exec('lsof', args).catch((error: { stdout?: string }) => ({
+				stdout: error.stdout ?? ''
+			}))
+		).stdout
+			.split('\n')
+			.filter(Boolean);
+	const listing = await fields(['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc']);
+	const pid = Number(listing.find((line) => line.startsWith('p'))?.slice(1));
+	const command = listing.find((line) => line.startsWith('c'))?.slice(1);
+	if (!pid || !command) return undefined;
+	const { status } = await import('./daemon/client.ts');
+	const daemon = await status();
+	let helper = false;
+	for (let each = pid, depth = 0; daemon && each > 1 && depth < 20; depth++) {
+		if (each === daemon.pid) {
+			helper = true;
+			break;
+		}
+		each = Number(
+			(
+				await exec('ps', ['-o', 'ppid=', '-p', String(each)]).catch(() => ({ stdout: '' }))
+			).stdout.trim()
+		);
+	}
+	if (!helper || !daemon) return { command, pid, helper };
+	const cwd = (await fields(['-a', '-p', String(pid), '-d', 'cwd', '-Fn']))
+		.find((line) => line.startsWith('n'))
+		?.slice(1);
+	const project = daemon.projects
+		.map((each) => each.root)
+		.filter((root) => cwd && (cwd === root || cwd.startsWith(root + sep)))
+		.sort((a, b) => b.length - a.length)[0];
+	return { command, pid, helper, project };
 }
 
 export async function doctor(options: { configFile?: string }): Promise<number> {
@@ -108,16 +153,31 @@ export async function doctor(options: { configFile?: string }): Promise<number> 
 		if (typeof service.port === 'number') ports.push([name, service.port]);
 	if (typeof config?.web?.serve?.port === 'number') ports.push(['web', config.web.serve.port]);
 	for (const [name, port] of ports) {
-		const busy = await portBusy(port);
-		lines.push(
-			busy
-				? {
-						ok: 'warn',
-						what: `Port ${port} (${name}) is in use — fine if it's facetshot's own server from an earlier run.`,
-						fix: `lsof -nP -iTCP:${port} -sTCP:LISTEN`
-					}
-				: { ok: true, what: `Port ${port} (${name}) is free` }
-		);
+		if (!(await portBusy(port))) {
+			lines.push({ ok: true, what: `Port ${port} (${name}) is free` });
+			continue;
+		}
+		const holder = await portHolder(port);
+		const who = holder ? `${holder.command} (pid ${holder.pid})` : "a process facetshot can't see";
+		if (holder?.helper && holder.project === loaded?.root)
+			lines.push({
+				ok: 'info',
+				what: `Port ${port} (${name}) is held by ${who}, which facetshot's background helper started for this project`
+			});
+		else if (holder?.helper)
+			lines.push({
+				ok: 'warn',
+				what: `Port ${port} (${name}) is held by ${who}, which facetshot's background helper started for ${holder.project ?? 'another project'}.`,
+				fix: "Give this project's service another port (or port: 'auto'), or stop that project's session or run."
+			});
+		else
+			lines.push({
+				ok: 'warn',
+				what: `Port ${port} (${name}) is in use by ${who}, which facetshot didn't start.`,
+				fix: holder
+					? `Stop it, or give the service another port (or port: 'auto').`
+					: `lsof -nP -iTCP:${port} -sTCP:LISTEN`
+			});
 	}
 
 	// Apple tools, when the project uses them.

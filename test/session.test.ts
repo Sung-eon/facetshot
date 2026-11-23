@@ -3,7 +3,7 @@
  * step by step, read what it logged, keep the steps as a flow and play it again.
  */
 import { afterAll, expect, test } from 'bun:test';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -15,6 +15,7 @@ const cli = join(import.meta.dir, '..', 'src', 'cli.ts');
 const home = mkdtempSync(join(tmpdir(), 'facetshot-home-'));
 const env = { ...(process.env as Record<string, string>), FACETSHOT_HOME: home };
 const flow = join(site, 'flows-saved', 'dialog.yaml');
+const kept = join(home, 'kept');
 afterAll(() => {
 	spawnSync(process.execPath, ['--bun', cli, 'daemon', 'stop'], { env, cwd: site });
 	rmSync(join(site, '.facetshot'), { recursive: true, force: true });
@@ -75,9 +76,20 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 
 		const closed = await client.callTool({
 			name: 'close',
-			arguments: { session: id, saveAs: 'flows-saved/dialog.yaml' }
+			arguments: { session: id, saveAs: 'flows-saved/dialog.yaml', keep: kept }
 		});
 		expect(text(closed)).toContain('Closed');
+		// The screenshots and the log were copied out before the session's own folder went.
+		expect(text(closed)).toContain(`kept in ${kept}`);
+		expect(readdirSync(kept).filter((name) => name.endsWith('.png')).length).toBeGreaterThan(1);
+		expect(readFileSync(join(kept, 'logs.ndjson'), 'utf8')).toContain('"navigation"');
+		expect(existsSync(join(site, '.facetshot', 'sessions', id))).toBe(false);
+		const keptLogs = spawnSync(process.execPath, ['--bun', cli, 'logs', kept], {
+			env,
+			cwd: site,
+			encoding: 'utf8'
+		});
+		expect(keptLogs.stdout).toContain('navigation');
 		// The ref became a selector that finds the button again in a run of its own.
 		const saved = readFileSync(flow, 'utf8');
 		expect(saved).toContain('role=button[name="Open dialog"');

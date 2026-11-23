@@ -2,9 +2,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { Config } from './types.ts';
+import { CONFIG_KEYS, EACH, type Config, type KeyShape } from './types.ts';
 import { UsageError } from './errors.ts';
 
 export const CONFIG_NAMES = ['facetshot.config.ts', 'facetshot.config.mjs', 'facetshot.config.js'];
@@ -37,6 +37,8 @@ export interface LoadedConfig {
 	 * to it has one stamp, and one that picks another database or port has another.
 	 */
 	stamp: string;
+	/** Keys the config has that facetshot doesn't know (most likely misspelt), each with a suggestion. */
+	warnings: string[];
 }
 
 /** Config modules are read one at a time, each in its caller's environment (see `env` below). */
@@ -84,7 +86,7 @@ export async function loadConfig(
 		: findConfig(options.cwd);
 	if (!file) {
 		const root = resolve(options.cwd ?? process.cwd());
-		return { config: { root }, root, stamp: 'none' };
+		return { config: { root }, root, stamp: 'none', warnings: [] };
 	}
 	if (!existsSync(file)) throw new UsageError(`There's no config at ${file}.`);
 	// A config is read again when it changes, or when it is read in a different environment: the query string makes
@@ -115,13 +117,90 @@ export async function loadConfig(
 		);
 	}
 	const root = dirname(file);
+	const warnings = unknownKeys(config).map((each) => `${file}: ${each}`);
+	for (const warning of warnings) {
+		if (warned.has(warning)) continue;
+		warned.add(warning);
+		process.stderr.write(`! ${warning}\n`);
+	}
 	const stamp = createHash('sha1')
 		.update(
 			JSON.stringify(config, (_key, value) => (typeof value === 'function' ? String(value) : value))
 		)
 		.digest('hex')
 		.slice(0, 16);
-	return { config: { ...config, root }, file, root, stamp };
+	return {
+		config: { ...config, root, ...stateInside(root, config.out) },
+		file,
+		root,
+		stamp,
+		warnings
+	};
+}
+
+/** Warnings already printed by this process: a config read again says nothing new. */
+const warned = new Set<string>();
+
+/**
+ * A config kept in the project's state folder (`.facetshot/facetshot.config.ts`, given with `-c`) would put its
+ * state in `.facetshot/.facetshot`: the state folder is the one the config is already in.
+ */
+function stateInside(root: string, out: string | undefined): { out?: string } {
+	const name = out ?? '.facetshot';
+	if (name !== '.facetshot') return {};
+	const parts = resolve(root).split(sep);
+	const at = parts.lastIndexOf(name);
+	return at > 0 ? { out: parts.slice(0, at + 1).join(sep) || sep } : {};
+}
+
+/**
+ * Keys a config has that `Config` doesn't, each as a warning with the nearest known key: a misspelt key would
+ * otherwise be ignored without a word. Checked as deep as the shape is fixed (CONFIG_KEYS, next to the types).
+ */
+export function unknownKeys(config: unknown, shape: KeyShape = CONFIG_KEYS, path = ''): string[] {
+	if (shape === true || !config || typeof config !== 'object' || Array.isArray(config)) return [];
+	const each = (shape as { [EACH]?: KeyShape })[EACH];
+	const warnings: string[] = [];
+	for (const [key, value] of Object.entries(config)) {
+		const where = path ? `${path}.${key}` : key;
+		if (each) {
+			warnings.push(...unknownKeys(value, each, where));
+			continue;
+		}
+		if (!Object.hasOwn(shape, key)) {
+			const guess = nearest(key, Object.keys(shape));
+			warnings.push(
+				`unknown key "${where}" is ignored${guess ? ` (did you mean "${path ? `${path}.` : ''}${guess}"?)` : ''}.`
+			);
+			continue;
+		}
+		warnings.push(...unknownKeys(value, (shape as Record<string, KeyShape>)[key], where));
+	}
+	return warnings;
+}
+
+/** The known key closest to a misspelt one, if any is close enough to be what was meant. */
+function nearest(key: string, known: string[]): string | undefined {
+	let best: string | undefined;
+	let bestDistance = Infinity;
+	for (const each of known) {
+		const distance = editDistance(key.toLowerCase(), each.toLowerCase());
+		if (distance < bestDistance) [best, bestDistance] = [each, distance];
+	}
+	return best !== undefined && bestDistance <= Math.max(2, Math.floor(key.length / 3))
+		? best
+		: undefined;
+}
+
+function editDistance(a: string, b: string): number {
+	let row = Array.from({ length: b.length + 1 }, (_, index) => index);
+	for (let i = 1; i <= a.length; i++) {
+		const next = [i];
+		for (let j = 1; j <= b.length; j++)
+			next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+		row = next;
+	}
+	return row[b.length];
 }
 
 /** facetshot's own folder for state shared across projects: the daemon socket, locks, caches. */

@@ -411,3 +411,166 @@ export interface Config {
 	/** Checks run on every web cell (in addition to `check`). Default: console, network. */
 	checks?: string[];
 }
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* The keys a config may have                                                                                         */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+/** Marks a table of entries named by the project (devices, services…): every entry has this shape. */
+export const EACH = Symbol('each');
+
+/**
+ * What a key holds, for the loader's check of misspelt keys: `true` for a value whose keys aren't fixed (or not an
+ * object), a table of the keys an object may have, or `{ [EACH]: … }` for entries the project names itself.
+ */
+export type KeyShape = true | { readonly [key: string]: KeyShape } | { readonly [EACH]: KeyShape };
+
+/** Every key of T and no other: the tables below fail to compile when a type gains or loses a key. */
+type KeysOf<T> = { readonly [K in keyof Required<T>]: KeyShape };
+
+const commandKeys = { cmd: true, cwd: true, env: true } satisfies KeysOf<Command>;
+const buildKeys = {
+	...commandKeys,
+	inputs: true,
+	output: true,
+	heavy: true
+} satisfies KeysOf<BuildStep>;
+const serviceKeys = {
+	...commandKeys,
+	port: true,
+	health: true,
+	reuse: true,
+	startTimeout: true
+} satisfies KeysOf<Service>;
+const readyKeys = {
+	idle: true,
+	visible: true,
+	gone: true,
+	when: true,
+	timeout: true
+} satisfies KeysOf<ReadyRule>;
+const readyWithRoutes = { ...readyKeys, routes: { [EACH]: readyKeys } } satisfies KeysOf<
+	WebConfig['ready'] & {}
+>;
+const appKeys = { app: true, build: buildKeys } satisfies KeysOf<AppleConfig['ios'] & {}>;
+
+/** The keys `Config` accepts, section by section, as far down as their shape is fixed. */
+export const CONFIG_KEYS = {
+	root: true,
+	out: true,
+	devices: {
+		[EACH]: {
+			name: true,
+			platform: true,
+			label: true,
+			width: true,
+			height: true,
+			scale: true,
+			mobile: true,
+			touch: true,
+			userAgent: true,
+			model: true,
+			orientation: true,
+			idiom: true,
+			split: true,
+			safeArea: { top: true, bottom: true, left: true, right: true },
+			browser: true,
+			extends: true
+		} satisfies KeysOf<Device & { extends?: string }>
+	},
+	groups: true,
+	variants: {
+		[EACH]: {
+			name: true,
+			appearance: true,
+			text: true,
+			contrast: true,
+			motion: true,
+			locale: true,
+			timezone: true,
+			direction: true,
+			persona: true,
+			network: true,
+			media: true
+		} satisfies KeysOf<Variant>
+	},
+	profiles: { [EACH]: { targets: true, on: true, as: true } satisfies KeysOf<Profile> },
+	aliases: true,
+	services: { [EACH]: serviceKeys },
+	web: {
+		baseURL: true,
+		build: buildKeys,
+		serve: serviceKeys,
+		browser: true,
+		personas: {
+			[EACH]: {
+				cookies: true,
+				headers: true,
+				storage: true,
+				storageState: true,
+				login: true,
+				ttl: true
+			} satisfies KeysOf<Persona>
+		},
+		persona: true,
+		storage: true,
+		ready: readyWithRoutes,
+		block: true,
+		rewrite: true,
+		mask: true,
+		css: true,
+		textSizes: { large: true, xlarge: true, xxl: true } satisfies KeysOf<
+			WebConfig['textSizes'] & {}
+		>,
+		clock: true,
+		fullPage: true
+	} satisfies KeysOf<WebConfig>,
+	apple: {
+		bundleId: true,
+		scheme: true,
+		deepLinkStyle: true,
+		ios: appKeys,
+		macos: appKeys,
+		env: true,
+		args: true,
+		readyFile: true,
+		variantEnv: { appearance: true, text: true } satisfies KeysOf<AppleConfig['variantEnv'] & {}>
+	} satisfies KeysOf<AppleConfig>,
+	desktop: {
+		kind: true,
+		main: true,
+		executable: true,
+		app: true,
+		build: buildKeys,
+		args: true,
+		env: true,
+		navigate: true,
+		frontend: { ...serviceKeys, url: true, build: buildKeys } satisfies KeysOf<
+			DesktopConfig['frontend'] & {}
+		>,
+		engine: true,
+		invoke: true,
+		readyFile: true
+	} satisfies KeysOf<DesktopConfig>,
+	swift: {
+		package: true,
+		test: true,
+		scheme: true,
+		inputs: true
+	} satisfies KeysOf<SwiftSnapshotConfig>,
+	storybook: {
+		url: true,
+		build: buildKeys,
+		ready: readyWithRoutes,
+		globals: true
+	} satisfies KeysOf<StorybookConfig>,
+	fixtures: { setup: true, remove: true, reuse: true } satisfies KeysOf<Fixtures>,
+	limits: {
+		webPages: true,
+		simulators: true,
+		maxLoad: true,
+		lockDir: true,
+		lockNames: { build: true, macWindow: true } satisfies KeysOf<Limits['lockNames'] & {}>
+	} satisfies KeysOf<Limits>,
+	checks: true
+} satisfies KeysOf<Config>;

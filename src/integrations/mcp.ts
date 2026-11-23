@@ -15,7 +15,7 @@
  * machine's caps.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -595,19 +595,29 @@ export function createServer(): McpServer {
 		{
 			title: 'Close a screen',
 			description:
-				'Closes a session. With saveAs, the steps that worked are kept as a flow file that capture can play again on every device.',
+				'Closes a session. Its screenshots and log are deleted unless keep names a folder to copy them to first (do so when they are evidence for what you report). With saveAs, the steps that worked are kept as a flow file that capture can play again on every device.',
 			inputSchema: {
 				session: z.string(),
 				saveAs: z
 					.string()
 					.optional()
-					.describe('A flow file to write, e.g. "flows/delete-account.yaml".')
+					.describe('A flow file to write, e.g. "flows/delete-account.yaml".'),
+				keep: z
+					.string()
+					.optional()
+					.describe(
+						'A new or empty folder to copy the session\'s screenshots and log into before they are deleted, e.g. "evidence/settings".'
+					)
 			},
 			annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
 		},
 		async (args) => {
 			try {
 				const { sessionCall } = await import('../daemon/client.ts');
+				const { keepSession, keptText } = await import('../session-cli.ts');
+				const kept = args.keep
+					? await keepSession(args.session, resolve(cwd(), args.keep))
+					: undefined;
 				const answer = await sessionCall<{ closed: string; saved?: string }>('close', {
 					id: args.session,
 					save: args.saveAs ? join(cwd(), args.saveAs) : undefined
@@ -617,7 +627,7 @@ export function createServer(): McpServer {
 					content: [
 						{
 							type: 'text',
-							text: `Closed ${answer.closed}.${answer.saved ? ` Steps saved to ${answer.saved}; capture it with targets: ["${args.saveAs}"].` : ''}`
+							text: `Closed ${answer.closed}.${answer.saved ? ` Steps saved to ${answer.saved}; capture it with targets: ["${args.saveAs}"].` : ''} ${keptText(kept, 'keep: "<folder>"')}`
 						}
 					]
 				};

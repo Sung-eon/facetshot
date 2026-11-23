@@ -1,5 +1,13 @@
 /** `facetshot open | act | look | close | logs`: sessions and logs from the command line. */
-import { existsSync, readFileSync } from 'node:fs';
+import {
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	statSync,
+	writeFileSync
+} from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadConfig } from './config.ts';
 import { EXIT, UsageError } from './errors.ts';
@@ -7,7 +15,7 @@ import { parseStep } from './flows.ts';
 import { atLeast, formatEntry, type LogEntry, type LogLevel } from './logs.ts';
 import { listRuns, stateDir } from './run.ts';
 import { describeView, type LookOptions, type View } from './session.ts';
-import { sessionCall, sessionLogs } from './daemon/client.ts';
+import { listSessions, sessionCall, sessionLogs } from './daemon/client.ts';
 
 type Flags = Record<string, string | true>;
 
@@ -89,12 +97,14 @@ export async function sessionCommand(
 		case 'look':
 			return show(await sessionCall<View>('look', { id: needId(), options }), flags);
 		case 'close': {
+			const kept =
+				typeof flags.keep === 'string' ? await keepSession(needId(), flags.keep) : undefined;
 			const answer = await sessionCall<{ closed: string; saved?: string }>('close', {
 				id: needId(),
 				save: typeof flags.save === 'string' ? resolve(flags.save) : undefined
 			});
 			process.stdout.write(
-				`Closed ${answer.closed}.${answer.saved ? ` Its steps are in ${answer.saved}; play them again with facetshot ${answer.saved}` : ''}\n`
+				`Closed ${answer.closed}.${answer.saved ? ` Its steps are in ${answer.saved}; play them again with facetshot ${answer.saved}.` : ''} ${keptText(kept, '--keep <folder>')}\n`
 			);
 			return EXIT.ok;
 		}
@@ -103,6 +113,62 @@ export async function sessionCommand(
 		default:
 			throw new UsageError(`Unknown command "${command}".`);
 	}
+}
+
+export interface Kept {
+	folder: string;
+	screenshots: number;
+	logLines: number;
+}
+
+/**
+ * Copies an open session's screenshots and its whole log (`logs.ndjson` and `logs.txt`, as a run writes them) into
+ * a new or empty folder, before `close` deletes them: the evidence for what a session found. Shared by the CLI and
+ * the MCP server.
+ */
+export async function keepSession(id: string, destination: string): Promise<Kept> {
+	const info = (await listSessions()).find((each) => each.id === id);
+	if (!info)
+		throw new UsageError(
+			`There's no open session "${id}", so there's nothing to keep.`,
+			'facetshot list sessions shows the open ones.'
+		);
+	const folder = resolve(destination);
+	if (existsSync(folder) && (!statSync(folder).isDirectory() || readdirSync(folder).length))
+		throw new UsageError(
+			`${destination} isn't a new or empty folder, so nothing was kept and ${id} is still open.`,
+			"Give a folder that doesn't exist yet (or is empty) to keep the screenshots in."
+		);
+	mkdirSync(folder, { recursive: true });
+	const screenshots = existsSync(info.folder)
+		? readdirSync(info.folder)
+				.filter((name) => name.endsWith('.png'))
+				.sort()
+		: [];
+	for (const name of screenshots) copyFileSync(join(info.folder, name), join(folder, name));
+	const entries: LogEntry[] = [];
+	await sessionLogs(id, { onEntry: (entry) => entries.push(entry) });
+	writeFileSync(
+		join(folder, 'logs.ndjson'),
+		entries
+			.map(
+				(entry) =>
+					`${JSON.stringify({ at: new Date(entry.at).toISOString(), of: id, source: entry.source, level: entry.level, text: entry.text })}\n`
+			)
+			.join('')
+	);
+	writeFileSync(
+		join(folder, 'logs.txt'),
+		entries.map((entry) => `${formatEntry(entry)}\n`).join('')
+	);
+	return { folder, screenshots: screenshots.length, logLines: entries.length };
+}
+
+/** What became of a closed session's screenshots, and how to keep them next time. */
+export function keptText(kept: Kept | undefined, how: string): string {
+	return kept
+		? `Its ${kept.screenshots} screenshot(s) and its log (${kept.logLines} lines) are kept in ${kept.folder}.`
+		: `Its screenshots and log were deleted; close with ${how} to keep them.`;
 }
 
 /** A session's logs (live with --follow), or a run's (by id, `latest`, or its folder). */

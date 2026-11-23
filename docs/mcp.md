@@ -158,6 +158,7 @@ steps are ignored.
 | --------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `session` | string, required | the session to close                                                                                                                                         |
 | `saveAs`  | string           | a flow file for the steps that worked: `flows/x.yaml` (`.yaml`, `.yml` or `.json`, inside the project, relative to the MCP server's folder, `FACETSHOT_CWD`) |
+| `keep`    | string           | a new or empty folder (relative to the same folder) to copy the session's screenshots and log into; without it they are deleted ([Sessions](sessions.md))    |
 
 ## Tool hints
 
