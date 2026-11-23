@@ -195,6 +195,12 @@ each <code dir="auto">shot</code> is a screenshot:</p>
 <td>waits until it is visible (up to 15 s)</td>
 </tr>
 <tr>
+<td>pause</td>
+<td><code dir="auto">wait: &lt;milliseconds&gt;</code></td>
+<td><code dir="auto">wait:500</code></td>
+<td>waits that long (a plain number; at most 60000)</td>
+</tr>
+<tr>
 <td>wait until gone</td>
 <td><code dir="auto">gone: &lt;element&gt;</code></td>
 <td><code dir="auto">gone:&lt;element&gt;</code></td>
@@ -329,13 +335,14 @@ folder.</li>
 </tr>
 <tr>
 <td>iOS simulator</td>
-<td><code dir="auto">click</code>/<code dir="auto">tap</code>, <code dir="auto">longpress</code> (and <code dir="auto">rightclick</code>, which becomes a long press), <code dir="auto">drag</code>, <code dir="auto">fill</code>, <code dir="auto">type</code>, <code dir="auto">wait</code>, <code dir="auto">gone</code>, <code dir="auto">scroll</code> by pixels (a swipe), <code dir="auto">goto</code> (<a href="/facetshot/ios/#flows">how</a>)</td>
+<td><code dir="auto">click</code>/<code dir="auto">tap</code>, <code dir="auto">longpress</code> (and <code dir="auto">rightclick</code>, which becomes a long press), <code dir="auto">drag</code>, <code dir="auto">fill</code>, <code dir="auto">type</code>, <code dir="auto">wait</code> for an element or a number of ms, <code dir="auto">gone</code>, <code dir="auto">scroll</code> by pixels (a swipe), <code dir="auto">goto</code> (<a href="/facetshot/ios/#flows">how</a>)</td>
 <td><code dir="auto">role=</code>, <code dir="auto">text=</code>, <code dir="auto">#id</code>, an accessibility label, a point</td>
 </tr>
 </tbody>
 </table>
 <p>On the iOS simulator, <code dir="auto">dblclick</code>, <code dir="auto">hover</code>, <code dir="auto">focus</code>, <code dir="auto">press</code>, <code dir="auto">select</code>, <code dir="auto">scroll</code> to an element, <code dir="auto">menu</code>, <code dir="auto">back</code>,
-<code dir="auto">forward</code> and <code dir="auto">reload</code> aren’t available. CSS selectors work only in pages (browsers, Electron, Tauri’s UI in WebKit).</p>
+<code dir="auto">forward</code> and <code dir="auto">reload</code> aren’t available, and <code dir="auto">wait</code> with a number isn’t a pause yet
+(<a href="/facetshot/status/#known-limits">status</a>). CSS selectors work only in pages (browsers, Electron, Tauri’s UI in WebKit).</p>
 <p>On apps, a point is in points from the top left of the window (Mac) or the screen (iOS). A flow for an app starts
 with <code dir="auto">start: app:/path</code>. A plain <code dir="auto">start: /path</code> also runs in the desktop app’s window when the config has a
 <code dir="auto">desktop</code> section, and only there when it has no <code dir="auto">web</code> section.</p>

@@ -227,18 +227,27 @@ command that asked for the run.</p>
 <p>Native Mac apps and Tauri’s real window take the same <a href="/facetshot/flows/#steps">steps</a> as a web page, in flows and in
 <a href="/facetshot/sessions/">sessions</a>, through macOS’s Accessibility interface:</p>
 <ul>
+<li>Before every step and every screenshot, the app is brought to the front and its window is made the key window,
+as a person’s click on it would. Controls then look active, and keys reach the element that has focus. If a menu
+or sheet is already open, the window is left as it is.</li>
 <li>A <code dir="auto">click</code>, <code dir="auto">tap</code> or <code dir="auto">rightclick</code> on an element (<code dir="auto">role=button[name="Save"]</code>, or a ref such as <code dir="auto">e12</code> in a session)
-uses the element’s own action, the one a screen reader would use. The pointer isn’t moved and the app doesn’t need
-to be in front. If the element offers no such action, or it fails (SwiftUI’s context menus do), facetshot clicks it
-for real instead.</li>
+uses the element’s own action, the one a screen reader would use. The pointer isn’t moved. If the element offers
+no such action, or it fails (SwiftUI’s context menus do), facetshot clicks it for real instead.</li>
 <li>Everything else that touches the screen is real input: a point (<code dir="auto">@120,80</code>, in points from the window’s top left),
-<code dir="auto">dblclick</code>, <code dir="auto">hover</code>, <code dir="auto">drag</code>, <code dir="auto">scroll</code>, and the keyboard (<code dir="auto">fill</code>, <code dir="auto">type</code>, <code dir="auto">press</code>). The app is brought to the front
-first, and the step fails if it doesn’t come to the front. A point outside the app’s window is refused. Pointer
-events go to whatever is on screen at that point, so don’t use the mouse while a step runs.</li>
+<code dir="auto">dblclick</code>, <code dir="auto">hover</code>, <code dir="auto">drag</code>, <code dir="auto">scroll</code>, and the keyboard (<code dir="auto">fill</code>, <code dir="auto">type</code>, <code dir="auto">press</code>). A pointer step fails if the app
+doesn’t come to the front; keys then go to the app’s own process instead. A point outside the app’s window is
+refused. Pointer events go to whatever is on screen at that point, so don’t use the mouse while a step runs.</li>
 <li><code dir="auto">fill</code> focuses the field, selects its text, and types, so the app sees the same key presses a person makes.</li>
 <li><code dir="auto">menu: File&gt;Export…</code> chooses from the app’s menu bar.</li>
-<li><code dir="auto">press</code> knows the letters, digits, punctuation, arrows, Enter, Escape, Tab, Space, Backspace, Delete, Home, End and
-Page Up/Down, with Shift, Control, Alt and Meta; not the function keys.</li>
+<li><code dir="auto">press</code> knows the letters, digits, punctuation, arrows, Enter, Escape, Tab, Space, Backspace, Delete, Home, End,
+Page Up/Down and F1 to F12, with Shift, Control, Alt and Meta (also written <code dir="auto">Cmd</code>). Keys are sent to the key window,
+so <code dir="auto">press:Enter</code> and <code dir="auto">press:Tab</code> reach a text view. A shortcut with Meta that an item in the app’s menu bar lists
+(<code dir="auto">press:Meta+N</code> for File &gt; New) chooses that item; one no menu item lists is sent as a key press.</li>
+<li><code dir="auto">wait:500</code> (a plain number) pauses that many milliseconds, as everywhere.</li>
+<li>The element list and <code dir="auto">--tree</code> are read from the app’s accessibility tree, up to 4000 elements, 60 levels deep, the
+first 500 children of any one element, and 20 seconds. A very large custom view (a canvas, a chart with thousands
+of parts) is cut at those limits, and the tree ends with a line in parentheses that says what was left out.
+Elements that report something unreadable are listed without it.</li>
 </ul>
 <p>An element is named by a ref, <code dir="auto">role=&lt;role&gt;[name="…"]</code>, <code dir="auto">text=…</code>, <code dir="auto">label=…</code>, <code dir="auto">title=…</code> or a point. Roles use the web’s
 names (<code dir="auto">button</code>, <code dir="auto">textbox</code>, <code dir="auto">checkbox</code>, <code dir="auto">menuitem</code>…). Unlike the web, <code dir="auto">text=</code> and the others match the whole name

@@ -167,6 +167,11 @@ by a point, long presses (and right-clicks, which become long presses), drags, a
 but haven’t been run on a simulator yet. There is no automated iOS test.</p>
 </li>
 <li>
+<p><strong>iOS flow changes, not yet run on a simulator:</strong> typed text keeps its line breaks (a <code dir="auto">\n</code> presses Return),
+<code dir="auto">wait:500</code> pauses, and the flow driver’s simulators shut down after <code dir="auto">FACETSHOT_SIMULATOR_IDLE_MINUTES</code> (idle ones
+first under memory pressure). The same shutdown for the SwiftUI driver’s simulator was run by hand.</p>
+</li>
+<li>
 <p><strong>Sessions</strong> don’t open iOS simulators or Storybook stories yet. Use <a href="/facetshot/flows/">flows</a> for those.</p>
 </li>
 <li>
@@ -177,6 +182,12 @@ not affected.</p>
 <li>
 <p><strong>Tauri’s real window</strong> was run by hand on macOS: a flow pressed a link through Accessibility, and the Rust side’s
 <code dir="auto">println!</code> came back in the logs. No automated test covers it.</p>
+</li>
+<li>
+<p><strong>Mac keys and focus:</strong> <code dir="auto">press:Enter</code> and <code dir="auto">press:Tab</code> into a SwiftUI text editor, a menu shortcut
+(<code dir="auto">press:Meta+N</code>), bringing the window to the front and a window with an 800-child custom view are covered by
+<code dir="auto">test/mac.test.ts</code> on macOS 27. A shortcut no menu item lists is sent as a key press to the key window; that path
+was run by hand on the same app, not in a test. AppKit apps other than the SwiftUI fixture haven’t been tried.</p>
 </li>
 <li>
 <p><strong>Mac permissions:</strong> steps and sessions in Mac windows need Accessibility, and resizing a window from outside needs

@@ -335,7 +335,8 @@ adds it without asking). See
 <div class="sl-heading-wrapper level-h2"><h2 id="doctor"><code dir="auto">doctor</code></h2><a class="sl-anchor-link" href="#doctor"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “doctor”</span></a></div>
 <p>Checks the browsers, the config, the ports it asks for, Xcode and simulators when you use Apple targets, Electron
 when you use it, locks held by other builds, and the background helper, and gives the command that fixes each
-problem.</p>
+problem. For a port that is in use, it names the process listening there and, when the background helper started
+it, for which project.</p>
 <div class="sl-heading-wrapper level-h2"><h2 id="baseline"><code dir="auto">baseline</code></h2><a class="sl-anchor-link" href="#baseline"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “baseline”</span></a></div>
 <p><code dir="auto">save &lt;name&gt;</code> copies your latest run to <code dir="auto">.facetshot/baselines/&lt;name&gt;</code>; <code dir="auto">list</code> shows the saved baselines; <code dir="auto">rm &lt;name&gt;</code>
 removes one.</p>
@@ -373,7 +374,7 @@ all of them.</p>
 </tr>
 <tr>
 <td><code dir="auto">close &lt;id&gt;</code></td>
-<td><code dir="auto">--save &lt;file&gt;</code>: write the steps that worked as a flow (<code dir="auto">.yaml</code>, <code dir="auto">.yml</code> or <code dir="auto">.json</code>, inside the project folder)</td>
+<td><code dir="auto">--save &lt;file&gt;</code>: write the steps that worked as a flow (<code dir="auto">.yaml</code>, <code dir="auto">.yml</code> or <code dir="auto">.json</code>, inside the project folder); <code dir="auto">--keep &lt;folder&gt;</code>: copy the screenshots and log there first</td>
 </tr>
 </tbody>
 </table>
@@ -437,6 +438,10 @@ summary lists them under “Taken before the screen settled”. To fail a CI job
 <tr>
 <td><code dir="auto">FACETSHOT_IDLE_MINUTES</code></td>
 <td>how long the background helper waits without work before it stops (default 15)</td>
+</tr>
+<tr>
+<td><code dir="auto">FACETSHOT_SIMULATOR_IDLE_MINUTES</code></td>
+<td>how long a simulator stays booted after its last screenshot (default 3); a booted iOS simulator holds 10 GB or more</td>
 </tr>
 <tr>
 <td><code dir="auto">FACETSHOT_SESSION_IDLE_MINUTES</code></td>
