@@ -32,7 +32,7 @@ import { listFiles } from '../engine/cache.ts';
 import { withLock } from '../engine/lock.ts';
 import { exec, launch, runToEnd, sleep, stopGroup, tail, within } from '../engine/procs.ts';
 import { EnvironmentError, firstLine, UsageError } from '../errors.ts';
-import { loadFlow, shotNames, type Step } from '../flows.ts';
+import { loadFlow, pause, shotNames, type Step } from '../flows.ts';
 import { matcher, parseNodes } from './mac-ui.ts';
 import {
 	appEnv,
@@ -648,6 +648,9 @@ export class IosSimulatorDriver implements Driver {
 		open: (address: string) => Promise<void>
 	): Promise<void> {
 		if ('goto' in step) return open(step.goto);
+		// A bare number is a pause in milliseconds, as on the web and in Mac windows.
+		const ms = pause(step);
+		if (ms !== undefined) return sleep(ms);
 		const runner = sim.runner;
 		if (!runner) throw new Error("this step needs the XCUITest runner, which isn't running");
 		const send = async (...words: string[]) => void (await runner.send(words));

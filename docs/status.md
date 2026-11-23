@@ -33,18 +33,15 @@ there yet. Reports are welcome. No [CI](ci.md) provider has been tried yet.
 - **New iOS steps, not yet run on a simulator:** steps that name an element by role (`role=button[name="Save"]`) or
   by a point, long presses (and right-clicks, which become long presses), drags, and the app's system log are written
   but haven't been run on a simulator yet. There is no automated iOS test.
-- **Simulator shutdown and iOS typing, not yet run on a simulator:** simulators shut down after
-  `FACETSHOT_SIMULATOR_IDLE_MINUTES` (and idle ones first under memory pressure), the SwiftUI driver's simulator is
-  now shut down too, and typed text keeps its line breaks (a `\n` presses Return). These are written but haven't been
-  run end to end on a simulator yet.
+- **iOS flow changes, not yet run on a simulator:** typed text keeps its line breaks (a `\n` presses Return),
+  `wait:500` pauses, and the flow driver's simulators shut down after `FACETSHOT_SIMULATOR_IDLE_MINUTES` (idle ones
+  first under memory pressure). The same shutdown for the SwiftUI driver's simulator was run by hand.
 - **Sessions** don't open iOS simulators or Storybook stories yet. Use [flows](flows.md) for those.
 - **Flutter on macOS:** Flutter 3.24's own build tool fails `flutter build macos` with recent Xcode versions (it
   misreads `lipo`'s output), so a Flutter Mac app hasn't been run end to end. Use a newer Flutter; the web build is
   not affected.
 - **Tauri's real window** was run by hand on macOS: a flow pressed a link through Accessibility, and the Rust side's
   `println!` came back in the logs. No automated test covers it.
-- **`wait` with a number on iOS:** `wait:500` pauses on web pages and in Mac windows; on the iOS simulator it is
-  still read as an accessibility label to wait for, and fails after 15 s.
 - **Mac keys and focus:** `press:Enter` and `press:Tab` into a SwiftUI text editor, a menu shortcut
   (`press:Meta+N`), bringing the window to the front and a window with an 800-child custom view are covered by
   `test/mac.test.ts` on macOS 27. A shortcut no menu item lists is sent as a key press to the key window; that path

@@ -57,11 +57,11 @@ On an iOS simulator: `role=…[name=…]`, `text=`, `#identifier`, a plain acces
 
 ## Which steps work where
 
-| Where                                                | Steps                                                                                                                                                                                            |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Web pages, Electron, Tauri's frontend, Storybook     | all; `menu` only in Electron (its menu bar)                                                                                                                                                      |
-| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward` and `reload`; `menu` uses the menu bar                                                                                                                    |
-| iOS simulator                                        | `click`/`tap`, `longpress` and `rightclick` (both a long press, the context menu), `drag`, `fill`, `type`, `wait` for an element (not a pause yet), `gone`, `scroll` by pixels (a swipe), `goto` |
+| Where                                                | Steps                                                                                                                                                                                           |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web pages, Electron, Tauri's frontend, Storybook     | all; `menu` only in Electron (its menu bar)                                                                                                                                                     |
+| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward` and `reload`; `menu` uses the menu bar                                                                                                                   |
+| iOS simulator                                        | `click`/`tap`, `longpress` and `rightclick` (both a long press, the context menu), `drag`, `fill`, `type`, `wait` for an element or a pause in ms, `gone`, `scroll` by pixels (a swipe), `goto` |
 
 In a Mac window, every step first brings the app to the front and makes its window key, so keys reach the focused
 element. A step on an element uses the element's own accessibility action (press, show menu) where it has one, so
