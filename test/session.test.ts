@@ -60,7 +60,8 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 
 		const textOnly = await client.callTool({
 			name: 'act',
-			arguments: { session: id, screenshot: false, tree: true }
+			// A number waits that many milliseconds, here and in the saved flow's replay.
+			arguments: { session: id, steps: ['wait:200'], screenshot: false, tree: true }
 		});
 		expect((textOnly.content as { type: string }[]).every((part) => part.type === 'text')).toBe(
 			true
@@ -94,6 +95,7 @@ test('a session is opened, worked step by step and saved as a flow', async () =>
 		const saved = readFileSync(flow, 'utf8');
 		expect(saved).toContain('role=button[name="Open dialog"');
 		expect(saved).not.toContain('Not there');
+		expect(saved).toContain('wait: "200"');
 	} finally {
 		await client.close();
 	}

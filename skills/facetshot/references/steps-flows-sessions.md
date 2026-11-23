@@ -26,6 +26,7 @@ The same steps are used in flow files, in MCP `steps` and `act`, and on the comm
 | select                | `select: <element>` + `option: <value>`   | `select:<element>=<value>`                               | picks an option in a `<select>`                               |
 | scroll                | `scroll: <pixels>` / `<element>` (+ `by`) | `scroll:600`, `scroll:<element>`, `scroll:<element>=400` | scrolls the page, to an element, or inside it                 |
 | wait                  | `wait: <element>`                         | `wait:<element>`                                         | waits until it is visible (up to 15 s)                        |
+| pause                 | `wait: <milliseconds>`                    | `wait:500`                                               | waits that long (a plain number; at most 60000)               |
 | wait until gone       | `gone: <element>`                         | `gone:<element>`                                         | waits until it is hidden (up to 15 s)                         |
 | go to                 | `goto: <path>`                            | `goto:<path>`                                            | opens another address                                         |
 | back, forward, reload | `back` or `back: true`                    | `back`                                                   | the browser's buttons                                         |
@@ -56,17 +57,20 @@ On an iOS simulator: `role=…[name=…]`, `text=`, `#identifier`, a plain acces
 
 ## Which steps work where
 
-| Where                                                | Steps                                                                                                                                                           |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web pages, Electron, Tauri's frontend, Storybook     | all; `menu` only in Electron (its menu bar)                                                                                                                     |
-| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward` and `reload`; `menu` uses the menu bar                                                                                   |
-| iOS simulator                                        | `click`/`tap`, `longpress` and `rightclick` (both a long press, the context menu), `drag`, `fill`, `type`, `wait`, `gone`, `scroll` by pixels (a swipe), `goto` |
+| Where                                                | Steps                                                                                                                                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web pages, Electron, Tauri's frontend, Storybook     | all; `menu` only in Electron (its menu bar)                                                                                                                                                      |
+| Native Mac apps (Flutter's too), Tauri's real window | all but `longpress`, `back`, `forward` and `reload`; `menu` uses the menu bar                                                                                                                    |
+| iOS simulator                                        | `click`/`tap`, `longpress` and `rightclick` (both a long press, the context menu), `drag`, `fill`, `type`, `wait` for an element (not a pause yet), `gone`, `scroll` by pixels (a swipe), `goto` |
 
-In a Mac window a step on an element uses the element's own accessibility action (press, show menu) where it has
-one, so the pointer isn't moved. A point, a drag, a hover, a double-click, scrolling and typing are real input:
-the app is brought to the front first, and the step fails rather than reach another app if it can't be. A point
-outside the window is refused. `press` knows letters, digits, punctuation, arrows, Enter, Escape, Tab, Space,
-Backspace, Delete, Home, End and Page Up/Down, with Shift, Meta, Control and Alt.
+In a Mac window, every step first brings the app to the front and makes its window key, so keys reach the focused
+element. A step on an element uses the element's own accessibility action (press, show menu) where it has one, so
+the pointer isn't moved. A point, a drag, a hover, a double-click, scrolling and typing are real input, and the step
+fails rather than reach another app if the app can't come to the front. A point outside the window is refused.
+`press` knows letters, digits, punctuation, arrows, Enter, Escape, Tab, Space, Backspace, Delete, Home, End, Page
+Up/Down and F1 to F12, with Shift, Meta (Cmd), Control and Alt. A shortcut with Meta that the app's menu bar lists
+(`press:Meta+N`) chooses that menu item. In a window with a very large custom view, the element list stops at a
+limit and says what it left out.
 
 The iOS steps by role or point, long press and drag are new and haven't been run on every setup; if one fails in
 a way that looks like facetshot's fault, say so rather than working around it.

@@ -61,6 +61,7 @@ The second column is how a step is written in a flow file; the third is the same
 | scroll to an element     | `scroll: <element>`                     | `scroll:<element>`          | scrolls the element into view                                    |
 | scroll inside an element | `scroll: <element>` + `by: <pixels>`    | `scroll:<element>=<pixels>` | scrolls inside a scrollable element                              |
 | wait                     | `wait: <element>`                       | `wait:<element>`            | waits until it is visible (up to 15 s)                           |
+| pause                    | `wait: <milliseconds>`                  | `wait:500`                  | waits that long (a plain number; at most 60000)                  |
 | wait until gone          | `gone: <element>`                       | `gone:<element>`            | waits until it is hidden (up to 15 s)                            |
 | go to                    | `goto: <path>`                          | `goto:<path>`               | opens another address                                            |
 | back, forward, reload    | `back` or `back: true`                  | `back`                      | the browser's buttons                                            |
@@ -134,14 +135,15 @@ The contact sheet then shows how far the flow got on each device.
 
 The same flow file works outside the browser. This table is the one place that says which steps work where:
 
-| Where                                | Steps that work                                                                                                                                                               | Elements named by                                                                         |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Electron, Tauri's UI in WebKit       | every step, as in a browser; `menu:` in Electron                                                                                                                              | everything above                                                                          |
-| Native Mac apps, Tauri's real window | every step but `longpress`, `back`, `forward` and `reload` ([how each is done](desktop.md#steps-in-a-mac-window))                                                             | `role=`, `text=`, `label=`, `title=` (the whole name, any case), a point, a session's ref |
-| iOS simulator                        | `click`/`tap`, `longpress` (and `rightclick`, which becomes a long press), `drag`, `fill`, `type`, `wait`, `gone`, `scroll` by pixels (a swipe), `goto` ([how](ios.md#flows)) | `role=`, `text=`, `#id`, an accessibility label, a point                                  |
+| Where                                | Steps that work                                                                                                                                                                              | Elements named by                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Electron, Tauri's UI in WebKit       | every step, as in a browser; `menu:` in Electron                                                                                                                                             | everything above                                                                          |
+| Native Mac apps, Tauri's real window | every step but `longpress`, `back`, `forward` and `reload` ([how each is done](desktop.md#steps-in-a-mac-window))                                                                            | `role=`, `text=`, `label=`, `title=` (the whole name, any case), a point, a session's ref |
+| iOS simulator                        | `click`/`tap`, `longpress` (and `rightclick`, which becomes a long press), `drag`, `fill`, `type`, `wait` for an element, `gone`, `scroll` by pixels (a swipe), `goto` ([how](ios.md#flows)) | `role=`, `text=`, `#id`, an accessibility label, a point                                  |
 
 On the iOS simulator, `dblclick`, `hover`, `focus`, `press`, `select`, `scroll` to an element, `menu`, `back`,
-`forward` and `reload` aren't available. CSS selectors work only in pages (browsers, Electron, Tauri's UI in WebKit).
+`forward` and `reload` aren't available, and `wait` with a number isn't a pause yet
+([status](status.md#known-limits)). CSS selectors work only in pages (browsers, Electron, Tauri's UI in WebKit).
 
 On apps, a point is in points from the top left of the window (Mac) or the screen (iOS). A flow for an app starts
 with `start: app:/path`. A plain `start: /path` also runs in the desktop app's window when the config has a

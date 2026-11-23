@@ -97,6 +97,20 @@ async function capture(finder: string, pid: number, file: string): Promise<void>
 	await exec('screencapture', ['-x', '-o', '-l', String(window.id), file]);
 }
 
+/**
+ * Brings a process to the front and makes its largest window main and key (`front`), or says it couldn't
+ * (`behind`). Left alone when it already is, so an open menu stays open. Never fails: a window that can't be raised
+ * is still captured, as it is.
+ */
+export async function raise(finder: string, pid: number): Promise<boolean> {
+	try {
+		const { stdout } = await exec(finder, ['raise', String(pid)], { timeout: 10_000 });
+		return stdout.trim() === 'front';
+	} catch {
+		return false;
+	}
+}
+
 export interface Launched {
 	pid: number;
 	/** Whether the app wrote its ready file in time; undefined when it isn't asked to. */
@@ -337,6 +351,9 @@ export async function shootMacWindow(
 		notes.push(
 			`The app didn't write its ready file within ${READY_TIMEOUT / 1000} s; shot when the window stopped changing.`
 		);
+	// A window that isn't key draws its controls inactive: the screenshot is of the window as a person using it sees it.
+	if (!(await raise(finder, running.pid)))
+		notes.push("The app didn't come to the front, so its window may look inactive.");
 	if (running.ready === undefined) await sleep(500);
 	const settled = await settle((to) => capture(finder, running.pid, to), file, {
 		cap: running.ready ? 3000 : 8000,

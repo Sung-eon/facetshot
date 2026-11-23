@@ -5,12 +5,13 @@
  * Elements are named as on the web: a ref from the latest list (`e12`), `role=button[name="Save"]`, `text=Save`,
  * `label=Name`, or a point on the screenshot (`@120,80`, in points from the window's top left). A step on an element
  * uses its Accessibility action where it has one (press, show menu), so the pointer is left alone; a point, a drag,
- * a hover and typing are real input, and bring the app to the front.
+ * a hover and typing are real input. Before every step the app is brought to the front with its window key, so keys
+ * reach the focused element and the menu bar, and focus-dependent drawing looks active.
  */
 import { exec, sleep } from '../engine/procs.ts';
-import type { Step } from '../flows.ts';
+import { pause, type Step } from '../flows.ts';
 import type { OnScreen } from '../session.ts';
-import { helper, windows, type Window } from './macos.ts';
+import { helper, raise, windows, type Window } from './macos.ts';
 
 /** One element as the helper reports it: Accessibility's names, screen points. */
 export interface AxNode {
@@ -31,12 +32,166 @@ export interface AxNode {
 	actions?: string[];
 }
 
-/** A tree as the helpers write it, one JSON object per line (the Mac helper and the iOS runner alike). */
+/**
+ * A tree as the helpers write it, one JSON object per line (the Mac helper and the iOS runner alike), with the notes
+ * the helper adds when it leaves part of the tree out (`{"note": …}`). A line that isn't a whole element (output cut
+ * short) is skipped, so a partial tree still reads.
+ */
+export function parseTree(text: string): { nodes: AxNode[]; notes: string[] } {
+	const nodes: AxNode[] = [];
+	const notes: string[] = [];
+	let skipped = 0;
+	for (const line of text.split('\n')) {
+		if (!line.trim()) continue;
+		let value: unknown;
+		try {
+			value = JSON.parse(line);
+		} catch {
+			skipped += 1;
+			continue;
+		}
+		const each = value as Partial<AxNode> & { note?: unknown };
+		if (typeof each.note === 'string') notes.push(each.note);
+		else if (typeof each.path === 'string' && typeof each.role === 'string')
+			nodes.push({ ...each, name: typeof each.name === 'string' ? each.name : '' } as AxNode);
+		else skipped += 1;
+	}
+	if (skipped)
+		notes.push(`${skipped} line${skipped === 1 ? '' : 's'} of the tree couldn't be read.`);
+	return { nodes, notes };
+}
+
 export function parseNodes(text: string): AxNode[] {
-	return text
-		.split('\n')
-		.filter(Boolean)
-		.map((line) => JSON.parse(line) as AxNode);
+	return parseTree(text).nodes;
+}
+
+/** A key as the Mac helper sends it: its virtual key code, the modifiers held, and the character it types. */
+export interface MacKey {
+	code: number;
+	modifiers: ('command' | 'shift' | 'alt' | 'control')[];
+	character: string;
+}
+
+/** Virtual key codes of a US keyboard layout, by the names Playwright gives keys (lowercased). */
+const KEY_CODES: Record<string, number> = {
+	enter: 36,
+	return: 36,
+	tab: 48,
+	space: 49,
+	' ': 49,
+	backspace: 51,
+	delete: 117,
+	escape: 53,
+	esc: 53,
+	arrowleft: 123,
+	arrowright: 124,
+	arrowdown: 125,
+	arrowup: 126,
+	home: 115,
+	end: 119,
+	pageup: 116,
+	pagedown: 121,
+	f1: 122,
+	f2: 120,
+	f3: 99,
+	f4: 118,
+	f5: 96,
+	f6: 97,
+	f7: 98,
+	f8: 100,
+	f9: 101,
+	f10: 109,
+	f11: 103,
+	f12: 111,
+	a: 0,
+	s: 1,
+	d: 2,
+	f: 3,
+	h: 4,
+	g: 5,
+	z: 6,
+	x: 7,
+	c: 8,
+	v: 9,
+	b: 11,
+	q: 12,
+	w: 13,
+	e: 14,
+	r: 15,
+	y: 16,
+	t: 17,
+	'1': 18,
+	'2': 19,
+	'3': 20,
+	'4': 21,
+	'6': 22,
+	'5': 23,
+	'=': 24,
+	'9': 25,
+	'7': 26,
+	'-': 27,
+	'8': 28,
+	'0': 29,
+	']': 30,
+	o: 31,
+	u: 32,
+	'[': 33,
+	i: 34,
+	p: 35,
+	l: 37,
+	j: 38,
+	"'": 39,
+	k: 40,
+	';': 41,
+	'\\': 42,
+	',': 43,
+	'/': 44,
+	n: 45,
+	m: 46,
+	'.': 47,
+	'`': 50
+};
+const MODIFIERS: Record<string, MacKey['modifiers'][number]> = {
+	meta: 'command',
+	cmd: 'command',
+	command: 'command',
+	controlormeta: 'command',
+	shift: 'shift',
+	alt: 'alt',
+	option: 'alt',
+	control: 'control',
+	ctrl: 'control'
+};
+
+/** A `press` value (`Enter`, `Shift+Meta+K`, `Cmd+N`, `KeyA`, `Digit1`) as the key the Mac helper sends. */
+export function macKey(combo: string): MacKey {
+	const modifiers = new Set<MacKey['modifiers'][number]>();
+	let key: string | undefined;
+	// "+" on its own is the plus key; "Meta++" ends in it.
+	const parts =
+		combo.trim() === '+'
+			? ['+']
+			: combo.endsWith('++')
+				? [...combo.slice(0, -2).split('+'), '+']
+				: combo.split('+');
+	for (const raw of parts) {
+		const part = raw.trim().toLowerCase();
+		if (MODIFIERS[part]) modifiers.add(MODIFIERS[part]);
+		else if (key !== undefined)
+			throw new Error(`"${combo}" names two keys; press takes one key and its modifiers.`);
+		else key = part.replace(/^key([a-z])$/, '$1').replace(/^digit(\d)$/, '$1');
+	}
+	if (key === '+') {
+		modifiers.add('shift');
+		key = '=';
+	}
+	if (key === undefined) throw new Error(`"${combo}" names no key, only modifiers.`);
+	const code = KEY_CODES[key];
+	if (code === undefined) throw new Error(`"${key}" isn't a key facetshot knows on a Mac.`);
+	// The character, for keys that type one: what a menu shortcut is listed by.
+	const character = key.length === 1 ? key : key === 'space' ? ' ' : '';
+	const order = ['command', 'shift', 'alt', 'control'] as const;
+	return { code, modifiers: order.filter((each) => modifiers.has(each)), character };
 }
 
 const WINDOW_BUTTONS: Record<string, string> = {
@@ -113,6 +268,8 @@ const ACTIONABLE = new Set([
 export interface MacScreen {
 	window: Window;
 	nodes: AxNode[];
+	/** What the helper left out of the tree, and why (a very large view, an app slow to answer). */
+	notes: string[];
 }
 
 /** A Mac app's window, by process: reads it and acts on it. */
@@ -122,11 +279,12 @@ export class MacUi {
 
 	private constructor(
 		private readonly finder: string,
-		readonly pid: number
+		readonly pid: number,
+		private readonly log: (message: string) => void
 	) {}
 
-	static async of(pid: number, log?: (message: string) => void): Promise<MacUi> {
-		return new MacUi(await helper(log), pid);
+	static async of(pid: number, log: (message: string) => void = () => {}): Promise<MacUi> {
+		return new MacUi(await helper(log), pid, log);
 	}
 
 	private async run(args: string[], timeout = 20_000): Promise<string> {
@@ -146,9 +304,33 @@ export class MacUi {
 		return window;
 	}
 
+	/** Brings the app to the front and makes its window key, as a person's click on it would. */
+	async front(): Promise<void> {
+		await raise(this.finder, this.pid);
+	}
+
 	async screen(): Promise<MacScreen> {
-		const [window, text] = await Promise.all([this.window(), this.run(['tree'], 30_000)]);
-		return { window, nodes: parseNodes(text) };
+		const [window, text] = await Promise.all([this.window(), this.readTree()]);
+		const { nodes, notes } = parseTree(text);
+		for (const note of notes) this.log(`Accessibility tree: ${note}`);
+		return { window, nodes, notes };
+	}
+
+	/** The tree as the helper wrote it; if the helper stops partway, what it wrote before, with a note why. */
+	private async readTree(): Promise<string> {
+		try {
+			return (await exec(this.finder, ['tree', String(this.pid)], { timeout: 30_000 })).stdout;
+		} catch (error) {
+			const { stdout, stderr, signal, code } = error as {
+				stdout?: string;
+				stderr?: string;
+				signal?: string;
+				code?: number | string;
+			};
+			if (!stdout?.trim()) throw new Error(stderr?.trim() || (error as Error).message);
+			const why = signal ? `stopped by ${signal}` : `exit ${code}`;
+			return `${stdout}\n${JSON.stringify({ note: `The helper stopped while reading the window (${why}); this is what it read before.` })}`;
+		}
 	}
 
 	/** What can be acted on, with fresh refs, at points on the window's screenshot. */
@@ -208,13 +390,15 @@ export class MacUi {
 
 	/** The window's whole tree as indented text: everything it says, for `--tree`. */
 	tree(screen: MacScreen): string {
-		return screen.nodes
-			.filter((node) => node.name || node.value || ACTIONABLE.has(roleOf(node)))
-			.map(
-				(node) =>
-					`${'  '.repeat(node.depth)}- ${roleOf(node)}${node.name ? ` "${node.name}"` : ''}${node.value ? `: ${node.value}` : ''}`
-			)
-			.join('\n');
+		return [
+			...screen.nodes
+				.filter((node) => node.name || node.value || ACTIONABLE.has(roleOf(node)))
+				.map(
+					(node) =>
+						`${'  '.repeat(node.depth)}- ${roleOf(node)}${node.name ? ` "${node.name}"` : ''}${node.value ? `: ${node.value}` : ''}`
+				),
+			...screen.notes.map((note) => `(${note})`)
+		].join('\n');
 	}
 
 	/** The element a step names, found in the window as it is now. */
@@ -269,8 +453,16 @@ export class MacUi {
 
 	/** Does one step (anything but `shot` and `goto`, which the driver handles). */
 	async step(step: Step): Promise<void> {
+		const ms = pause(step);
+		if (ms !== undefined) return sleep(ms);
+		// Keys go to the key window and actions to what has focus: the app's window has to be both, as for a person.
+		await this.front();
 		const real = (command: string, ...values: (number | string)[]) =>
 			this.run([command, ...values.map(String)]);
+		const key = (combo: string) => {
+			const { code, modifiers, character } = macKey(combo);
+			return real('key', code, modifiers.join(','), character);
+		};
 		const press = async (target: string, action: 'AXPress' | 'AXShowMenu') => {
 			if (!this.isPoint(target)) {
 				const { node } = await this.find(target);
@@ -305,11 +497,11 @@ export class MacUi {
 			// Typed, not set: the app sees the same key presses a person makes, so its own bindings update.
 			const { node } = await this.find(step.fill);
 			await this.action(node, 'focus');
-			await real('key', 'Meta+A');
+			await key('Meta+A');
 			if (step.with) await real('type', step.with);
-			else await real('key', 'Backspace');
+			else await key('Backspace');
 		} else if ('type' in step) await real('type', step.type);
-		else if ('press' in step) await real('key', step.press);
+		else if ('press' in step) await key(step.press);
 		else if ('select' in step) {
 			const { node } = await this.find(step.select);
 			await this.action(node, 'AXPress');

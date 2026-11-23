@@ -4,14 +4,21 @@
 //   check                       `granted` if this process may record the screen (and so screenshot a window)
 //   trusted                     `granted` if it may use Accessibility (read and press another app's controls)
 //   <pid>                       the process's windows on screen, one per line: `<id> <width> <height> <x> <y>`, largest last
-//   tree <pid>                  its main window, open menus and sheets as JSON lines, one per element, depth first
+//   raise <pid>                 brings the app to the front and makes its largest window main and key; prints
+//                               `front` or `behind` (needs Accessibility for the window part, not for the app part)
+//   tree <pid>                  its main window, open menus and sheets as JSON lines, one per element, depth first;
+//                               bounded in depth, count and time, and a last `{"note": …}` line says what was left out
 //   do <pid> <path> <action> [role] [name]
 //                               an Accessibility action (AXPress, AXShowMenu, AXConfirm, AXIncrement…) on an element,
 //                               or `focus`; role and name find it again if the path has moved
 //   set <pid> <path> <value> [role] [name]   sets an element's value (a text field's text, a checkbox's state)
 //   menubar <pid> <File>Export…>  chooses an item in the app's menu bar
 //   click <pid> <x> <y> [left|right] [count]   a real click at a point on the screen (the app comes to the front)
-//   move <pid> <x> <y>  ·  drag <pid> <x1> <y1> <x2> <y2>  ·  scroll <pid> <x> <y> <dy>  ·  type <pid> <text>  ·  key <pid> <Shift+Meta+K>
+//   move <pid> <x> <y>  ·  drag <pid> <x1> <y1> <x2> <y2>  ·  scroll <pid> <x> <y> <dy>  ·  type <pid> <text>
+//   key <pid> <code> <modifiers> <character>
+//                               a key press: its virtual key code, modifiers as `command,shift,alt,control` (or empty),
+//                               and the character it types (or empty). A shortcut with Command that the app's menu bar
+//                               lists chooses that menu item; anything else is a real key press sent to the key window
 //
 // Points are the screen's, in points, from its top left: what Accessibility reports.
 import AppKit
@@ -24,7 +31,7 @@ func fail(_ message: String, _ code: Int32 = 1) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
     exit(code)
 }
-guard let command = arguments.first else { fail("usage: mac-helper check | trusted | <pid> | tree <pid> | do … | set … | menubar … | click … | drag … | scroll … | type … | key …", 2) }
+guard let command = arguments.first else { fail("usage: mac-helper check | trusted | <pid> | raise <pid> | tree <pid> | do … | set … | menubar … | click … | drag … | scroll … | type … | key …", 2) }
 
 // MARK: Windows
 
@@ -52,37 +59,134 @@ if let pid = Int(command), arguments.count == 1 {
 }
 
 // MARK: Accessibility
+//
+// Another app's elements answer whatever they like: an attribute can fail, time out, or hold a type nobody expects
+// (a custom view's children array with something other than elements in it). Every read below checks the type it
+// gets and treats anything else as missing, so one odd element never stops the helper.
 
 guard arguments.count >= 2, let pidValue = Int32(arguments[1]) else { fail("\(command) needs a pid", 2) }
 let pid: pid_t = pidValue
+
+func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
+    var value: AnyObject?
+    return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
+}
+func isElement(_ value: AnyObject?) -> Bool {
+    guard let value else { return false }
+    return CFGetTypeID(value) == AXUIElementGetTypeID()
+}
+/** The elements in a CF array, skipping anything that isn't one (never a cast that can trap on a stray value). */
+func elements(in value: AnyObject?) -> [AXUIElement] {
+    guard let value, CFGetTypeID(value) == CFArrayGetTypeID() else { return [] }
+    let array = value as! CFArray
+    var out: [AXUIElement] = []
+    for index in 0..<CFArrayGetCount(array) {
+        guard let raw = CFArrayGetValueAtIndex(array, index) else { continue }
+        let item = Unmanaged<AnyObject>.fromOpaque(raw).takeUnretainedValue()
+        if CFGetTypeID(item) == AXUIElementGetTypeID() { out.append(item as! AXUIElement) }
+    }
+    return out
+}
+/** The strings in a CF array, skipping anything else. */
+func strings(in value: AnyObject?) -> [String] {
+    guard let value, CFGetTypeID(value) == CFArrayGetTypeID() else { return [] }
+    let array = value as! CFArray
+    var out: [String] = []
+    for index in 0..<CFArrayGetCount(array) {
+        guard let raw = CFArrayGetValueAtIndex(array, index) else { continue }
+        let item = Unmanaged<AnyObject>.fromOpaque(raw).takeUnretainedValue()
+        if CFGetTypeID(item) == CFStringGetTypeID() { out.append(item as! String) }
+    }
+    return out
+}
+/** An element's children, at most `limit` of them, and how many it says it has. */
+func children(_ element: AXUIElement, limit: Int) -> (list: [AXUIElement], total: Int) {
+    var count: CFIndex = 0
+    if AXUIElementGetAttributeValueCount(element, kAXChildrenAttribute as CFString, &count) == .success, count > limit {
+        var values: CFArray?
+        guard AXUIElementCopyAttributeValues(element, kAXChildrenAttribute as CFString, 0, limit, &values) == .success else { return ([], count) }
+        return (elements(in: values), count)
+    }
+    let list = elements(in: attribute(element, kAXChildrenAttribute))
+    return (list, list.count)
+}
+func children(_ element: AXUIElement) -> [AXUIElement] { children(element, limit: 100_000).list }
+func flag(_ element: AXUIElement, _ name: String) -> Bool? {
+    guard let value = attribute(element, name), CFGetTypeID(value) == CFBooleanGetTypeID() else { return nil }
+    return CFBooleanGetValue((value as! CFBoolean))
+}
+func string(_ value: AnyObject?) -> String? {
+    guard let value else { return nil }
+    if CFGetTypeID(value) == CFStringGetTypeID() {
+        let text = value as! String
+        return text.isEmpty ? nil : text
+    }
+    if CFGetTypeID(value) == CFNumberGetTypeID() || CFGetTypeID(value) == CFBooleanGetTypeID() {
+        let number = value as! NSNumber
+        return number.doubleValue.isFinite ? number.stringValue : nil
+    }
+    return nil
+}
+func point(_ value: AnyObject?) -> CGPoint? {
+    guard let value, CFGetTypeID(value) == AXValueGetTypeID(), AXValueGetType(value as! AXValue) == .cgPoint else { return nil }
+    var point = CGPoint.zero
+    return AXValueGetValue(value as! AXValue, .cgPoint, &point) && point.x.isFinite && point.y.isFinite ? point : nil
+}
+func size(_ value: AnyObject?) -> CGSize? {
+    guard let value, CFGetTypeID(value) == AXValueGetTypeID(), AXValueGetType(value as! AXValue) == .cgSize else { return nil }
+    var size = CGSize.zero
+    return AXValueGetValue(value as! AXValue, .cgSize, &size) && size.width.isFinite && size.height.isFinite ? size : nil
+}
+
+/** The app's largest window, the one a screenshot is of. */
+func mainWindow(_ app: AXUIElement) -> AXUIElement? {
+    elements(in: attribute(app, kAXWindowsAttribute)).max { first, second in
+        let a = size(attribute(first, kAXSizeAttribute)) ?? .zero, b = size(attribute(second, kAXSizeAttribute)) ?? .zero
+        return a.width * a.height < b.width * b.height
+    }
+}
+
+/**
+ * Brings the app to the front and makes its largest window main and key, so focus-dependent drawing is active and
+ * keys reach it. Left alone when that is already so: raising a window again can close a menu it has open.
+ */
+func bringToFront(_ pid: pid_t) -> Bool {
+    let front = { NSWorkspace.shared.frontmostApplication?.processIdentifier == pid }
+    if AXIsProcessTrusted() {
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 2)
+        let window = mainWindow(app)
+        let ready = front() && (window.map { flag($0, kAXMainAttribute) == true } ?? true)
+        if !ready {
+            // Accessibility's frontmost works from a background process where activate() is often refused.
+            _ = AXUIElementSetAttributeValue(app, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
+            if let window {
+                _ = AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
+                _ = AXUIElementSetAttributeValue(window, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+                _ = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+            }
+        }
+    }
+    if !front() { NSRunningApplication(processIdentifier: pid)?.activate(options: [.activateAllWindows]) }
+    var waited = 0
+    while !front() && waited < 30 {
+        usleep(50_000)
+        waited += 1
+    }
+    return front()
+}
+
+if command == "raise" {
+    print(bringToFront(pid) ? "front" : "behind")
+    exit(0)
+}
+
 guard AXIsProcessTrusted() else {
     fail("facetshot may not use Accessibility, so it can't read or press the app's controls. Allow it in System Settings → Privacy & Security → Accessibility, for the app facetshot runs in.", 3)
 }
 let app = AXUIElementCreateApplication(pid)
 AXUIElementSetMessagingTimeout(app, 5)
 
-func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
-    var value: AnyObject?
-    return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
-}
-func children(_ element: AXUIElement) -> [AXUIElement] {
-    attribute(element, kAXChildrenAttribute) as? [AXUIElement] ?? []
-}
-func string(_ value: AnyObject?) -> String? {
-    if let text = value as? String { return text.isEmpty ? nil : text }
-    if let number = value as? NSNumber { return number.stringValue }
-    return nil
-}
-func point(_ value: AnyObject?) -> CGPoint? {
-    guard let value, CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
-    var point = CGPoint.zero
-    return AXValueGetValue(value as! AXValue, .cgPoint, &point) ? point : nil
-}
-func size(_ value: AnyObject?) -> CGSize? {
-    guard let value, CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
-    var size = CGSize.zero
-    return AXValueGetValue(value as! AXValue, .cgSize, &size) ? size : nil
-}
 /** What a person would call it: its title, its label, or for text, the text. */
 func name(_ element: AXUIElement, role: String) -> String {
     for key in [kAXTitleAttribute, kAXDescriptionAttribute, "AXLabel"] {
@@ -92,7 +196,7 @@ func name(_ element: AXUIElement, role: String) -> String {
     // A field named only by the hint inside it (SwiftUI's TextField("Name", …)).
     if let hint = string(attribute(element, kAXPlaceholderValueAttribute)) { return hint }
     // A control without a title of its own is often named by the text beside it.
-    if let titled = attribute(element, kAXTitleUIElementAttribute), CFGetTypeID(titled) == AXUIElementGetTypeID() {
+    if let titled = attribute(element, kAXTitleUIElementAttribute), isElement(titled) {
         if let text = string(attribute(titled as! AXUIElement, kAXValueAttribute)) ?? string(attribute(titled as! AXUIElement, kAXTitleAttribute)) { return text }
     }
     return ""
@@ -129,16 +233,51 @@ func resolve(_ path: String, role wanted: String?, name wantedName: String?) -> 
     return nil
 }
 
-func json(_ object: [String: Any]) -> String {
-    let data = try! JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-    return String(data: data, encoding: .utf8)!
+/** A line of JSON, or nil when the object can't be written as JSON (never a crash). */
+func json(_ object: [String: Any]) -> String? {
+    guard JSONSerialization.isValidJSONObject(object),
+          let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) else { return nil }
+    return String(data: data, encoding: .utf8)
+}
+
+/**
+ * The enabled menu-bar item whose shortcut is this key with these modifiers, if the app lists one. Menus give the
+ * shortcut as a character (or a virtual key, for keys without one) and modifiers as a mask: 1 Shift, 2 Option,
+ * 4 Control, 8 no Command.
+ */
+func menuItem(for code: CGKeyCode, _ character: String, _ modifiers: Set<String>) -> AXUIElement? {
+    guard let bar = attribute(app, kAXMenuBarAttribute), isElement(bar) else { return nil }
+    let wanted = (modifiers.contains("shift") ? 1 : 0) | (modifiers.contains("alt") ? 2 : 0) | (modifiers.contains("control") ? 4 : 0)
+    var queue = children(bar as! AXUIElement)
+    var seen = 0
+    while !queue.isEmpty, seen < 3000 {
+        let item = queue.removeFirst()
+        seen += 1
+        let kind = role(item)
+        if kind == kAXMenuItemRole as String, flag(item, kAXEnabledAttribute) != false {
+            let mask = (attribute(item, kAXMenuItemCmdModifiersAttribute) as? NSNumber)?.intValue
+            let char = string(attribute(item, kAXMenuItemCmdCharAttribute))
+            let virtual = (attribute(item, kAXMenuItemCmdVirtualKeyAttribute) as? NSNumber)?.intValue
+            let same = (!character.isEmpty && char?.lowercased() == character.lowercased()) || (char == nil && virtual == Int(code))
+            if mask == wanted, same { return item }
+        }
+        queue.append(contentsOf: children(item))
+    }
+    return nil
 }
 
 switch command {
 case "tree":
+    // Bounded every way a big custom view can make it long: depth, elements in all, children of one element, time.
+    let maxCount = 4000, maxDepth = 60, maxChildren = 500
+    let deadline = Date().addingTimeInterval(20)
     var count = 0
+    var notes: [String] = []
+    func note(_ text: String) { if !notes.contains(text) { notes.append(text) } }
     func walk(_ element: AXUIElement, _ path: String, _ depth: Int) {
-        guard count < 4000, depth < 60 else { return }
+        guard count < maxCount else { return note("Stopped after \(maxCount) elements; the rest of the window isn't listed.") }
+        guard depth < maxDepth else { return note("Elements nested deeper than \(maxDepth) levels aren't listed.") }
+        guard Date() < deadline else { return note("The app took too long to answer; the rest of the window isn't listed.") }
         count += 1
         let kind = role(element)
         var line: [String: Any] = ["path": path, "depth": depth, "role": kind, "name": name(element, role: kind)]
@@ -147,16 +286,24 @@ case "tree":
         if let at = point(attribute(element, kAXPositionAttribute)), let extent = size(attribute(element, kAXSizeAttribute)) {
             line["x"] = Double(at.x); line["y"] = Double(at.y); line["width"] = Double(extent.width); line["height"] = Double(extent.height)
         }
-        if let enabled = attribute(element, kAXEnabledAttribute) as? Bool, !enabled { line["disabled"] = true }
-        if let focused = attribute(element, kAXFocusedAttribute) as? Bool, focused { line["focused"] = true }
-        if let selected = attribute(element, kAXSelectedAttribute) as? Bool, selected { line["selected"] = true }
-        if let expanded = attribute(element, kAXExpandedAttribute) as? Bool, expanded { line["expanded"] = true }
+        if flag(element, kAXEnabledAttribute) == false { line["disabled"] = true }
+        if flag(element, kAXFocusedAttribute) == true { line["focused"] = true }
+        if flag(element, kAXSelectedAttribute) == true { line["selected"] = true }
+        if flag(element, kAXExpandedAttribute) == true { line["expanded"] = true }
         var names: CFArray?
-        if AXUIElementCopyActionNames(element, &names) == .success, let actions = names as? [String], !actions.isEmpty { line["actions"] = actions }
-        print(json(line))
-        for (index, child) in children(element).enumerated() { walk(child, "\(path).\(index)", depth + 1) }
+        if AXUIElementCopyActionNames(element, &names) == .success {
+            let actions = strings(in: names)
+            if !actions.isEmpty { line["actions"] = actions }
+        }
+        // An element whose attributes can't be written as JSON is listed by its place and role alone.
+        guard let text = json(line) ?? json(["path": path, "depth": depth, "role": kind, "name": ""]) else { return }
+        print(text)
+        let (list, total) = children(element, limit: maxChildren)
+        if total > list.count { note("An element (\(kind) at \(path)) has \(total) children; only the first \(maxChildren) are read.") }
+        for (index, child) in list.enumerated() { walk(child, "\(path).\(index)", depth + 1) }
     }
     for (index, root) in roots() { walk(root, "\(index)", 0) }
+    for text in notes { if let line = json(["note": text]) { print(line) } }
 
 case "do":
     guard arguments.count >= 4 else { fail("do <pid> <path> <action> [role] [name]", 2) }
@@ -172,7 +319,7 @@ case "set":
     guard let element = resolve(arguments[2], role: arguments.count > 4 ? arguments[4] : nil, name: arguments.count > 5 ? arguments[5] : nil) else { fail("That element isn't there any more.") }
     _ = AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
     let current = attribute(element, kAXValueAttribute)
-    let value: CFTypeRef = current is NSNumber ? NSNumber(value: Int(arguments[3]) ?? 0) : arguments[3] as CFString
+    let value: CFTypeRef = current.map({ CFGetTypeID($0) == CFNumberGetTypeID() }) == true ? NSNumber(value: Int(arguments[3]) ?? 0) : arguments[3] as CFString
     let result = AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, value)
     if result != .success { fail("Its value can't be set (\(result.rawValue)).") }
 
@@ -182,14 +329,14 @@ case "menubar":
         text.replacingOccurrences(of: "&", with: "").replacingOccurrences(of: "…", with: "").replacingOccurrences(of: "...", with: "").trimmingCharacters(in: .whitespaces).lowercased()
     }
     let labels = arguments[2].split(separator: ">").map { String($0).trimmingCharacters(in: .whitespaces) }
-    guard let bar = attribute(app, kAXMenuBarAttribute), CFGetTypeID(bar) == AXUIElementGetTypeID() else { fail("The app has no menu bar.") }
+    guard let bar = attribute(app, kAXMenuBarAttribute), isElement(bar) else { fail("The app has no menu bar.") }
     var items = children(bar as! AXUIElement)
     for (index, label) in labels.enumerated() {
         guard let item = items.first(where: { tidy(name($0, role: role($0))) == tidy(label) }) else {
             fail("No menu item \"\(label)\"; there are: \(items.map { name($0, role: role($0)) }.filter { !$0.isEmpty }.joined(separator: ", ")).")
         }
         if index == labels.count - 1 {
-            if let enabled = attribute(item, kAXEnabledAttribute) as? Bool, !enabled { fail("\"\(label)\" is disabled.") }
+            if flag(item, kAXEnabledAttribute) == false { fail("\"\(label)\" is disabled.") }
             let result = AXUIElementPerformAction(item, kAXPressAction as CFString)
             if result != .success { fail("\"\(label)\" didn't respond (\(result.rawValue)).") }
         } else {
@@ -199,20 +346,15 @@ case "menubar":
     }
 
 default:
-    // Real input goes to whatever is in front, so the app has to be: brought there, and checked, never assumed.
-    if command != "type" && command != "key" {
-        NSRunningApplication(processIdentifier: pid)?.activate()
-        var waited = 0
-        while NSWorkspace.shared.frontmostApplication?.processIdentifier != pid && waited < 20 {
-            usleep(50_000)
-            waited += 1
-        }
-        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else {
-            fail("The app didn't come to the front, so this real \(command) wasn't sent (it would reach another app).")
-        }
-    } else {
-        NSRunningApplication(processIdentifier: pid)?.activate()
-        usleep(150_000)
+    // Real input goes to whatever is in front, so the app has to be: brought there with its window key, and checked,
+    // never assumed. Keys and text can still go to the app's own process when it won't come forward.
+    let front = bringToFront(pid)
+    if !front && command != "type" && command != "key" {
+        fail("The app didn't come to the front, so this real \(command) wasn't sent (it would reach another app).")
+    }
+    let source = CGEventSource(stateID: .hidSystemState)
+    func send(_ event: CGEvent) {
+        if front { event.post(tap: .cghidEventTap) } else { event.postToPid(pid) }
     }
     let number = { (index: Int) -> CGFloat in
         guard index < arguments.count, let value = Double(arguments[index]) else { fail("\(command) needs a number at argument \(index)", 2) }
@@ -254,42 +396,36 @@ default:
         for character in arguments[2] {
             let units = Array(String(character).utf16)
             for down in [true, false] {
-                let event = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: down)!
+                guard let event = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: down) else { continue }
                 event.keyboardSetUnicodeString(stringLength: units.count, unicodeString: units)
-                event.postToPid(pid)
+                send(event)
             }
             usleep(4_000)
         }
     case "key":
-        guard arguments.count >= 3 else { fail("key <pid> <Shift+Meta+K>", 2) }
-        let codes: [String: CGKeyCode] = [
-            "enter": 36, "return": 36, "tab": 48, "space": 49, "backspace": 51, "delete": 117, "escape": 53, "esc": 53,
-            "arrowleft": 123, "arrowright": 124, "arrowdown": 125, "arrowup": 126, "home": 115, "end": 119,
-            "pageup": 116, "pagedown": 121,
-            "a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7, "c": 8, "v": 9, "b": 11, "q": 12, "w": 13,
-            "e": 14, "r": 15, "y": 16, "t": 17, "1": 18, "2": 19, "3": 20, "4": 21, "6": 22, "5": 23, "=": 24, "9": 25,
-            "7": 26, "-": 27, "8": 28, "0": 29, "]": 30, "o": 31, "u": 32, "[": 33, "i": 34, "p": 35, "l": 37, "j": 38,
-            "'": 39, "k": 40, ";": 41, "\\": 42, ",": 43, "/": 44, "n": 45, "m": 46, ".": 47, "`": 50
+        guard arguments.count >= 5, let code = CGKeyCode(arguments[2]) else { fail("key <pid> <code> <modifiers> <character>", 2) }
+        let modifiers = Set(arguments[3].split(separator: ",").map(String.init))
+        let character = arguments[4]
+        // A shortcut with Command is what a menu item answers to: choose that item, which works whatever has focus.
+        if modifiers.contains("command"), AXIsProcessTrusted(), let item = menuItem(for: code, character, modifiers) {
+            if AXUIElementPerformAction(item, kAXPressAction as CFString) == .success { exit(0) }
+        }
+        // Modifier keys go down first and up last, as a person's do, so apps that watch the modifiers see them.
+        let modifierKeys: [(name: String, code: CGKeyCode, flag: CGEventFlags)] = [
+            ("command", 55, .maskCommand), ("shift", 56, .maskShift), ("alt", 58, .maskAlternate), ("control", 59, .maskControl)
         ]
+        let held = modifierKeys.filter { modifiers.contains($0.name) }
         var flags: CGEventFlags = []
-        var key: CGKeyCode?
-        for part in arguments[2].split(separator: "+").map({ $0.lowercased() }) {
-            switch part {
-            case "shift": flags.insert(.maskShift)
-            case "meta", "cmd", "command", "controlormeta": flags.insert(.maskCommand)
-            case "control", "ctrl": flags.insert(.maskControl)
-            case "alt", "option": flags.insert(.maskAlternate)
-            default:
-                guard let code = codes[part] else { fail("\"\(part)\" isn't a key facetshot knows on a Mac.") }
-                key = code
-            }
-        }
-        guard let key else { fail("\(arguments[2]) names no key.") }
-        for down in [true, false] {
-            let event = CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: down)!
+        func key(_ code: CGKeyCode, _ down: Bool) {
+            guard let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: down) else { return }
             event.flags = flags
-            event.postToPid(pid)
+            send(event)
+            usleep(8_000)
         }
+        for modifier in held { flags.insert(modifier.flag); key(modifier.code, true) }
+        key(code, true)
+        key(code, false)
+        for modifier in held.reversed() { flags.remove(modifier.flag); key(modifier.code, false) }
     default:
         fail("\(command) isn't a command.", 2)
     }

@@ -48,6 +48,69 @@ function buildApp(): string {
 	return app;
 }
 
+describe('Mac steps without a window', () => {
+	test('press names become virtual key codes, modifiers and the character a menu lists', async () => {
+		const { macKey } = await import('../src/drivers/mac-ui.ts');
+		expect(macKey('Enter')).toEqual({ code: 36, modifiers: [], character: '' });
+		expect(macKey('Tab')).toEqual({ code: 48, modifiers: [], character: '' });
+		expect(macKey('Cmd+N')).toEqual({ code: 45, modifiers: ['command'], character: 'n' });
+		expect(macKey('Shift+Meta+K')).toEqual({
+			code: 40,
+			modifiers: ['command', 'shift'],
+			character: 'k'
+		});
+		expect(macKey('Control+Alt+KeyA')).toEqual({
+			code: 0,
+			modifiers: ['alt', 'control'],
+			character: 'a'
+		});
+		expect(macKey('ControlOrMeta+Digit1').modifiers).toEqual(['command']);
+		expect(macKey('Meta++')).toEqual({ code: 24, modifiers: ['command', 'shift'], character: '=' });
+		expect(macKey('F5').code).toBe(96);
+		expect(() => macKey('Meta')).toThrow('names no key');
+		expect(() => macKey('A+B')).toThrow('two keys');
+		expect(() => macKey('Hyper')).toThrow("isn't a key");
+	});
+
+	test('a tree with notes and broken lines reads as far as it goes', async () => {
+		const { parseTree, parseNodes } = await import('../src/drivers/mac-ui.ts');
+		const text = [
+			JSON.stringify({ path: '0', depth: 0, role: 'AXWindow', name: 'Notes' }),
+			JSON.stringify({ path: '0.0', depth: 1, role: 'AXGroup' }),
+			'{"path":"0.1","dep',
+			JSON.stringify({ something: 'else' }),
+			JSON.stringify({ note: 'Stopped after 4000 elements.' })
+		].join('\n');
+		const { nodes, notes } = parseTree(text);
+		expect(nodes.map((node) => [node.path, node.name])).toEqual([
+			['0', 'Notes'],
+			['0.0', '']
+		]);
+		expect(notes).toEqual([
+			'Stopped after 4000 elements.',
+			"2 lines of the tree couldn't be read."
+		]);
+		expect(parseNodes(text)).toHaveLength(2);
+	});
+
+	test('wait with a number is a pause in milliseconds, inline and in a flow', async () => {
+		const { loadFlow, parseStep, pause } = await import('../src/flows.ts');
+		const { matcher } = await import('../src/drivers/mac-ui.ts');
+		expect(pause(parseStep('wait:5000'))).toBe(5000);
+		expect(pause(parseStep('wait:role=dialog'))).toBeUndefined();
+		expect(() => parseStep('wait:600000')).toThrow('at most');
+		writeFileSync(
+			join(scratch, 'pause.yaml'),
+			'start: /\nsteps:\n  - wait: 250\n  - wait: "text=Done"\n'
+		);
+		const flow = loadFlow('pause.yaml', scratch);
+		expect(flow.steps).toEqual([{ wait: '250' }, { wait: 'text=Done' }]);
+		expect(pause(flow.steps[0])).toBe(250);
+		// A number is never an element on a Mac either, so a step reaching the matcher with one is a mistake.
+		expect(() => matcher('5000')).toThrow("isn't something a Mac window can be searched for");
+	});
+});
+
 describe.skipIf(!recording)('Mac app windows', () => {
 	const app = recording ? buildApp() : '';
 	const config = {
@@ -115,6 +178,77 @@ describe.skipIf(!recording)('Mac app windows', () => {
 			expect(logs).toContain('Exported 2 notes');
 		},
 		180_000
+	);
+
+	test.skipIf(!accessibility)(
+		'keys reach a text editor and the menu bar, and a number waits',
+		async () => {
+			await withAllDrivers();
+			writeFileSync(
+				join(scratch, 'keys.yaml'),
+				[
+					'start: /',
+					'steps:',
+					'  - click: role=textbox[name="Body"]',
+					'  - type: one',
+					'  - press: Enter',
+					'  - type: two',
+					'  - press: Tab',
+					'  - type: three',
+					'  - press: Meta+N',
+					'  - wait: 300',
+					'  - shot: typed'
+				].join('\n')
+			);
+			const { run } = await import('../src/run.ts');
+			const manifest = await run(
+				{ targets: [join(scratch, 'keys.yaml')], on: ['window-small'], as: ['light'] },
+				{ config: { ...config, out: join(scratch, 'keys') } }
+			);
+			expect(manifest.cells.map((cell) => [cell.screen, cell.status, cell.error])).toEqual([
+				['keys.typed', 'ok', undefined]
+			]);
+			const logs = readFileSync(join(manifest.out, manifest.logs!.text), 'utf8');
+			expect(logs).toContain('Body: "one\\ntwo\\tthree"');
+			expect(logs).toContain('New note');
+		},
+		180_000
+	);
+
+	test.skipIf(!accessibility)(
+		'a window with a huge, partly malformed custom view still reads',
+		async () => {
+			const { MacUi } = await import('../src/drivers/mac-ui.ts');
+			const { helper } = await import('../src/drivers/macos.ts');
+			await helper();
+			const child = Bun.spawn([join(app, 'Contents', 'MacOS', 'Notes')], {
+				env: { ...process.env, FACETSHOT_ROUTE: '/canvas', FACETSHOT_WINDOW_SIZE: '640x480' },
+				stdout: 'ignore',
+				stderr: 'ignore'
+			});
+			try {
+				const ui = await MacUi.of(child.pid);
+				let screen = await ui.screen().catch(() => undefined);
+				for (
+					let tries = 0;
+					!screen?.nodes.some((node) => node.name === 'Drawing') && tries < 40;
+					tries++
+				) {
+					await Bun.sleep(250);
+					screen = await ui.screen().catch(() => undefined);
+				}
+				expect(
+					screen!.nodes.filter((node) => node.name.startsWith('Shape ')).length
+				).toBeGreaterThan(400);
+				expect(screen!.notes.join(' ')).toContain('has 800 children');
+				expect(ui.tree(screen!)).toContain('(An element');
+				// The step reads the same tree to find its element.
+				await ui.step({ wait: 'text=Shape 12' });
+			} finally {
+				child.kill();
+			}
+		},
+		120_000
 	);
 
 	test.skipIf(!accessibility)(
