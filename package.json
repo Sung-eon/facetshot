@@ -1,6 +1,6 @@
 {
 	"name": "facetshot",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"description": "Screenshots of your app's screens on several devices and display settings at once, with a list of what looks broken and what the app logged. For people and AI coding agents (command line, MCP server, Agent Skill).",
 	"license": "MIT",
 	"repository": {
