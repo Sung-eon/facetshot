@@ -289,7 +289,7 @@ export async function run(request: RunRequest, options: RunOptions): Promise<Man
 					(result.notes ??= []).push('nothing earlier to compare with');
 					continue;
 				}
-				const outcome = diffImages(
+				const outcome = await diffImages(
 					join(runDir, result.image),
 					join(against, result.image),
 					runDir,

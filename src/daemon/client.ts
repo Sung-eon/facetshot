@@ -26,6 +26,8 @@ interface Status {
 	/** Closing what it holds; it goes once that is done, and a new daemon starts after it. */
 	stopping?: boolean;
 	idleMinutes: number;
+	/** The shared browsers that are running. */
+	browsers?: string[];
 	projects: { root: string; running: number; open: string[] }[];
 }
 
@@ -86,17 +88,42 @@ async function startDaemon(): Promise<void> {
 	throw new Error(`The daemon didn't start; see ${join(homeFolder(), 'daemon.log')}.`);
 }
 
+/**
+ * How long a client waits for a helper running other code to finish what it is doing, so it can be replaced. Running
+ * in the client's own process instead would start a second set of browsers and simulators outside the machine's caps.
+ */
+const REPLACE_WAIT_MS = 5 * 60_000;
+
+const busy = (current: Status) => current.active > 0 || (current.sessions ?? 0) > 0;
+
 /** A daemon running this code, started if need be. Undefined if that can't be had right now. */
 async function ensureDaemon(log: (message: string) => void): Promise<boolean> {
 	const stamp = codeStamp();
 	let current = await status();
 	if (current && current.stamp !== stamp && !current.stopping) {
-		if (current.active > 0 || (current.sessions ?? 0) > 0) {
-			log('The background helper is busy with older code; running this one here instead.');
-			return false;
+		if (busy(current)) {
+			log(
+				'The background helper is busy with other facetshot code; waiting for it to finish, so this run shares its browsers and limits…'
+			);
+			const freed = await waitUntil(
+				async () => {
+					current = await status();
+					return !current || !!current.stopping || !busy(current);
+				},
+				REPLACE_WAIT_MS,
+				{ every: 2000 }
+			);
+			if (!freed) {
+				log(
+					`The background helper is still busy after ${REPLACE_WAIT_MS / 60_000} minutes; running this one here instead.`
+				);
+				return false;
+			}
 		}
-		await call('POST', '/stop').catch(() => {});
-		current = { ...current, stopping: true };
+		if (current && !current.stopping) {
+			await call('POST', '/stop').catch(() => {});
+			current = { ...current, stopping: true };
+		}
 	}
 	if (current?.stopping) {
 		// It is closing what it holds; a new one started now would borrow servers it is about to stop.
@@ -203,6 +230,7 @@ export async function daemonCommand(action: string): Promise<number> {
 			process.stdout.write(
 				`Running (pid ${current.pid}), ${current.active} run${current.active === 1 ? '' : 's'} now, idle ${current.idleMinutes} min.\n`
 			);
+			for (const line of current.browsers ?? []) process.stdout.write(`  ${line}\n`);
 			for (const project of current.projects) {
 				process.stdout.write(
 					`  ${project.root}\n${project.open.map((line) => `    ${line}`).join('\n')}\n`
@@ -248,7 +276,7 @@ export async function sessionCall<T>(
 		// it is free, as for runs; while it is busy, there's nowhere to keep a session.
 		if (!(await ensureDaemon(() => {}))) {
 			throw new FacetshotError(
-				'The background helper is busy running an older facetshot, which can’t keep sessions.',
+				'The background helper is still busy running other facetshot code, which can’t keep this session.',
 				'Try again once it’s done (facetshot daemon status shows what it’s doing).',
 				EXIT.environment
 			);

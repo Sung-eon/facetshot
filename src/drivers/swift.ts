@@ -16,7 +16,7 @@ import { firstLine, UsageError } from '../errors.ts';
 import { slugify } from '../plan.ts';
 import { failed, notApplied, type Driver, type RunContext } from './driver.ts';
 import { imagePath } from './page.ts';
-import { ensureSimulator } from './simctl.ts';
+import { ensureSimulator, simulatorName, useSimulator } from './simctl.ts';
 
 interface IndexEntry {
 	scene: string;
@@ -68,6 +68,7 @@ export class SwiftSnapshotDriver implements Driver {
 	readonly name = 'swift snapshots';
 	private derived = '';
 	private simulator = '';
+	private simulatorName = '';
 
 	handles(cell: Cell, config: Config): boolean {
 		return (
@@ -124,6 +125,7 @@ export class SwiftSnapshotDriver implements Driver {
 		]);
 		this.scheme = scheme;
 		this.simulator = simulator;
+		this.simulatorName = simulatorName(model);
 		const [target] = swift.test.split('/');
 		await ensureBuilt(
 			'swift-ios',
@@ -167,25 +169,32 @@ export class SwiftSnapshotDriver implements Driver {
 						const prefixed = Object.fromEntries(
 							Object.entries(env).map(([key, value]) => [`TEST_RUNNER_${key}`, value])
 						);
+						// Booted for the test and shut down once idle, like the flow driver's simulators (useSimulator).
 						await ctx.pools.simulators.run(() =>
-							runToEnd(
-								{
-									cmd:
-										`xcodebuild test-without-building -quiet -scheme ${JSON.stringify(scheme)} ` +
-										`-destination ${JSON.stringify(`platform=iOS Simulator,id=${this.simulator}`)} ` +
-										`-derivedDataPath ${JSON.stringify(this.derived)} -only-testing:${swift.test} ` +
-										// In the run's scratch folder, removed with it, so result bundles don't pile up in derived data.
-										`-resultBundlePath ${JSON.stringify(join(out, 'result.xcresult'))}`,
-									cwd: pkg,
-									env: prefixed
-								},
-								{
-									root: ctx.root,
-									values: {},
-									logFile: join(ctx.stateDir, 'logs', 'swift-ios.log'),
-									what: 'The iOS snapshot test',
-									signal: ctx.signal
-								}
+							useSimulator(
+								this.simulator,
+								ctx,
+								() =>
+									runToEnd(
+										{
+											cmd:
+												`xcodebuild test-without-building -quiet -scheme ${JSON.stringify(scheme)} ` +
+												`-destination ${JSON.stringify(`platform=iOS Simulator,id=${this.simulator}`)} ` +
+												`-derivedDataPath ${JSON.stringify(this.derived)} -only-testing:${swift.test} ` +
+												// In the run's scratch folder, removed with it, so result bundles don't pile up in derived data.
+												`-resultBundlePath ${JSON.stringify(join(out, 'result.xcresult'))}`,
+											cwd: pkg,
+											env: prefixed
+										},
+										{
+											root: ctx.root,
+											values: {},
+											logFile: join(ctx.stateDir, 'logs', 'swift-ios.log'),
+											what: 'The iOS snapshot test',
+											signal: ctx.signal
+										}
+									),
+								{ name: this.simulatorName }
 							)
 						);
 					} else {

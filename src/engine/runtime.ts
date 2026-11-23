@@ -4,25 +4,11 @@
  * Run from the command line without the daemon, a Runtime lives for one run and closes everything it opened. Inside
  * the daemon it lives until the daemon goes idle, which is what makes the second run fast.
  */
-import type { Browser, BrowserType } from 'playwright';
-import { EnvironmentError } from '../errors.ts';
-import { setupCommand } from '../setup.ts';
+import type { Browser } from 'playwright';
+import { Browsers, type Engine } from './browsers.ts';
 import { healthy, within, type Running } from './procs.ts';
 
-export type Engine = import('../types.ts').BrowserName;
-
-/** Which Playwright launcher, and which installed browser (channel), a browser name means. */
-const LAUNCH: Record<
-	Engine,
-	{ type: 'chromium' | 'webkit' | 'firefox'; channel?: string; app?: string }
-> = {
-	chromium: { type: 'chromium' },
-	webkit: { type: 'webkit' },
-	firefox: { type: 'firefox' },
-	chrome: { type: 'chromium', channel: 'chrome', app: 'Google Chrome' },
-	msedge: { type: 'chromium', channel: 'msedge', app: 'Microsoft Edge' },
-	'moz-firefox': { type: 'firefox', channel: 'moz-firefox', app: 'Firefox' }
-};
+export type { Engine } from './browsers.ts';
 
 /** How long one closing step may take before facetshot moves on; a browser or server that hangs dies with the process. */
 const CLOSE_STEP_MS = 10_000;
@@ -30,7 +16,8 @@ const CLOSE_STEP_MS = 10_000;
 const CLOSER_MS = 30_000;
 
 export class Runtime {
-	private browsers = new Map<string, Promise<Browser>>();
+	private readonly browsers: Browsers;
+	private readonly ownsBrowsers: boolean;
 	private services = new Map<string, Running & { version?: string }>();
 	/** Per key, the service call in progress: two runs asking at once get one server, not two. */
 	private starting = new Map<string, Promise<Running>>();
@@ -40,70 +27,17 @@ export class Runtime {
 	readonly memo = new Map<string, unknown>();
 
 	/**
-	 * A browser, started once and kept. `scheme` is for browsers that can't emulate a colour scheme per page (an
-	 * installed Firefox over WebDriver BiDi): they get one browser per scheme, set through Firefox's own preferences.
+	 * @param browsers shared browsers (the background helper's, one set for every project), or undefined for a set
+	 *   of its own that this runtime closes with itself
 	 */
-	async browser(engine: Engine, scheme?: 'light' | 'dark'): Promise<Browser> {
-		const perScheme = engine === 'moz-firefox' ? (scheme ?? 'light') : undefined;
-		const key = perScheme ? `${engine}:${perScheme}` : engine;
-		let browser = this.browsers.get(key);
-		if (!browser) {
-			browser = (async () => {
-				const playwright = await import('playwright');
-				const { type: launcher, channel, app } = LAUNCH[engine];
-				const type: BrowserType = playwright[launcher];
-				try {
-					// facetshot handles signals itself: it stops servers and removes test data before it goes, and
-					// Playwright's own handlers would end the process first. Browsers still die with the process.
-					return await type.launch({
-						channel,
-						firefoxUserPrefs: perScheme
-							? {
-									'layout.css.prefers-color-scheme.content-override': perScheme === 'dark' ? 0 : 1,
-									'ui.systemUsesDarkTheme': perScheme === 'dark' ? 1 : 0
-								}
-							: undefined,
-						headless: true,
-						handleSIGINT: false,
-						handleSIGTERM: false,
-						handleSIGHUP: false
-					});
-				} catch (error) {
-					const message = error instanceof Error ? error.message : String(error);
-					if (
-						app &&
-						/not found|isn't installed|Executable doesn't exist|distribution/i.test(message)
-					) {
-						throw new EnvironmentError(
-							`${app} isn't installed on this machine, so "${engine}" can't be used.`,
-							`Install ${app}, or use Playwright's own build instead (${launcher}).`
-						);
-					}
-					if (/Executable doesn't exist|browserType.launch/.test(message)) {
-						throw new EnvironmentError(
-							`Playwright's ${engine} isn't installed.`,
-							`Install it once: ${setupCommand(engine)}`
-						);
-					}
-					// What the browser itself said as it gave up, rather than Playwright's general "failed to launch".
-					const said = message
-						.replace(/\x1b\[[0-9;]*m/g, '')
-						.split('\n')
-						.map((line) => /\[err\]\s*(.+)$/.exec(line)?.[1]?.trim())
-						.filter((line): line is string => !!line && !/headless mode/i.test(line));
-					throw new EnvironmentError(
-						`${engine} didn't start${said.length ? `: ${said[said.length - 1]}` : '.'}`,
-						`Try installing it again (${setupCommand(engine)}), or leave ${engine} out of --browser.`
-					);
-				}
-			})();
-			this.browsers.set(key, browser);
-			const forget = () => {
-				if (this.browsers.get(key) === browser) this.browsers.delete(key);
-			};
-			browser.then((b) => b.once('disconnected', forget), forget);
-		}
-		return browser;
+	constructor(browsers?: Browsers) {
+		this.browsers = browsers ?? new Browsers();
+		this.ownsBrowsers = !browsers;
+	}
+
+	/** A browser, started once and kept (see Browsers). */
+	browser(engine: Engine, scheme?: 'light' | 'dark'): Promise<Browser> {
+		return this.browsers.browser(engine, scheme);
 	}
 
 	/**
@@ -147,28 +81,12 @@ export class Runtime {
 	/** What is open right now, for `facetshot daemon status`. */
 	describe(): string[] {
 		return [
-			...[...this.browsers.keys()].map((engine) => `browser: ${engine}`),
+			...(this.ownsBrowsers ? this.browsers.describe() : []),
 			...[...this.services.values()].map(
 				(service) => `service: ${service.name} ${service.url}${service.owned ? '' : ' (borrowed)'}`
 			),
 			...this.closers.map((closer) => closer.name)
 		];
-	}
-
-	/**
-	 * Closes the browsers only (they start again on the next screenshot): what a long-lived daemon does now and then.
-	 * False when one wouldn't close in time; it then dies with the process, so the caller should end it soon.
-	 */
-	async closeBrowsers(): Promise<boolean> {
-		const open = [...this.browsers.values()];
-		this.browsers.clear();
-		const closed = await Promise.all(
-			open.map(async (pending) => {
-				const browser = await pending.catch(() => undefined);
-				return !browser || within(browser.close(), CLOSE_STEP_MS);
-			})
-		);
-		return closed.every(Boolean);
 	}
 
 	/**
@@ -187,7 +105,8 @@ export class Runtime {
 			services.map((service) => within(service.stop(), CLOSE_STEP_MS))
 		);
 		clean = stopped.every(Boolean) && clean;
-		clean = (await this.closeBrowsers()) && clean;
+		// Shared browsers belong to the helper, which closes them itself.
+		if (this.ownsBrowsers) clean = (await this.browsers.close()) && clean;
 		this.memo.clear();
 		return clean;
 	}

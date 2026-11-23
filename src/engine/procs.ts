@@ -21,7 +21,8 @@ import {
 	statSync,
 	writeFileSync
 } from 'node:fs';
-import { createServer } from 'node:net';
+import { createHash } from 'node:crypto';
+import { connect, createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { promisify } from 'node:util';
@@ -144,6 +145,9 @@ export async function freePort(): Promise<number> {
 }
 
 export async function portBusy(port: number): Promise<boolean> {
+	// Something answering is busy, even when a test bind would succeed (a server listening with SO_REUSEPORT, as Bun's
+	// do, lets a second socket bind the same port).
+	for (const host of ['127.0.0.1', '::1']) if (await answersOn(host, port)) return true;
 	for (const host of ['127.0.0.1', '::1']) {
 		const busy = await new Promise<boolean>((done) => {
 			const server = createServer();
@@ -153,6 +157,19 @@ export async function portBusy(port: number): Promise<boolean> {
 		if (busy) return true;
 	}
 	return false;
+}
+
+function answersOn(host: string, port: number): Promise<boolean> {
+	return new Promise((done) => {
+		const socket = connect({ host, port });
+		const end = (open: boolean) => {
+			socket.destroy();
+			done(open);
+		};
+		socket.setTimeout(500, () => end(false));
+		socket.once('connect', () => end(true));
+		socket.once('error', () => end(false));
+	});
 }
 
 export async function healthy(url: string, timeout = 2000): Promise<boolean> {
@@ -208,6 +225,23 @@ interface ServiceRecord {
 	cmd: string;
 	/** The facetshot process that started it: while that one lives, the server is its to stop, not ours. */
 	owner?: number;
+	/** A hash of what it was started with (command, folder, environment): see `serviceSettings`. */
+	settings?: string;
+}
+
+/**
+ * What a service is started with, as a hash: the filled-in command, its folder and its environment. A server already
+ * running on the port is taken as this service only if it was started with the same settings; one started by
+ * another run in this checkout with another database or other environment is never borrowed.
+ */
+export function serviceSettings(service: Service, values: Record<string, string>): string {
+	const env = Object.fromEntries(
+		Object.entries(service.env ?? {}).map(([key, value]) => [key, fill(value, values)])
+	);
+	return createHash('sha1')
+		.update(JSON.stringify({ cmd: fill(service.cmd, values), cwd: service.cwd ?? '.', env }))
+		.digest('hex')
+		.slice(0, 16);
 }
 
 function records(file: string): Record<string, ServiceRecord> {
@@ -302,6 +336,10 @@ export async function ensureService(
 			? fill(service.health, { ...ctx.values, port: String(port) })
 			: url + service.health
 		: url;
+	const values = { ...ctx.values, port: String(port), url };
+	const settings = serviceSettings(service, values);
+	// By name and port: two settings of one checkout may each run this service on a port of its own.
+	const recordKey = `${name}@${port}`;
 	const owned = (pid: number): Running => {
 		track(pid);
 		return {
@@ -312,20 +350,28 @@ export async function ensureService(
 			pid,
 			stop: async () => {
 				await stopGroup(pid);
-				writeRecord(recordFile, name, undefined);
+				writeRecord(recordFile, recordKey, undefined);
 			}
 		};
 	};
 	if (await portBusy(port)) {
-		const record = records(recordFile)[name];
+		const record = records(recordFile)[recordKey];
+		if (record && groupAlive(record.pid) && record.settings && record.settings !== settings) {
+			throw new EnvironmentError(
+				`Port ${port} (for "${name}") is held by facetshot's own ${name} server (pid ${record.pid}), which another run in this checkout started with other settings (another command, database or environment).`,
+				`Give these settings ports of their own (services.${name}.port, or a stablePorts block keyed by what differs), or wait until that run is done; facetshot daemon status shows what the background helper holds.`
+			);
+		}
 		const orphaned =
 			record &&
 			record.port === port &&
 			groupAlive(record.pid) &&
-			!(record.owner && record.owner !== process.pid && alive(record.owner));
+			// One this process started is held by another of its runtimes: borrowed below, never owned twice.
+			record.owner !== process.pid &&
+			!(record.owner && alive(record.owner));
 		if (orphaned && (await healthy(healthUrl))) {
 			// Started by an earlier facetshot run that is gone without stopping it: take it over, and stop it as ours.
-			writeRecord(recordFile, name, { ...record, owner: process.pid });
+			writeRecord(recordFile, recordKey, { ...record, owner: process.pid });
 			return owned(record.pid);
 		}
 		if (await healthy(healthUrl)) {
@@ -338,7 +384,6 @@ export async function ensureService(
 			`Free the port (lsof -nP -iTCP:${port} -sTCP:LISTEN), or set services.${name}.port to another number or "auto".`
 		);
 	}
-	const values = { ...ctx.values, port: String(port), url };
 	ctx.log(`Starting ${name} on :${port}…`);
 	const child = launch(service, { root: ctx.root, values, logFile });
 	// A server must not keep facetshot's own process alive; it is stopped through the runtime instead.
@@ -367,11 +412,12 @@ export async function ensureService(
 			`Check the health path, or raise services.${name}.startTimeout.`
 		);
 	}
-	writeRecord(recordFile, name, {
+	writeRecord(recordFile, recordKey, {
 		pid: child.pid!,
 		port,
 		cmd: fill(service.cmd, values),
-		owner: process.pid
+		owner: process.pid,
+		settings
 	});
 	return owned(child.pid!);
 }

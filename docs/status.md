@@ -33,6 +33,10 @@ there yet. Reports are welcome. No [CI](ci.md) provider has been tried yet.
 - **New iOS steps, not yet run on a simulator:** steps that name an element by role (`role=button[name="Save"]`) or
   by a point, long presses (and right-clicks, which become long presses), drags, and the app's system log are written
   but haven't been run on a simulator yet. There is no automated iOS test.
+- **Simulator shutdown and iOS typing, not yet run on a simulator:** simulators shut down after
+  `FACETSHOT_SIMULATOR_IDLE_MINUTES` (and idle ones first under memory pressure), the SwiftUI driver's simulator is
+  now shut down too, and typed text keeps its line breaks (a `\n` presses Return). These are written but haven't been
+  run end to end on a simulator yet.
 - **Sessions** don't open iOS simulators or Storybook stories yet. Use [flows](flows.md) for those.
 - **Flutter on macOS:** Flutter 3.24's own build tool fails `flutter build macos` with recent Xcode versions (it
   misreads `lipo`'s output), so a Flutter Mac app hasn't been run end to end. Use a newer Flutter; the web build is

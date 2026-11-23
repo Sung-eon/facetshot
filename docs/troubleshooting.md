@@ -101,12 +101,14 @@ Another heavy build is running somewhere on this machine, so facetshot waits its
 lock is gone, the lock is taken over automatically. A lock held by a script (with no note saying who holds it) is
 left alone; `facetshot doctor` shows it, and how to remove it if you're sure nothing is building.
 
-## "The background helper is busy with older code"
+## "The background helper is busy with other facetshot code"
 
-The background helper runs a different version of facetshot's code than yours (you updated or edited facetshot, or
-another checkout of facetshot started it) and is still busy with a job. The new run happens in your own process
-instead, outside the shared limits, and the helper is replaced once it's free. Sessions can't be opened until then.
-See [Lifecycle](architecture.md#lifecycle).
+The background helper runs different facetshot code than yours (you updated or edited facetshot, or another checkout
+of facetshot with other code started it) and is still busy with a run or an open session. Your command waits up to
+five minutes for it to finish, then the helper is replaced by one running your code. If it is still busy after that,
+a run happens in your own process instead, outside the shared limits, and a session can't be opened until it is
+free. Code is compared by content, so two checkouts with the same code share one helper. See
+[Lifecycle](architecture.md#lifecycle).
 
 ## A command works in your terminal but not in a run
 

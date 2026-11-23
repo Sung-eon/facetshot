@@ -116,14 +116,19 @@ died is taken over. Electron launches aren't locked across runs and sessions; se
 
 - The helper starts on demand, the first time a client needs it, with the environment and the macOS permissions of
   the app that started it.
-- It records which version of facetshot's code it runs (a hash of the source files' times). When a client runs
+- It records which version of facetshot's code it runs (a hash of the source files' contents). When a client runs
   different code, newer or older, the helper is stopped and replaced. If it is busy (a run in progress or a session
-  open), the client runs the request in its own process instead, outside the shared limits, and the helper is
-  replaced on a later run. A session can't be opened then; the client says the helper is busy.
+  open), the client waits up to five minutes for it to finish first. Only if it is still busy then does a run happen
+  in the client's own process, outside the shared limits; a session can't be opened until the helper is free.
 - After 15 minutes without runs or sessions (`FACETSHOT_IDLE_MINUTES`), the helper stops. A project that hasn't been
-  used for 15 minutes gives up its servers and browsers even while other projects keep the helper busy.
+  used for 15 minutes gives up its servers even while other projects keep the helper busy.
+- Browsers are shared: one per engine for every project, each screenshot and session in a browser context of its
+  own. They close once no project is left.
+- A simulator is shut down 3 minutes after its last screenshot (`FACETSHOT_SIMULATOR_IDLE_MINUTES`): a booted iOS
+  simulator holds 10 GB or more. Before one boots while the system reports memory pressure, facetshot's other idle
+  simulators are shut down first.
 - An unused session closes after 10 minutes (`FACETSHOT_SESSION_IDLE_MINUTES`).
-- Browsers are closed and started again every 25 runs. If the helper's own memory grows past 1.5 GB, it stops when it
+- Browsers are closed and started again every 25 runs, once no run or session uses them. If the helper's own memory grows past 1.5 GB, it stops when it
   is next idle, and the next run starts a fresh one.
 - Stopping has a 60-second deadline. Each step gets 10 seconds, servers are stopped before browsers, and whatever is
   still running when the helper exits is killed.

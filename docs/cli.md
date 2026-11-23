@@ -204,12 +204,13 @@ summary lists them under "Taken before the screen settled". To fail a CI job on 
 
 ## Environment variables
 
-| Variable                         | Effect                                                                                                            |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `FACETSHOT_HOME`                 | where per-user state lives (default `~/.facetshot`): the background helper's socket and log, locks, ports, caches |
-| `FACETSHOT_NO_DAEMON`            | the same as `--no-daemon` for every command, including the MCP server                                             |
-| `FACETSHOT_IDLE_MINUTES`         | how long the background helper waits without work before it stops (default 15)                                    |
-| `FACETSHOT_SESSION_IDLE_MINUTES` | how long an unused session stays open (default 10)                                                                |
-| `FACETSHOT_CONFIG`               | the config the MCP server uses                                                                                    |
-| `FACETSHOT_CWD`                  | the folder the MCP server looks for a config from                                                                 |
-| `FACETSHOT_MCP_MAX_IMAGES`       | sheets per MCP response (default 4)                                                                               |
+| Variable                           | Effect                                                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `FACETSHOT_HOME`                   | where per-user state lives (default `~/.facetshot`): the background helper's socket and log, locks, ports, caches   |
+| `FACETSHOT_NO_DAEMON`              | the same as `--no-daemon` for every command, including the MCP server                                               |
+| `FACETSHOT_IDLE_MINUTES`           | how long the background helper waits without work before it stops (default 15)                                      |
+| `FACETSHOT_SIMULATOR_IDLE_MINUTES` | how long a simulator stays booted after its last screenshot (default 3); a booted iOS simulator holds 10 GB or more |
+| `FACETSHOT_SESSION_IDLE_MINUTES`   | how long an unused session stays open (default 10)                                                                  |
+| `FACETSHOT_CONFIG`                 | the config the MCP server uses                                                                                      |
+| `FACETSHOT_CWD`                    | the folder the MCP server looks for a config from                                                                   |
+| `FACETSHOT_MCP_MAX_IMAGES`         | sheets per MCP response (default 4)                                                                                 |

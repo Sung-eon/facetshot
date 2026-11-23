@@ -1,11 +1,35 @@
 import Foundation
 import XCTest
 
+/// A word as facetshot wrote it: `\n`, `\t`, `\r` and `\\` stand for a newline, a tab, a return and a backslash, so
+/// typed text keeps its line breaks (typing "\n" presses Return).
+func unescape(_ word: String) -> String {
+    var out = ""
+    var escaped = false
+    for character in word {
+        if escaped {
+            switch character {
+            case "n": out.append("\n")
+            case "t": out.append("\t")
+            case "r": out.append("\r")
+            default: out.append(character)
+            }
+            escaped = false
+        } else if character == "\\" {
+            escaped = true
+        } else {
+            out.append(character)
+        }
+    }
+    return out
+}
+
 /// What `simctl` cannot do to a simulator — turn it, press, type — done from a UI test that stays running and takes
 /// one command at a time from facetshot (`src/drivers/ios.ts`).
 ///
 /// facetshot starts it with `xcodebuild test-without-building` once per simulator and writes numbered files into the
-/// folder `FACETSHOT_RUNNER_DIR` names: `1.cmd`, `2.cmd`, … Each holds one line, its words separated by tabs. The
+/// folder `FACETSHOT_RUNNER_DIR` names: `1.cmd`, `2.cmd`, … Each holds one line, its words separated by tabs; inside a
+/// word, `\n`, `\t`, `\r` and `\\` stand for a newline, a tab, a return and a backslash (see `unescape`). The
 /// runner answers each with `<n>.out`: `ok`, or `error<TAB>why`. `started` is written once it is listening.
 ///
 ///     launch <json>                 (re)launch the app with {"env": {…}, "args": […]}
@@ -48,7 +72,7 @@ final class FacetshotRunner: XCTestCase {
                 Thread.sleep(forTimeInterval: 0.05)
                 continue
             }
-            let words = line.trimmingCharacters(in: .newlines).components(separatedBy: "\t")
+            let words = line.trimmingCharacters(in: .newlines).components(separatedBy: "\t").map(unescape)
             if words.first == "quit" {
                 try? Data("ok\n".utf8).write(to: folder.appending(path: "\(next).out"))
                 return

@@ -106,11 +106,12 @@ Exit codes: `0` all good; `1` some screenshots failed, or a session step didn't 
 wrong; `3` something on this machine is missing (the message says what); `4` an unexpected error. Findings and
 changes don't change the exit code.
 
-| Variable                            | Effect                                                                 |
-| ----------------------------------- | ---------------------------------------------------------------------- |
-| `FACETSHOT_HOME`                    | where per-user state lives (default `~/.facetshot`)                    |
-| `FACETSHOT_NO_DAEMON`               | like `--no-daemon` everywhere (no sessions then)                       |
-| `FACETSHOT_IDLE_MINUTES`            | how long the background helper waits idle before stopping (default 15) |
-| `FACETSHOT_SESSION_IDLE_MINUTES`    | how long an unused session stays open (default 10)                     |
-| `FACETSHOT_CONFIG`, `FACETSHOT_CWD` | the config, and the folder, the MCP server works from                  |
-| `FACETSHOT_MCP_MAX_IMAGES`          | sheets per MCP response (default 4)                                    |
+| Variable                            | Effect                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `FACETSHOT_HOME`                    | where per-user state lives (default `~/.facetshot`)                     |
+| `FACETSHOT_NO_DAEMON`               | like `--no-daemon` everywhere (no sessions then)                        |
+| `FACETSHOT_IDLE_MINUTES`            | how long the background helper waits idle before stopping (default 15)  |
+| `FACETSHOT_SIMULATOR_IDLE_MINUTES`  | how long a simulator stays booted after its last screenshot (default 3) |
+| `FACETSHOT_SESSION_IDLE_MINUTES`    | how long an unused session stays open (default 10)                      |
+| `FACETSHOT_CONFIG`, `FACETSHOT_CWD` | the config, and the folder, the MCP server works from                   |
+| `FACETSHOT_MCP_MAX_IMAGES`          | sheets per MCP response (default 4)                                     |

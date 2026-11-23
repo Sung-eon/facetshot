@@ -99,13 +99,13 @@ be installed; find out which before fixing anything:
 command the agent's config names: `.mcp.json`, `.cursor/mcp.json` or `.codex/config.toml`, normally `bunx facetshot
 mcp`, which picks the project's copy, then the user's, then downloads one.
 
-| Problem                                                         | Do                                                                                                                                                                                      |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| a browser isn't installed, or doesn't start after an update     | `facetshot setup` (`--browser webkit,firefox` for those); it installs the browsers facetshot's own Playwright needs, then runs `doctor`                                                 |
-| the facetshot tools aren't there, or the MCP server won't start | read the command in the agent's MCP config and run it with `--version` in the project's folder (`bunx facetshot --version`); if that fails, facetshot isn't installed or Bun is missing |
-| `bun` isn't found, or is older than 1.3                         | the person installs or updates Bun (https://bun.sh)                                                                                                                                     |
-| `The background helper is busy running an older facetshot`      | an update happened while it ran: wait for it, or `facetshot daemon stop` when nothing else is using it                                                                                  |
-| the MCP config was missing or changed                           | `facetshot init --agent <name>` writes it; the person then restarts the agent, which reads MCP servers only when it starts                                                              |
+| Problem                                                            | Do                                                                                                                                                                                      |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a browser isn't installed, or doesn't start after an update        | `facetshot setup` (`--browser webkit,firefox` for those); it installs the browsers facetshot's own Playwright needs, then runs `doctor`                                                 |
+| the facetshot tools aren't there, or the MCP server won't start    | read the command in the agent's MCP config and run it with `--version` in the project's folder (`bunx facetshot --version`); if that fails, facetshot isn't installed or Bun is missing |
+| `bun` isn't found, or is older than 1.3                            | the person installs or updates Bun (https://bun.sh)                                                                                                                                     |
+| `The background helper is still busy running other facetshot code` | facetshot changed while it ran; your command already waited 5 minutes: try again later, or `facetshot daemon stop` when nothing else is using it                                        |
+| the MCP config was missing or changed                              | `facetshot init --agent <name>` writes it; the person then restarts the agent, which reads MCP servers only when it starts                                                              |
 
 You may run `facetshot setup`, `facetshot doctor` and `facetshot init` yourself (say what `init` wrote). Ask the
 person before installing or updating facetshot (`bun add -g facetshot`, `bun add -d facetshot`), and never run
@@ -124,7 +124,7 @@ restart the agent.
 | `none of the devices … can show a … target`                          | add a device of the right kind (`--on phone`, `--on iphone`, `--on window`)                                                               |
 | `Signing in as "…" with … didn't work`                               | try the login flow's steps in a session to see where it stops                                                                             |
 | `may not use Accessibility` / `may not record the screen`            | the person allows it in System Settings → Privacy & Security, for the app facetshot runs in                                               |
-| `The background helper is busy running an older facetshot`           | wait for it to finish, then try again; runs fall back to running in your process                                                          |
+| `The background helper is busy with other facetshot code`            | it waits up to 5 minutes for the helper; after that a run happens in your process                                                         |
 | a session id isn't found                                             | it closed after 10 idle minutes; open another (`list` with `what: "sessions"`)                                                            |
 | the sign-in page or a spinner in every screenshot                    | a persona or a ready rule is missing; see above                                                                                           |
 

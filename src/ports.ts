@@ -19,6 +19,11 @@ export interface StablePortsOptions {
 	from?: number;
 	/** The last port of the range. Default 5999. */
 	to?: number;
+	/**
+	 * One setting of this checkout that runs beside others (a database name, say): each gets a block of its own, so two
+	 * agents in one checkout with different settings never share a server.
+	 */
+	key?: string;
 }
 
 type Ledger = Record<string, { base: number; count: number }>;
@@ -32,7 +37,7 @@ export function stablePorts(
 	const to = options.to ?? 5999;
 	const folder = homeFolder();
 	const file = join(folder, 'ports.json');
-	const key = resolve(root);
+	const key = options.key ? `${resolve(root)}#${options.key}` : resolve(root);
 	let ledger: Ledger = {};
 	try {
 		ledger = JSON.parse(readFileSync(file, 'utf8')) as Ledger;
@@ -40,7 +45,8 @@ export function stablePorts(
 		// No ledger yet, or an unreadable one: start a new one.
 	}
 	// Folders that are gone (a removed worktree) give their ports back.
-	for (const folderKey of Object.keys(ledger)) if (!existsSync(folderKey)) delete ledger[folderKey];
+	for (const folderKey of Object.keys(ledger))
+		if (!existsSync(folderKey.split('#')[0])) delete ledger[folderKey];
 
 	const held = ledger[key];
 	if (held && held.count >= count && held.base >= from && held.base + count - 1 <= to) {

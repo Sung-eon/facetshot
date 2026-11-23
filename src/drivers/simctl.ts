@@ -2,7 +2,11 @@
  * The iOS simulator, through `xcrun simctl`. facetshot only ever uses simulators it made itself (named
  * `facetshot-<model>`), so the ones a person keeps for their own work are never booted, changed or erased.
  */
+import { join } from 'node:path';
+import { homeFolder } from '../config.ts';
+import { tryLock, withLock } from '../engine/lock.ts';
 import { exec } from '../engine/procs.ts';
+import { memoryPressure } from '../engine/scheduler.ts';
 import { EnvironmentError } from '../errors.ts';
 import type { RunContext } from './driver.ts';
 
@@ -118,6 +122,99 @@ export async function boot(udid: string, ctx: Pick<RunContext, 'log'>): Promise<
 	}
 	await simctl('bootstatus', udid, '-b');
 	return was !== 'Booted';
+}
+
+/**
+ * How long a simulator stays booted with nothing using it. A booted iOS simulator holds 10 GB or more (its home screen,
+ * widgets and system apps run too), so it goes soon after its last screenshot; the next run boots it again, which takes
+ * seconds, not minutes.
+ */
+export const SIMULATOR_IDLE_MS = Number(process.env.FACETSHOT_SIMULATOR_IDLE_MINUTES ?? 3) * 60_000;
+
+/** The simulators this process has booted or used: how many lanes work on each now, and its pending shutdown. */
+const inUse = new Map<string, { users: number; timer?: ReturnType<typeof setTimeout> }>();
+
+/** One user of a simulator at a time, across runs, checkouts and agents: it is facetshot's, not one run's. */
+const simulatorLock = (udid: string) => join(homeFolder(), 'locks', `simulator-${udid}.lock`);
+
+/** Shuts a simulator down unless someone is working on it (its lock is held); one already shut down is fine. */
+async function shutdownIfFree(udid: string): Promise<boolean> {
+	const release = tryLock(simulatorLock(udid), 'facetshot shutting down an idle simulator');
+	if (!release) return false;
+	try {
+		await shutdown(udid);
+		return true;
+	} finally {
+		release();
+	}
+}
+
+/** Shuts a simulator down; one already shut down is fine. */
+export async function shutdown(udid: string): Promise<void> {
+	const held = inUse.get(udid);
+	if (held?.timer) clearTimeout(held.timer);
+	if (!held?.users) inUse.delete(udid);
+	await simctl('shutdown', udid).catch(() => {});
+}
+
+/**
+ * Makes room before a simulator boots while memory is short: facetshot's own booted simulators that nothing uses
+ * (left idle by this process, or by another) are shut down first.
+ */
+async function makeRoom(except: string, ctx: Pick<RunContext, 'log'>): Promise<void> {
+	if (memoryPressure() === 'normal') return;
+	for (const device of await ownSimulators()) {
+		if (device.state !== 'Booted' || device.udid === except) continue;
+		if (await shutdownIfFree(device.udid))
+			ctx.log(`Memory is short: shut down ${device.name}, which nothing was using.`);
+	}
+}
+
+/**
+ * Every use of one of facetshot's simulators goes through here. It waits for the simulator's lock, boots it, runs
+ * `work`, and then shuts it down once nothing has used it for SIMULATOR_IDLE_MS, when the runtime closes, or right
+ * after `work` with `shutDownAfter` (more lanes than may be booted at once).
+ */
+export async function useSimulator<T>(
+	udid: string,
+	ctx: Pick<RunContext, 'log' | 'runtime' | 'root' | 'signal'>,
+	work: () => Promise<T>,
+	options: { name?: string; shutDownAfter?: boolean } = {}
+): Promise<T> {
+	const name = options.name ?? udid;
+	return withLock(
+		simulatorLock(udid),
+		`facetshot on ${name} in ${ctx.root}`,
+		async () => {
+			const held = inUse.get(udid) ?? { users: 0 };
+			if (held.timer) clearTimeout(held.timer);
+			held.timer = undefined;
+			held.users += 1;
+			inUse.set(udid, held);
+			// Whoever booted it (an earlier helper, a killed run), the runtime that used it shuts it down when it closes.
+			const closing = `simulator-close:${udid}`;
+			if (!ctx.runtime.memo.has(closing)) {
+				ctx.runtime.memo.set(closing, true);
+				ctx.runtime.onClose(`simulator ${name}`, () => shutdownIfFree(udid).then(() => {}));
+			}
+			try {
+				await makeRoom(udid, ctx);
+				await boot(udid, ctx);
+				return await work();
+			} finally {
+				held.users -= 1;
+				if (held.users === 0) {
+					if (options.shutDownAfter) await shutdown(udid);
+					else {
+						held.timer = setTimeout(() => void shutdownIfFree(udid), SIMULATOR_IDLE_MS);
+						// A run in its own process ends without waiting for this; its runtime's close shuts it down.
+						held.timer.unref?.();
+					}
+				}
+			}
+		},
+		{ onWait: ctx.log, signal: ctx.signal, poll: 2000 }
+	);
 }
 
 /**

@@ -19,6 +19,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import { homeFolder, loadConfig } from '../config.ts';
+import { Browsers } from '../engine/browsers.ts';
 import { Runtime } from '../engine/runtime.ts';
 import { Pool } from '../engine/scheduler.ts';
 import { explain, FacetshotError } from '../errors.ts';
@@ -38,7 +39,7 @@ const PID_FILE = () => join(homeFolder(), 'daemon.pid');
 export const IDLE_MS = Number(process.env.FACETSHOT_IDLE_MINUTES ?? 15) * 60_000;
 /** The daemon's own memory ceiling; browsers are separate processes and are recycled on their own (below). */
 const MAX_RSS = 1.5 * 2 ** 30;
-/** Runs after which a project's browsers are closed and started fresh, so a long-lived browser can't keep growing. */
+/** Runs after which the browsers are closed and started fresh, so a long-lived browser can't keep growing. */
 const RUNS_PER_BROWSER = 25;
 /** However closing goes, the daemon is gone this long after it starts to stop; what it started dies with it. */
 const SHUTDOWN_DEADLINE_MS = 60_000;
@@ -73,7 +74,13 @@ export type Event =
 	| { type: 'done'; manifest: unknown }
 	| { type: 'error'; message: string; exitCode: number };
 
+/**
+ * A checkout with one set of settings. Two agents in one checkout with different settings (another database, other
+ * ports) get a project each, so neither stops, restarts or borrows the other's servers.
+ */
 interface Project {
+	/** `root` and `stamp` together: the key in the helper's map of projects. */
+	key: string;
 	root: string;
 	runtime: Runtime;
 	/** The config's modification time: a changed config gets a fresh runtime. */
@@ -122,6 +129,10 @@ export async function serve(): Promise<void> {
 	const runtimes = new Set<Runtime>();
 	// Machine-wide: every run, of every project, shares these.
 	const pools = { web: new Pool(4), simulators: new Pool(2) };
+	// One browser per engine for every project: each screenshot and session gets its own context in it.
+	const browsers = new Browsers();
+	let runsSinceBrowsers = 0;
+	let browsersFailed = false;
 	let active = 0;
 	let lastUsed = Date.now();
 	const sessions = new Map<string, { session: Session; project: Project }>();
@@ -135,20 +146,28 @@ export async function serve(): Promise<void> {
 	};
 
 	const project = async (root: string, stamp: string): Promise<Project> => {
-		const known = projects.get(root);
-		if (known && known.stamp === stamp) return known;
-		// A changed config gets a fresh runtime; the old one closes as soon as no run uses it (in handleRun).
-		if (known && known.running === 0) await retire(known);
+		const key = `${root}\n${stamp}`;
+		const known = projects.get(key);
+		if (known) return known;
+		// Other settings for this checkout that nothing uses now (an edited config, an agent that's done) close first,
+		// so their servers give their ports back. One in use is kept: two settings can work side by side if their
+		// ports differ (a server started with other settings is never borrowed; see ensureService).
+		for (const [other, each] of projects)
+			if (each.root === root && each.running === 0) {
+				projects.delete(other);
+				await retire(each);
+			}
 		const fresh: Project = {
+			key,
 			root,
-			runtime: new Runtime(),
+			runtime: new Runtime(browsers),
 			stamp,
 			running: 0,
 			runs: 0,
 			lastUsed: Date.now()
 		};
 		runtimes.add(fresh.runtime);
-		projects.set(root, fresh);
+		projects.set(key, fresh);
 		return fresh;
 	};
 
@@ -180,6 +199,7 @@ export async function serve(): Promise<void> {
 		await Promise.all([...sessions.values()].map(({ session }) => session.close().catch(() => {})));
 		sessions.clear();
 		await Promise.all([...runtimes].map((runtime) => runtime.close()));
+		await browsers.close();
 		// No `server.close()`: closing a Unix-socket server unlinks the socket by its path, which may be a newer
 		// daemon's by now. The socket file goes only through releaseSocket, which checks it is this one's.
 		releaseSocket();
@@ -191,6 +211,18 @@ export async function serve(): Promise<void> {
 	const stopWhenIdle = (reason: string) => {
 		if (active === 0) void shutdown(reason);
 		else pendingStop = reason;
+	};
+
+	/**
+	 * Closes the shared browsers while nothing uses them: after RUNS_PER_BROWSER runs, or once no project is left. A
+	 * session's page lives in them, so they wait for sessions too.
+	 */
+	const recycleBrowsers = async () => {
+		if (active > 0 || sessions.size > 0) return;
+		if (runsSinceBrowsers < RUNS_PER_BROWSER && projects.size > 0) return;
+		if (!browsers.describe().length) return;
+		runsSinceBrowsers = 0;
+		if (!(await browsers.close())) browsersFailed = true;
 	};
 
 	const handleRun = async (body: RunMessage, response: ServerResponse) => {
@@ -238,14 +270,13 @@ export async function serve(): Promise<void> {
 				entry.running -= 1;
 				entry.runs += 1;
 				entry.lastUsed = Date.now();
-				if (entry.running === 0) {
-					if (projects.get(entry.root) !== entry) await retire(entry);
-					else if (entry.runs % RUNS_PER_BROWSER === 0 && !(await entry.runtime.closeBrowsers()))
-						pendingStop ??= "a browser wouldn't close";
-				}
+				if (entry.running === 0 && projects.get(entry.key) !== entry) await retire(entry);
 			}
+			runsSinceBrowsers += 1;
 			active -= 1;
 			lastUsed = Date.now();
+			await recycleBrowsers();
+			if (browsersFailed) pendingStop ??= "a browser wouldn't close";
 			if (pendingStop) stopWhenIdle(pendingStop);
 		}
 	};
@@ -257,7 +288,7 @@ export async function serve(): Promise<void> {
 		await held.session.close().catch(() => {});
 		held.project.running -= 1;
 		held.project.lastUsed = Date.now();
-		if (held.project.running === 0 && projects.get(held.project.root) !== held.project)
+		if (held.project.running === 0 && projects.get(held.project.key) !== held.project)
 			await retire(held.project);
 	};
 
@@ -373,9 +404,11 @@ export async function serve(): Promise<void> {
 						active,
 						sessions: sessions.size,
 						stopping,
+						browsers: browsers.describe(),
 						idleMinutes: Math.round((Date.now() - lastUsed) / 60_000),
-						projects: [...projects].map(([root, each]) => ({
-							root,
+						projects: [...projects.values()].map((each) => ({
+							root: each.root,
+							settings: each.stamp,
 							running: each.running,
 							open: each.runtime.describe()
 						}))
@@ -453,11 +486,13 @@ export async function serve(): Promise<void> {
 		// A project nobody has used for the idle time lets go of its servers and browsers, even while another keeps
 		// the daemon busy.
 		else
-			for (const [root, each] of projects)
+			for (const [key, each] of projects)
 				if (each.running === 0 && Date.now() - each.lastUsed > IDLE_MS) {
-					projects.delete(root);
+					projects.delete(key);
 					void retire(each);
 				}
+		// With no project left (or after enough runs), the browsers go too.
+		void recycleBrowsers();
 	}, 30_000).unref();
 	// Anything unexpected still closes what this process started before it goes.
 	process.on('uncaughtException', (error) => {

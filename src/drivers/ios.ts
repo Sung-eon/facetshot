@@ -60,13 +60,25 @@ import {
 import { imagePath, pngSize } from './page.ts';
 import { LogBook, recordSystemLog } from '../logs.ts';
 import { PNG } from 'pngjs';
-import { boot, CONTENT_SIZE, ensureSimulator, simctl, simulatorName } from './simctl.ts';
+import { CONTENT_SIZE, ensureSimulator, simctl, simulatorName, useSimulator } from './simctl.ts';
 
 /** After the app's ready word, how long its last transition may take (with Reduce Motion it's a cross-fade). */
 const SETTLE_AFTER_READY = 400;
 
 const RUNNER_DIR = join(import.meta.dirname, '..', '..', 'FacetshotRunner');
 const READY_TIMEOUT = 15_000;
+
+/**
+ * A word of a runner command, written so tabs and newlines inside it survive the one-line, tab-separated format: the
+ * runner turns `\n`, `\t`, `\r` and `\\` back (`unescape` in FacetshotRunner.swift). Typed text keeps its line breaks.
+ */
+export function escapeWord(word: string): string {
+	return word
+		.replace(/\\/g, '\\\\')
+		.replace(/\t/g, '\\t')
+		.replace(/\n/g, '\\n')
+		.replace(/\r/g, '\\r');
+}
 
 /** The UI test that turns and presses, as a running process taking commands. */
 class RunnerSession {
@@ -122,10 +134,7 @@ class RunnerSession {
 	async send(words: string[], timeout = 60_000): Promise<string | undefined> {
 		const n = this.next++;
 		const command = join(this.folder, `${n}.cmd`);
-		writeFileSync(
-			`${command}.tmp`,
-			words.map((word) => word.replace(/[\t\n]/g, ' ')).join('\t') + '\n'
-		);
+		writeFileSync(`${command}.tmp`, words.map(escapeWord).join('\t') + '\n');
 		renameSync(`${command}.tmp`, command);
 		const answer = join(this.folder, `${n}.out`);
 		if (!(await waitForFile(answer, timeout))) {
@@ -138,6 +147,11 @@ class RunnerSession {
 		if (status !== 'ok') throw new Error(why ?? status);
 		const data = join(this.folder, `${n}.data`);
 		return existsSync(data) ? readFileSync(data, 'utf8') : undefined;
+	}
+
+	/** The runner's test is still running. When it ends (a failure, ten idle minutes, a killed xcodebuild), XCUITest ends the app it launched with it. */
+	get alive(): boolean {
+		return this.child.exitCode === null && this.child.signalCode === null;
 	}
 
 	async stop(): Promise<void> {
@@ -301,17 +315,11 @@ export class IosSimulatorDriver implements Driver {
 			async ({ model, index, cells: group }) => {
 				const name = simulatorName(model, index);
 				try {
-					// One run at a time on a simulator, across checkouts and agents: it is facetshot's, not this run's.
-					await withLock(
-						join(homeFolder(), 'locks', `${name}.lock`),
-						`facetshot on ${name} in ${ctx.root}`,
-						() => this.onSimulator(model, index, group, crowded, ctx, report),
-						{
-							onWait: ctx.log,
-							signal: ctx.signal,
-							poll: 2000
-						}
-					);
+					const udid = await ensureSimulator(model, ctx, index);
+					await useSimulator(udid, ctx, () => this.onSimulator(udid, name, group, ctx, report), {
+						name,
+						shutDownAfter: crowded
+					});
 				} catch (error) {
 					// Only what comes before the first screenshot (boot, install) gets here; a device's own failure is reported per device.
 					for (const cell of group) report(failed(cell, firstLine(error)));
@@ -321,26 +329,16 @@ export class IosSimulatorDriver implements Driver {
 		);
 	}
 
+	/** One lane's screenshots on a booted simulator (booted, kept and shut down by `useSimulator`). */
 	private async onSimulator(
-		model: string,
-		lane: number,
+		udid: string,
+		name: string,
 		cells: Cell[],
-		crowded: boolean,
 		ctx: RunContext,
 		report: (result: CellResult) => void
 	): Promise<void> {
 		const apple = ctx.config.apple!;
 		const app = this.app!;
-		const udid = await ensureSimulator(model, ctx, lane);
-		const name = simulatorName(model, lane);
-		await boot(udid, ctx);
-		// facetshot's simulators are its own whoever booted them (an earlier helper, a killed run): this runtime shuts
-		// down every one it used, once, so none is left running.
-		const closing = `ios-close:${udid}`;
-		if (!crowded && !ctx.runtime.memo.has(closing)) {
-			ctx.runtime.memo.set(closing, true);
-			ctx.runtime.onClose(`simulator ${name}`, () => simctl('shutdown', udid).then(() => {}));
-		}
 		await simctl(
 			'status_bar',
 			udid,
@@ -420,10 +418,8 @@ export class IosSimulatorDriver implements Driver {
 					await sim.runner.send(['orient', 'portrait']).catch(() => {});
 				await sim.runner.stop();
 			}
-			if (crowded) {
-				ctx.runtime.memo.delete(`ios-launch:${udid}`);
-				await simctl('shutdown', udid).catch(() => {});
-			}
+			// The runner took the app it launched with it: the next run launches it again.
+			ctx.runtime.memo.delete(`ios-launch:${udid}`);
 		}
 	}
 
@@ -463,7 +459,15 @@ export class IosSimulatorDriver implements Driver {
 	): Promise<void> {
 		const apple = ctx.config.apple!;
 		const wanted = device.orientation === 'landscape' ? 'landscape' : 'portrait';
-		sim.runner ??= await RunnerSession.start(this.runner!, sim.udid, apple.bundleId, ctx);
+		// A runner whose test has ended can't answer, and took the app it launched with it: start another, and launch the
+		// app again from it. Without this, a launch remembered from the old runner was skipped, "activate" started the app
+		// with none of its environment (Knot came up signed out), and the next "open" waited on an app the new runner never
+		// launched until "has not loaded accessibility" — every later command then timed out.
+		if (sim.runner && !sim.runner.alive) sim.runner = undefined;
+		if (!sim.runner) {
+			sim.runner = await RunnerSession.start(this.runner!, sim.udid, apple.bundleId, ctx);
+			ctx.runtime.memo.delete(`ios-launch:${sim.udid}`);
+		}
 		if (!sim.log) {
 			// By process name, so lines from the app's first moments are kept. Swift's print doesn't reach facetshot from
 			// a simulator; Logger, os_log and NSLog do.

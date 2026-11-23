@@ -2,6 +2,7 @@
  * Builds that run only when something they read has changed. The hash of the inputs is kept next to the output, so
  * the next run (or another agent in the same checkout) skips straight to the screenshots.
  */
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { BuildStep } from '../types.ts';
@@ -28,12 +29,17 @@ export interface Built {
 	ms: number;
 }
 
-/** What decides whether a build step must run again: its inputs' contents, its command and its environment. */
-export function stepHash(step: BuildStep, ctx: Pick<BuildContext, 'root' | 'values'>): string {
+/** The command and environment a build step runs with, filled in: what differs between two settings of a checkout. */
+function stepSettings(step: BuildStep, ctx: Pick<BuildContext, 'values'>): string[] {
 	const env = Object.entries(step.env ?? {})
 		.map(([key, value]) => `${key}=${fill(value, ctx.values)}`)
 		.sort();
-	return inputsHash(ctx.root, step.inputs, [fill(step.cmd, ctx.values), ...env]);
+	return [fill(step.cmd, ctx.values), ...env];
+}
+
+/** What decides whether a build step must run again: its inputs' contents, its command and its environment. */
+export function stepHash(step: BuildStep, ctx: Pick<BuildContext, 'root' | 'values'>): string {
+	return inputsHash(ctx.root, step.inputs, stepSettings(step, ctx));
 }
 
 export async function ensureBuilt(
@@ -49,7 +55,17 @@ export async function ensureBuilt(
 		existsSync(stamp) && readFileSync(stamp, 'utf8') === hash && (!output || existsSync(output));
 	if (fresh) return { hash, cached: true, output, ms: Date.now() - started };
 
+	const settingsFile = join(ctx.stateDir, 'builds', `${name}.settings`);
+	const settings = createHash('sha1').update(stepSettings(step, ctx).join('\n')).digest('hex');
 	const work = async () => {
+		const before = existsSync(settingsFile) ? readFileSync(settingsFile, 'utf8') : undefined;
+		if (output && existsSync(output) && before && before !== settings) {
+			// Two settings of one checkout (another API address, another database) building into one folder take turns
+			// overwriting it, and a server still serving the other's build starts serving this one.
+			ctx.log(
+				`Building ${name} over ${output}, which was built with another command or environment. If two settings of this checkout run at once, give each its own output folder (put what differs in build.output).`
+			);
+		}
 		ctx.log(`Building ${name} (its inputs changed)…`);
 		await runToEnd(step, {
 			root: ctx.root,
@@ -60,6 +76,7 @@ export async function ensureBuilt(
 		});
 		mkdirSync(join(ctx.stateDir, 'builds'), { recursive: true });
 		writeFileSync(stamp, hash);
+		writeFileSync(settingsFile, settings);
 	};
 	if (step.heavy && ctx.heavyLock) {
 		await withLock(ctx.heavyLock, `facetshot build ${name} in ${ctx.root}`, work, {

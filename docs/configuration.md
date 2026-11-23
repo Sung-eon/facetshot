@@ -55,8 +55,20 @@ const [webPort, apiPort] = stablePorts(import.meta.dirname, 2);
 [A complete example](auth-and-data.md#a-complete-example-web-app-and-api) uses these ports for a web app and its
 API.
 
-With `stablePorts`, checkouts never share or stop each other's servers. Runs from the same checkout share one set,
-through the background helper.
+With `stablePorts`, checkouts never share or stop each other's servers. Runs from the same checkout with the same
+settings share one set, through the background helper.
+
+Two agents in one checkout can also run with different settings at once (one sets `SHOTS_DB`, the other doesn't).
+The helper keeps them apart: each gets its own servers and browser contexts, and a server started with other
+settings (another command, database or environment) is never borrowed. They still need ports of their own, or the
+second stops with an error that names the server holding the port. Key the ports by what differs, and put it in
+build outputs too, so one build doesn't overwrite the other's:
+
+```ts
+const database = process.env.SHOTS_DB ?? 'app_dev';
+const [webPort, apiPort] = stablePorts(import.meta.dirname, 2, { key: database });
+// …and in the web build: output: `.facetshot-build-${database}`
+```
 
 ## Top level
 

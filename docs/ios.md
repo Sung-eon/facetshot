@@ -48,6 +48,9 @@ facetshot app:/inbox app:/settings --on iphone,ipad-portrait,ipad-landscape --as
 3. For each variant it changes the simulator's appearance, text size and contrast while the app runs. For each
    screen it opens the deep link and waits until the screen is ready.
 4. It takes the simulator's screenshot.
+5. Three minutes after its last screenshot, it shuts the simulator down again
+   ([Lifecycle](architecture.md#lifecycle)). A booted simulator runs its whole home screen and system apps and holds
+   10 GB or more.
 
 While there are only a few devices, each gets a simulator of its own, so the iPad in portrait and in landscape are
 taken in parallel, and a simulator that finishes early hands its slot to the next. Opening deep links, rotating and

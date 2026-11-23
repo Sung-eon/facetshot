@@ -31,3 +31,14 @@ test('a full range says so', () => {
 	stablePorts(one, 2, { from: 7000, to: 7001 });
 	expect(() => stablePorts(two, 2, { from: 7000, to: 7001 })).toThrow(/No 2 free ports/);
 });
+
+test('settings of one folder with a key each get blocks of their own, and keep them', () => {
+	const folder = mkdtempSync(join(home, 'keyed-'));
+	const plain = stablePorts(folder, 2, { from: 8000, to: 8099 });
+	const one = stablePorts(folder, 2, { from: 8000, to: 8099, key: 'db_one' });
+	const two = stablePorts(folder, 2, { from: 8000, to: 8099, key: 'db_two' });
+	expect(new Set([...plain, ...one, ...two]).size).toBe(6);
+	// Another folder asking doesn't take a keyed block away (the folder still exists).
+	stablePorts(mkdtempSync(join(home, 'other-')), 2, { from: 8000, to: 8099 });
+	expect(stablePorts(folder, 2, { from: 8000, to: 8099, key: 'db_one' })).toEqual(one);
+});
